@@ -1,0 +1,137 @@
+{
+  "nav": {
+    "quizzes": "Đề thi",
+    "weekly": "Đề hàng tuần",
+    "rewards": "Phần thưởng",
+    "about": "Giới thiệu",
+    "home": "Trang chủ",
+    "aboutUs": "Về chúng tôi",
+    "features": "Tính năng",
+    "pricing": "Bảng giá",
+    "signIn": "Đăng nhập",
+    "register": "Đăng ký"
+  },
+  "hero": {
+    "badge": "Trải nghiệm thi cử đỉnh cao",
+    "title": "Học tập, Thi cử, ",
+    "earn": "Nhận phần thưởng",
+    "desc": "Tham gia cùng hàng ngàn học sinh và giáo viên trên nền tảng thi cử tối ưu. Kiểm tra kiến thức, thi đấu với bạn bè và dành lấy những phần thưởng hấp dẫn",
+    "getStarted": "Bắt đầu ngay",
+    "tryDemo": "Thử AI Demo",
+    "stats": "học sinh đã tham gia tuần này"
+  },
+  "categories": {
+    "badge": "Danh mục",
+    "titlePrefix": "Khám phá ",
+    "titleSuffix": "Danh mục đề thi",
+    "desc": "Khám phá các đề thi thuộc nhiều lĩnh vực khác nhau để kiểm tra và mở rộng kiến thức của bạn",
+    "names": {
+      "science": "Khoa học & Công nghệ",
+      "math": "Toán học",
+      "chemistry": "Hóa học",
+      "biology": "Sinh học",
+      "general": "Kiến thức chung",
+      "current": "Thời sự"
+    },
+    "cardDesc": "Kiểm tra kiến thức của bạn về {{name}} với các bộ đề chọn lọc",
+    "explore": "Khám phá ngay"
+  },
+  "features": {
+    "badge": "Tính năng",
+    "titlePrefix": "Tại sao chọn ",
+    "desc": "Khám phá các đề thi thuộc nhiều lĩnh vực khác nhau để kiểm tra và mở rộng kiến thức của bạn",
+    "items": {
+      "personalized": {
+        "title": "Cá nhân hóa học tập",
+        "desc": "Các bộ đề thi thích ứng điều chỉnh theo trình độ và tốc độ học tập của bạn"
+      },
+      "rewards": {
+        "title": "Hệ thống phần thưởng",
+        "desc": "Tích lũy điểm, huy hiệu và quà tặng cho những thành tích của bạn"
+      },
+      "teacher": {
+        "title": "Bảng điều khiển giáo viên",
+        "desc": "Công cụ toàn diện giúp giáo viên tạo và quản lý đề thi dễ dàng"
+      },
+      "tracking": {
+        "title": "Theo dõi tiến độ",
+        "desc": "Biểu đồ chi tiết giúp bạn theo dõi sự tiến bộ qua từng ngày"
+      },
+      "leaders": {
+        "title": "Bảng xếp hạng cạnh tranh",
+        "desc": "Cùng tranh tài với bạn bè và thăng hạng trong nhiều lĩnh mục khác nhau"
+      },
+      "mobile": {
+        "title": "Hỗ trợ đa thiết bị",
+        "desc": "Truy cập ôn luyện mọi lúc, mọi nơi trên mọi thiết bị di động"
+      }
+    }
+  },
+  "cta": {
+    "title": "Sẵn sàng bắt đầu hành trình của bạn?",
+    "desc": "Tham gia cùng hàng ngàn học sinh và giáo viên. Đăng ký ngay hôm nay để trải nghiệm toàn bộ tính năng",
+    "createAccount": "Tạo tài khoản",
+    "browseLibrary": "Thư viện cộng đồng"
+  },
+  "footer": {
+    "desc": "Nền tảng thi cử tối ưu cho học sinh và giáo viên. Học tập, thi đấu và nhận phần thưởng",
+    "quickLinks": "Liên kết nhanh",
+    "forTeachers": "Cho giáo viên",
+    "contact": "Liên hệ",
+    "links": {
+      "about": "Giới thiệu",
+      "contact": "Liên hệ với chúng tôi",
+      "careers": "Tuyển dụng",
+      "culture": "Văn hóa"
+    },
+    "copyright": "Bản quyền © 2025 SysDe. Đã đăng ký bản quyền",
+    "terms": "Điều khoản dịch vụ",
+    "privacy": "Chính sách bảo mật"
+  },
+  "login": {
+    "welcome": "Chào mừng trở lại",
+    "desc": "Nhập thông tin truy cập để vào tài khoản của bạn",
+    "username": "Tên đăng nhập",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "signIn": "Đăng nhập",
+    "or": "HOẶC",
+    "noAccount": "Chưa có tài khoản?",
+    "signUp": "Đăng ký ngay",
+    "forgotPassword": "Quên mật khẩu?",
+    "placeholders": {
+      "email": "ten@vidu.com",
+      "password": "••••••••••"
+    }
+  },
+  "register": {
+    "title": "Tạo tài khoản",
+    "desc": "Tham gia cộng đồng và bắt đầu hành trình của bạn",
+    "fullName": "Họ và tên",
+    "email": "Email",
+    "institution": "Trường công tác",
+    "teachingField": "Lĩnh vực giảng dạy",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "btn": "Đăng ký",
+    "haveAccount": "Đã có tài khoản?",
+    "signIn": "Đăng nhập",
+    "fields": {
+      "math": "Toán học",
+      "science": "Khoa học",
+      "literature": "Ngữ văn",
+      "english": "Tiếng Anh",
+      "other": "Lĩnh vực khác"
+    },
+    "placeholders": {
+      "fullName": "Nguyễn Văn A",
+      "institution": "Đại học Bách Khoa",
+      "teachingField": "Chọn lĩnh vực của bạn"
+    }
+  },
+  "notFound": {
+    "title": "Oops!",
+    "sub": "Đường dẫn không tồn tại",
+    "desc": "Có vẻ như bạn đã đi lạc vào một không gian chưa được khám phá.",
+    "backHome": "Quay lại trang chủ"
+  }
+}

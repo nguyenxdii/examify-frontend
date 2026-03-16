@@ -1,0 +1,137 @@
+{
+  "nav": {
+    "quizzes": "Quiz",
+    "weekly": "Weekly Quiz",
+    "rewards": "Rewards",
+    "about": "About",
+    "home": "Home",
+    "aboutUs": "About Us",
+    "features": "Features",
+    "pricing": "Pricing",
+    "signIn": "Sign In",
+    "register": "Register"
+  },
+  "hero": {
+    "badge": "The ultimate quiz experience",
+    "title": "Learn, Quiz, ",
+    "earn": "Earn Rewards",
+    "desc": "Join thousands of students and teachers on the ultimate quiz platform. Test your knowledge, compete with peers, and win exciting rewards",
+    "getStarted": "Get Started",
+    "tryDemo": "Try AI Demo",
+    "stats": "students joined this week"
+  },
+  "categories": {
+    "badge": "Categories",
+    "titlePrefix": "Explore ",
+    "titleSuffix": "Quiz Categories",
+    "desc": "Discover quizzes across various subjects to test and expand your knowledge",
+    "names": {
+      "science": "Science & Tech",
+      "math": "Mathematics",
+      "chemistry": "Chemistry",
+      "biology": "Biology",
+      "general": "General Knowledge",
+      "current": "Current Affairs"
+    },
+    "cardDesc": "Test your knowledge in {{name}} with our curated quizzes",
+    "explore": "Explore Quizzes"
+  },
+  "features": {
+    "badge": "Features",
+    "titlePrefix": "Why ",
+    "desc": "Discover quizzes across various subjects to test and expand your knowledge",
+    "items": {
+      "personalized": {
+        "title": "Personalized Learning",
+        "desc": "Adaptive quizzes that adjust to your knowledge level and learning pace"
+      },
+      "rewards": {
+        "title": "Reward System",
+        "desc": "Earn points, badges, and rewards for your achievements"
+      },
+      "teacher": {
+        "title": "Teacher Dashboard",
+        "desc": "Comprehensive tools for educators to create and manage quizzes"
+      },
+      "tracking": {
+        "title": "Progress Tracking",
+        "desc": "Adaptive quizzes that adjust to your knowledge level and learning pace"
+      },
+      "leaders": {
+        "title": "Competitive Leaderboards",
+        "desc": "Compete with peers and climb the ranks in various categories"
+      },
+      "mobile": {
+        "title": "Mobile Friendly",
+        "desc": "Access quizzes anytime, anywhere on any device"
+      }
+    }
+  },
+  "cta": {
+    "title": "Ready to Start Your Quiz Journey?",
+    "desc": "Join thousands of students and teachers. Sign up today and get access to all features",
+    "createAccount": "Create Account",
+    "browseLibrary": "Browse Library"
+  },
+  "footer": {
+    "desc": "The ultimate quiz platform for students and teachers. Learn, compete, and earn rewards",
+    "quickLinks": "Quick Links",
+    "forTeachers": "For Teachers",
+    "contact": "Contact us",
+    "links": {
+      "about": "About",
+      "contact": "Contact us",
+      "careers": "Careers",
+      "culture": "Culture"
+    },
+    "copyright": "Copyright © 2025 SysDe. All rights reserved",
+    "terms": "Terms and Conditions",
+    "privacy": "Privacy Policy"
+  },
+  "login": {
+    "welcome": "Welcome back",
+    "desc": "Enter your credentials to access your account",
+    "username": "Username",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign In",
+    "or": "OR",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign Up",
+    "forgotPassword": "Forgot password?",
+    "placeholders": {
+      "email": "name@example.com",
+      "password": "••••••••••"
+    }
+  },
+  "register": {
+    "title": "Create Account",
+    "desc": "Join our community and start your journey",
+    "fullName": "Full Name",
+    "email": "Email",
+    "institution": "Institution",
+    "teachingField": "Teaching Field",
+    "confirmPassword": "Confirm Password",
+    "btn": "Register",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign In",
+    "fields": {
+      "math": "Mathematics",
+      "science": "Science",
+      "literature": "Literature",
+      "english": "English",
+      "other": "Other"
+    },
+    "placeholders": {
+      "fullName": "John Doe",
+      "institution": "University of Technology",
+      "teachingField": "Select your field"
+    }
+  },
+  "notFound": {
+    "title": "Oops!",
+    "sub": "Page Not Found",
+    "desc": "It seems you've wandered into an unexplored space.",
+    "backHome": "Back to Home"
+  }
+}
