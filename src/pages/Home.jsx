@@ -43,6 +43,7 @@ export default function Home() {
       color: "bg-blue-400/10",
       borderColor: "border-blue-500",
       iconColor: "text-blue-400",
+      rgb: "59, 130, 246",
     },
     {
       id: 2,
@@ -51,6 +52,7 @@ export default function Home() {
       color: "bg-emerald-400/10",
       borderColor: "border-emerald-500",
       iconColor: "text-emerald-400",
+      rgb: "16, 185, 129",
     },
     {
       id: 3,
@@ -59,6 +61,7 @@ export default function Home() {
       color: "bg-purple-400/10",
       borderColor: "border-purple-500",
       iconColor: "text-purple-400",
+      rgb: "168, 85, 247",
     },
     {
       id: 4,
@@ -67,6 +70,7 @@ export default function Home() {
       color: "bg-pink-400/10",
       borderColor: "border-pink-500",
       iconColor: "text-pink-400",
+      rgb: "236, 72, 153",
     },
     {
       id: 5,
@@ -75,6 +79,7 @@ export default function Home() {
       color: "bg-orange-400/10",
       borderColor: "border-orange-500",
       iconColor: "text-orange-400",
+      rgb: "249, 115, 22",
     },
     {
       id: 6,
@@ -83,6 +88,7 @@ export default function Home() {
       color: "bg-red-500/10",
       borderColor: "border-red-500",
       iconColor: "text-red-500",
+      rgb: "239, 68, 68",
     },
   ];
 
@@ -144,12 +150,14 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <a
             href="#"
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 opacity-80 hover:opacity-100 transition-opacity"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary/50 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20 border border-white/20">
               S
             </div>
-            <span className="text-xl font-bold text-primary">SysDe</span>
+            <span className="text-xl font-bold bg-gradient-to-r from-primary to-secondary/60 bg-clip-text text-transparent">
+              SynDe
+            </span>
           </a>
 
           <div className="hidden md:flex items-center gap-8">
@@ -337,13 +345,17 @@ export default function Home() {
                   hidden: { opacity: 0, y: 15 },
                   show: { opacity: 1, y: 0 },
                 }}
-                whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                className={`group relative p-6 rounded-2xl border-2 border-primary/20 bg-white dark:bg-card hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 cursor-pointer overflow-hidden`}
+                className="group relative p-6 rounded-2xl border-2 bg-white dark:bg-card hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 cursor-pointer overflow-hidden transition-colors"
+                style={{ 
+                  borderColor: `rgba(${cat.rgb}, 0.2)` 
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = `rgba(${cat.rgb}, 0.6)`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = `rgba(${cat.rgb}, 0.2)`;
+                }}
               >
-                {/* Accent top bar */}
-                <div
-                  className={`absolute top-0 left-0 right-0 h-1.5 ${cat.color.replace("bg-", "bg-").replace("/10", "")}`}
-                />
 
                 <div className="flex gap-5 items-start">
                   <div
@@ -387,7 +399,7 @@ export default function Home() {
           <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
             {t("features.titlePrefix")}
             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              SysDe
+              SynDe
             </span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -474,12 +486,12 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-8">
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center text-white font-bold">
+              <div className="flex items-center gap-2 mb-4 opacity-80 hover:opacity-100 transition-opacity cursor-pointer">
+                <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary/50 rounded-lg flex items-center justify-center text-white font-bold text-sm border border-white/20">
                   S
                 </div>
                 <span className="text-lg font-bold bg-gradient-to-r from-primary to-secondary/60 bg-clip-text text-transparent">
-                  SysDe
+                  SynDe
                 </span>
               </div>
               <p className="text-muted-foreground text-sm">

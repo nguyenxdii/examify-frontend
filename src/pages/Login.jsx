@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import authBg from "../assets/auth/auth.jpg";
+import { login } from "../api/authApi";
 
 export default function Login() {
   const { t, i18n } = useTranslation();
@@ -27,9 +28,24 @@ export default function Login() {
     i18n.changeLanguage(lang);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login attempt:", { email, password });
+    try {
+      const response = await login({ email, password });
+
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify({
+        id: response.data.id,
+        email: response.data.email,
+        fullName: response.data.fullName,
+        role: response.data.role,
+      }));
+
+      navigate("/dashboard");
+    } catch (error) {
+      const message = error.response?.data?.message || "Đăng nhập thất bại!";
+      alert(message);
+    }
   };
 
   return (
@@ -67,18 +83,15 @@ export default function Login() {
                 ? { scale: 0, opacity: 0, rotate: -180 }
                 : { scale: 1, opacity: 1, rotate: 0 }
             }
-            animate={{ scale: 1, opacity: 1, rotate: 0 }}
-            transition={{
-              delay: 0.3,
-              type: "spring",
-              stiffness: 260,
-              damping: 20,
-              mass: 1,
-            }}
             className="mb-6 flex justify-center"
           >
-            <div className="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center text-white text-4xl font-bold shadow-2xl shadow-primary/40">
-              S
+            <div className="flex items-center gap-2">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary to-purple-600/50 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-primary/40 border border-white/20">
+                S
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600/60 bg-clip-text text-transparent">
+                SynDe
+              </span>
             </div>
           </motion.div>
 
@@ -103,7 +116,7 @@ export default function Login() {
                 "linear-gradient(to right, black 40%, transparent 95%)",
             }}
           >
-            SysDe
+            SynDe
           </motion.h1>
 
           <motion.p

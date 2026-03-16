@@ -46,7 +46,8 @@
         "desc": "Adaptive quizzes that adjust to your knowledge level and learning pace"
       },
       "rewards": {
-        "title": "Reward System",
+        "title": "Start your journey with SynDe",
+        "subtitle": "Smart online multiple-choice quiz management and participation system",
         "desc": "Earn points, badges, and rewards for your achievements"
       },
       "teacher": {
@@ -84,7 +85,7 @@
       "careers": "Careers",
       "culture": "Culture"
     },
-    "copyright": "Copyright © 2025 SysDe. All rights reserved",
+    "copyright": "Copyright © 2025 SynDe. All rights reserved",
     "terms": "Terms and Conditions",
     "privacy": "Privacy Policy"
   },
@@ -133,5 +134,70 @@
     "sub": "Page Not Found",
     "desc": "It seems you've wandered into an unexplored space.",
     "backHome": "Back to Home"
+  },
+  "dashboard": {
+    "sidebar": {
+      "overview": "Overview",
+      "users": "User Management",
+      "allQuizzes": "All Quizzes",
+      "analytics": "System Analytics",
+      "myQuizzes": "My Quizzes",
+      "createQuiz": "Create Quiz",
+      "students": "Students",
+      "settings": "Settings",
+      "profile": "Profile",
+      "logout": "Logout",
+      "adminMenu": "Admin Menu",
+      "userMenu": "User Menu"
+    },
+    "header": {
+      "welcome": "Welcome back,",
+      "overviewDesc": "Here's your overview for today.",
+      "search": "Search...",
+      "account": "Account",
+      "signOut": "Sign Out"
+    },
+    "stats": {
+      "totalQuizzes": "Total Quizzes",
+      "totalStudents": "Total Students",
+      "avgScore": "Avg. Score",
+      "completionRate": "Completion Rate",
+      "totalUsers": "Total Users",
+      "activeSessions": "Active Sessions",
+      "systemHealth": "System Health",
+      "newToday": "{{count}} new today",
+      "newThisWeek": "{{count}} new this week",
+      "fromLastMonth": "+{{count}} from last month",
+      "realTime": "Real-time traffic",
+      "allSystemsGo": "All systems Go"
+    },
+    "recentQuizzes": {
+      "title": "Recent Quizzes",
+      "globalTitle": "Global Quizzes",
+      "viewAll": "View all",
+      "table": {
+        "title": "Quiz Title",
+        "category": "Category",
+        "attempts": "Attempts",
+        "date": "Created At",
+        "status": "Status"
+      }
+    },
+    "topStudents": {
+      "title": "Top Performing Students",
+      "completed": "{{count}} Quizzes completed",
+      "avgScore": "Avg Score"
+    },
+    "admin": {
+      "title": "System Administration",
+      "desc": "Overview of system-wide activity and user management.",
+      "maintenance": "System Maintenance",
+      "maintenanceDesc": "Next scheduled maintenance is on Sunday, March 23rd at 02:00 AM UTC.",
+      "viewLogs": "View Logs"
+    },
+    "user": {
+      "title": "Teacher Dashboard",
+      "desc": "Monitor your students' performance and manage your quizzes."
+    }
   }
 }

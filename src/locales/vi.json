@@ -68,7 +68,8 @@
     }
   },
   "cta": {
-    "title": "Sẵn sàng bắt đầu hành trình của bạn?",
+    "title": "Bắt đầu chuyến hành trình của bạn với SynDe",
+    "subtitle": "Hệ thống quản lý và tham gia thi trắc nghiệm trực tuyến thông minh",
     "desc": "Tham gia cùng hàng ngàn học sinh và giáo viên. Đăng ký ngay hôm nay để trải nghiệm toàn bộ tính năng",
     "createAccount": "Tạo tài khoản",
     "browseLibrary": "Thư viện cộng đồng"
@@ -84,7 +85,7 @@
       "careers": "Tuyển dụng",
       "culture": "Văn hóa"
     },
-    "copyright": "Bản quyền © 2025 SysDe. Đã đăng ký bản quyền",
+    "copyright": "Bản quyền © 2025 SynDe. Đã đăng ký bản quyền",
     "terms": "Điều khoản dịch vụ",
     "privacy": "Chính sách bảo mật"
   },
@@ -133,5 +134,70 @@
     "sub": "Đường dẫn không tồn tại",
     "desc": "Có vẻ như bạn đã đi lạc vào một không gian chưa được khám phá.",
     "backHome": "Quay lại trang chủ"
+  },
+  "dashboard": {
+    "sidebar": {
+      "overview": "Tổng quan",
+      "users": "Quản lý người dùng",
+      "allQuizzes": "Tất cả đề thi",
+      "analytics": "Phân tích hệ thống",
+      "myQuizzes": "Đề thi của tôi",
+      "createQuiz": "Tạo đề thi",
+      "students": "Học sinh",
+      "settings": "Cài đặt",
+      "profile": "Trang cá nhân",
+      "logout": "Đăng xuất",
+      "adminMenu": "Danh mục Admin",
+      "userMenu": "Danh mục Người dùng"
+    },
+    "header": {
+      "welcome": "Chào mừng trở lại,",
+      "overviewDesc": "Đây là tổng quan của bạn hôm nay.",
+      "search": "Tìm kiếm...",
+      "account": "Tài khoản",
+      "signOut": "Đăng xuất"
+    },
+    "stats": {
+      "totalQuizzes": "Tổng số đề thi",
+      "totalStudents": "Tổng số học sinh",
+      "avgScore": "Điểm trung bình",
+      "completionRate": "Tỷ lệ hoàn thành",
+      "totalUsers": "Tổng người dùng",
+      "activeSessions": "Phiên hoạt động",
+      "systemHealth": "Sức khỏe hệ thống",
+      "newToday": "{{count}} mới hôm nay",
+      "newThisWeek": "{{count}} mới tuần này",
+      "fromLastMonth": "+{{count}} từ tháng trước",
+      "realTime": "Giao thông thời gian thực",
+      "allSystemsGo": "Mọi hệ thống ổn định"
+    },
+    "recentQuizzes": {
+      "title": "Đề thi gần đây",
+      "globalTitle": "Đề thi toàn hệ thống",
+      "viewAll": "Xem tất cả",
+      "table": {
+        "title": "Tên đề thi",
+        "category": "Danh mục",
+        "attempts": "Lượt làm",
+        "date": "Ngày tạo",
+        "status": "Trạng thái"
+      }
+    },
+    "topStudents": {
+      "title": "Học sinh tiêu biểu",
+      "completed": "{{count}} đề thi đã hoàn thành",
+      "avgScore": "Điểm TB"
+    },
+    "admin": {
+      "title": "Quản trị hệ thống",
+      "desc": "Tổng quan về hoạt động toàn hệ thống và quản lý người dùng.",
+      "maintenance": "Bảo trì hệ thống",
+      "maintenanceDesc": "Lịch bảo trì tiếp theo vào Chủ Nhật, ngày 23 tháng 3 lúc 02:00 AM UTC.",
+      "viewLogs": "Xem nhật ký"
+    },
+    "user": {
+      "title": "Bảng điều khiển giáo viên",
+      "desc": "Theo dõi hiệu suất của học sinh và quản lý các đề thi của bạn."
+    }
   }
 }
