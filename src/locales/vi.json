@@ -189,7 +189,7 @@
       "profile": "Trang cá nhân",
       "logout": "Đăng xuất",
       "adminMenu": "Danh mục Admin",
-      "userMenu": "Danh mục Giáo viên",
+      "userMenu": "Danh mục",
       "rooms": "Phòng thi",
       "questions": "Ngân hàng câu hỏi",
       "results": "Kết quả",
@@ -243,6 +243,195 @@
     "user": {
       "title": "Bảng điều khiển Giáo viên",
       "desc": "Theo dõi hiệu suất của học sinh và quản lý các đề thi của bạn."
+    }
+  },
+  "wizard": {
+    "steps": {
+      "input": "Nhập nội dung",
+      "analysis": "AI Phân tích",
+      "config": "Cấu hình đề",
+      "generation": "Sinh câu hỏi",
+      "preview": "Xem trước",
+      "finalize": "Lưu đề thi"
+    },
+    "step1": {
+      "title": "Nội dung đề thi của bạn là gì?",
+      "document": "Tài liệu văn bản",
+      "documentDesc": "Phân tích từ nội dung bài học, chương sách hoặc tài liệu bạn dán vào.",
+      "topic": "Chủ đề tự do",
+      "topicDesc": "Chỉ cần nhập chủ đề (ví dụ: \"Đạo hàm lớp 12\"), AI sẽ tự tìm kiến thức.",
+      "contentLabel": "Nội dung tài liệu",
+      "topicLabel": "Nhập chủ đề muốn tạo đề",
+      "placeholderDoc": "Dán nội dung văn bản tại đây...",
+      "placeholderTopic": "Ví dụ: Lịch sử Việt Nam thế kỷ 20, Giải tích lớp 11 chương 1...",
+      "uploadFile": "Tải lên file tài liệu (PDF, Word, TXT)",
+      "limit": "Giới hạn 10MB",
+      "characters": "Ký tự",
+      "next": "Tiếp theo"
+    },
+    "step2": {
+      "analyzing": "Đang phân tích nội dung...",
+      "analyzingDesc": "AI đang tìm kiếm các chủ đề và độ khó phù hợp từ tài liệu của bạn.",
+      "error": "Không thể phân tích nội dung. Vui lòng thử lại.",
+      "retry": "Thử lại",
+      "suggestedTotal": "Số câu gợi ý",
+      "suggestedDesc": "Dựa trên độ dài văn bản",
+      "detectedTopics": "Chủ đề phát hiện",
+      "summary": "Tóm tắt nội dung",
+      "customConfig": "Tự cấu hình",
+      "useSuggestions": "Sử dụng gợi ý"
+    },
+    "step3": {
+      "mc": "Trắc nghiệm thuần",
+      "mcDesc": "100% trắc nghiệm",
+      "basic": "Hỗn hợp cơ bản",
+      "basicDesc": "70% TN + 30% ĐA",
+      "adv": "Hỗn hợp nâng cao",
+      "advDesc": "60% TN + 20% ĐA + 20% TL",
+      "custom": "Tùy chỉnh",
+      "customDesc": "Theo ý của bạn",
+      "qCount": "Số lượng câu hỏi",
+      "max": "Tối đa 50",
+      "mcLabel": "Trắc nghiệm 1 đáp án",
+      "maLabel": "Trắc nghiệm nhiều đáp án",
+      "essayLabel": "Tự luận",
+      "maxAdd": "Tối đa có thể thêm",
+      "totalQ": "Tổng số câu hỏi",
+      "difficulty": "Độ khó",
+      "difficultyLevels": {
+        "easy": "Dễ",
+        "medium": "Trung bình",
+        "hard": "Khó",
+        "mixed": "Hỗn hợp"
+      },
+      "totalRatio": "Tổng tỉ lệ",
+      "mustBe100": "(Phải là 100%)",
+      "back": "Quay lại",
+      "generate": "Sinh câu hỏi"
+    },
+    "step4": {
+      "generating": "Đang phù phép sinh câu hỏi...",
+      "generatingDesc": "AI đang chọn lọc những kiến thức tinh túy nhất để xây dựng bộ câu hỏi cho bạn.",
+      "loading": "Đang xử lý...",
+      "analyzingStructure": "Phân tích cấu trúc đề",
+      "generatingContent": "Sinh nội dung câu hỏi",
+      "qualityCheck": "Kiểm tra chất lượng"
+    },
+    "step5": {
+      "generated": "Đã sinh {{count}} câu hỏi",
+      "backEdit": "Quay lại sửa",
+      "continue": "Tiếp tục bước cuối",
+      "regenerating": "Đang tải lại câu hỏi...",
+      "types": {
+        "mc": "TN 1 đáp án",
+        "ma": "TN nhiều đáp án",
+        "essay": "Tự luận"
+      },
+      "sampleAnswer": "Đáp án gợi ý",
+      "noExplanation": "Chưa có lời giải chi tiết.",
+      "generateMore": "Sinh thêm câu hỏi bằng AI",
+      "modal": {
+        "title": "Sinh thêm câu hỏi",
+        "type": "Loại câu hỏi",
+        "difficulty": "Độ khó cho các câu thêm",
+        "count": "Số lượng câu",
+        "cancel": "Hủy",
+        "start": "Bắt đầu sinh",
+        "error": "Lỗi khi sinh thêm câu hỏi",
+        "maxAlert": "Chỉ có thể sinh thêm tối đa {{count}} câu."
+      },
+      "deleteConfirm": {
+        "title": "Xác nhận xóa?",
+        "desc": "Câu hỏi #{{index}} sẽ bị loại bỏ khỏi danh sách. Hành động này không thể hoàn tác.",
+        "cancel": "Hủy bỏ",
+        "confirm": "Xóa ngay"
+      }
+    },
+    "step6": {
+      "title": "Thông tin cuối cùng",
+      "examName": "Tên đề thi",
+      "examNamePlaceholder": "Ví dụ: Kiểm tra chuyên đề Di truyền học - Lớp 12",
+      "subject": "Môn học",
+      "subjectPlaceholder": "Toán, Lý, Hóa...",
+      "description": "Mô tả ngắn",
+      "descriptionPlaceholder": "Dành cho lớp 12A1, kỳ thi thử...",
+      "saveDraft": "Lưu bản nháp",
+      "saveFinish": "Lưu & Hoàn tất",
+      "saving": {
+        "exam": "Đang lưu thông tin đề thi...",
+        "questions": "Đang lưu {{count}} câu hỏi...",
+        "success": "Thành công! Đang chuyển hướng...",
+        "error": "Đã có lỗi xảy ra trong quá trình lưu."
+      }
+    },
+    "create": {
+      "desc": "Tạo đề thi mới bằng tay hoặc sử dụng trí tuệ nhân tạo (AI).",
+      "manual": "Tạo thủ công",
+      "manualDesc": "Tự tay biên soạn từng câu hỏi và đáp án cho đề thi của bạn.",
+      "ai": "Tạo bằng AI",
+      "aiDesc": "Tải lên tài liệu hoặc nhập chủ đề để AI tự động soạn đề thi cho bạn.",
+      "recommended": "Khuyên dùng"
+    },
+    "questionModal": {
+      "editTitle": "Chỉnh sửa câu hỏi",
+      "addTitle": "Thêm câu hỏi mới",
+      "type": "Loại câu hỏi",
+      "difficulty": "Độ khó",
+      "content": "Nội dung câu hỏi",
+      "choices": "Các lựa chọn & Đáp án đúng",
+      "placeholderChoice": "Nội dung phương án...",
+      "addChoice": "Thêm lựa chọn",
+      "sampleAnswer": "Đáp án mẫu",
+      "explanation": "Giải thích chi tiết",
+      "placeholderQuestion": "Nhập nội dung câu hỏi...",
+      "cancel": "Hủy",
+      "save": "Lưu thay đổi",
+      "add": "Thêm mới",
+      "error": "Đã có lỗi xảy ra"
+    },
+    "list": {
+      "desc": "Quản lý và tổ chức các bộ đề thi của bạn.",
+      "empty": "Chưa có đề thi nào",
+      "emptyDesc": "Hãy bắt đầu bằng cách tạo đề thi đầu tiên của bạn để học sinh có thể tham gia.",
+      "tryAi": "Thử tạo bằng AI",
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa đề thi này không?",
+      "deleteError": "Lỗi khi xóa đề thi",
+      "noDescription": "Không có mô tả cho đề thi này.",
+      "unclassified": "Chưa phân loại",
+      "details": "Chi tiết",
+      "published": "Đã phát hành",
+      "deleteWarning": "Không thể xóa đề thi đã phát hành"
+    },
+    "detail": {
+      "backToList": "Quay lại danh sách",
+      "noDescription": "Không có mô tả chi tiết.",
+      "unclassified": "Chưa phân loại",
+      "questionsCount": "{{count}} câu hỏi",
+      "deleteExamConfirm": "CẢNH BÁO: Bạn có chắc chắn muốn xóa toàn bộ đề thi này không? Hành động này không thể hoàn tác.",
+      "deleteQuestionConfirm": "Bạn có chắc muốn xóa câu hỏi này?",
+      "status": {
+        "draft": "Bản nháp",
+        "ready": "Sẵn sàng",
+        "shared": "Đã phát hành"
+      },
+      "setReady": "Thiết lập Sẵn sàng",
+      "share": "Chia sẻ",
+      "listHeader": "Danh sách câu hỏi",
+      "addQuestion": "Thêm câu hỏi",
+      "noQuestions": "Chưa có câu hỏi nào trong đề thi này.",
+      "config": "Cấu hình đề thi",
+      "time": "Thời gian làm bài",
+      "passScore": "Điểm sàn",
+      "minutes": "phút",
+      "points": "điểm",
+      "openRoom": "Mở phòng thi ngay",
+      "note": "Lưu ý",
+      "noteDesc": "Bạn chỉ có thể chỉnh sửa nội dung câu hỏi khi đề thi ở trạng thái **Bản nháp**. Khi đề đã sẵn sàng hoặc phát hành, việc chỉnh sửa sẽ bị khóa để đảm bảo tính toàn vẹn của dữ liệu phòng thi."
+    },
+    "common": {
+      "editConfirm": "Bạn có muốn lưu thay đổi này không?",
+      "regenerateOne": "Sinh lại câu này",
+      "step": "Bước"
     }
   }
 }

@@ -189,7 +189,7 @@
       "profile": "Profile",
       "logout": "Logout",
       "adminMenu": "Admin Menu",
-      "userMenu": "Teacher Menu",
+      "userMenu": "Menu",
       "rooms": "Exam Rooms",
       "questions": "Question Bank",
       "results": "Results",
@@ -243,6 +243,199 @@
     "user": {
       "title": "Teacher Dashboard",
       "desc": "Monitor your students' performance and manage your quizzes."
+    }
+  },
+  "wizard": {
+    "steps": {
+      "input": "Content Input",
+      "analysis": "AI Analysis",
+      "config": "Configuration",
+      "generation": "Generation",
+      "preview": "Preview",
+      "finalize": "Finalize"
+    },
+    "step1": {
+      "title": "What is your exam content?",
+      "document": "Smart Document",
+      "documentDesc": "Upload or paste text from PDF, Word, etc.",
+      "topic": "Quick Topic",
+      "topicDesc": "AI will brainstorm questions from a topic name.",
+      "contentLabel": "Content details",
+      "topicLabel": "Topic name",
+      "placeholderDoc": "Paste your content here...",
+      "placeholderTopic": "Enter a topic (e.g. History of Rome)...",
+      "uploadFile": "Upload document file (PDF, Word, TXT)",
+      "limit": "Limit 10MB",
+      "characters": "Characters",
+      "next": "Next"
+    },
+    "step2": {
+      "analyzing": "AI is analyzing content...",
+      "analyzingDesc": "AI is finding suitable topics and difficulties from your document.",
+      "error": "Unable to analyze content. Please try again.",
+      "retry": "Retry",
+      "suggestedTotal": "Suggested Questions",
+      "suggestedDesc": "Based on content length and complexity",
+      "mcCount": "Multiple Choice: {{count}}",
+      "maCount": "Multiple Answer: {{count}}",
+      "essayCount": "Essay: {{count}}",
+      "difficulty": "Difficulty level: {{level}}",
+      "detectedTopics": "Detected Topics",
+      "summary": "Content Summary",
+      "customConfig": "Custom Config",
+      "useSuggestions": "Use Suggestions"
+    },
+    "step3": {
+      "mc": "Pure Multiple Choice",
+      "mcDesc": "100% MCQs",
+      "basic": "Basic Mix",
+      "basicDesc": "70% MC + 30% MA",
+      "adv": "Advanced Mix",
+      "advDesc": "60% MC + 20% MA + 20% Essay",
+      "custom": "Custom",
+      "customDesc": "Your way",
+      "qCount": "Number of Questions",
+      "max": "Max 50",
+      "mcLabel": "Multiple Choice",
+      "maLabel": "Multiple Answer",
+      "essayLabel": "Essay",
+      "maxAdd": "Max can add",
+      "totalQ": "Total questions",
+      "difficulty": "Difficulty",
+      "difficultyLevels": {
+        "easy": "Easy",
+        "medium": "Medium",
+        "hard": "Hard",
+        "mixed": "Mixed"
+      },
+      "totalRatio": "Total ratio",
+      "mustBe100": "(Must be 100%)",
+      "back": "Back",
+      "generate": "Generate Questions"
+    },
+    "step4": {
+      "generating": "Casting generation spell...",
+      "generatingDesc": "AI is picking the best knowledge to build your question set.",
+      "loading": "Processing...",
+      "analyzingStructure": "Analyzing structure",
+      "generatingContent": "Generating questions",
+      "qualityCheck": "Quality check"
+    },
+    "step5": {
+      "generated": "Generated {{count}} questions",
+      "backEdit": "Back to edit",
+      "continue": "Continue to final step",
+      "regenerating": "Regenerating question...",
+      "types": {
+        "mc": "Single Choice",
+        "ma": "Multiple Answer",
+        "essay": "Essay"
+      },
+      "sampleAnswer": "Sample Answer",
+      "noExplanation": "No detailed explanation yet.",
+      "generateMore": "Generate more questions with AI",
+      "modal": {
+        "title": "Generate More Questions",
+        "type": "Question Type",
+        "difficulty": "Difficulty",
+        "count": "Count",
+        "cancel": "Cancel",
+        "start": "Start Generating",
+        "error": "Error generating more questions",
+        "maxAlert": "Can only generate {{count}} more questions max."
+      },
+      "deleteConfirm": {
+        "title": "Confirm Delete?",
+        "desc": "Question #{{index}} will be removed. This cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete Now"
+      }
+    },
+    "step6": {
+      "title": "Final Information",
+      "examName": "Exam Name",
+      "examNamePlaceholder": "e.g., Biology Genetics Quiz - Grade 12",
+      "subject": "Subject",
+      "subjectPlaceholder": "Math, Physics, Chemistry...",
+      "description": "Short Description",
+      "descriptionPlaceholder": "For class 12A1, trial exam...",
+      "saveDraft": "Save as Draft",
+      "saveFinish": "Save & Finish",
+      "saving": {
+        "exam": "Saving exam info...",
+        "questions": "Saving questions...",
+        "success": "Success! Redirecting...",
+        "error": "An error occurred while saving."
+      }
+    },
+    "create": {
+      "desc": "Create a new exam manually or use artificial intelligence (AI).",
+      "manual": "Manual Creation",
+      "manualDesc": "Manually compose each question and answer for your exam.",
+      "ai": "AI Creation",
+      "aiDesc": "Upload documents or enter a topic to generate questions automatically.",
+      "recommended": "Recommended"
+    },
+    "questionModal": {
+      "editTitle": "Edit Question",
+      "addTitle": "Add New Question",
+      "type": "Question Type",
+      "difficulty": "Difficulty",
+      "content": "Question Content",
+      "choices": "Choices & Correct Answers",
+      "placeholderChoice": "Choice content...",
+      "addChoice": "Add Choice",
+      "sampleAnswer": "Sample Answer",
+      "explanation": "Detailed Explanation",
+      "placeholderQuestion": "Enter question content...",
+      "cancel": "Cancel",
+      "save": "Save Changes",
+      "add": "Add New",
+      "error": "An error occurred"
+    },
+    "list": {
+      "desc": "Manage and organize your exam collections.",
+      "empty": "No exams found.",
+      "emptyDesc": "Start by creating your first exam for students to join.",
+      "tryAi": "Try AI Creation",
+      "deleteConfirm": "Are you sure you want to delete this exam?",
+      "deleteError": "Error deleting exam.",
+      "noDescription": "No description for this exam.",
+      "unclassified": "Unclassified",
+      "details": "Details",
+      "published": "Published",
+      "deleteWarning": "Cannot delete published exams"
+    },
+    "detail": {
+      "backToList": "Back to list",
+      "noDescription": "No description provided.",
+      "unclassified": "Unclassified",
+      "questionsCount": "{{count}} questions",
+      "deleteExamConfirm": "WARNING: Are you sure you want to delete this entire exam? This action cannot be undone.",
+      "deleteQuestionConfirm": "Are you sure you want to delete this question?",
+      "status": {
+        "draft": "Draft",
+        "ready": "Ready",
+        "shared": "Shared"
+      },
+      "setReady": "Set Ready",
+      "share": "Share",
+      "listHeader": "Question List",
+      "addQuestion": "Add Question",
+      "noQuestions": "No questions in this exam yet.",
+      "config": "Exam Configuration",
+      "time": "Duration",
+      "passScore": "Passing Score",
+      "minutes": "mins",
+      "points": "pts",
+      "openRoom": "Open Exam Room Now",
+      "note": "Note",
+      "noteDesc": "You can only edit questions when the exam is in **Draft** status. Once it is ready or shared, editing is locked to ensure data integrity."
+    },
+    "common": {
+      "editConfirm": "Do you want to save these changes?",
+      "regenerateOne": "Regenerate this question",
+      "step": "Step"
     }
   }
 }

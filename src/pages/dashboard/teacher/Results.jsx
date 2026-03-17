@@ -3,7 +3,6 @@ import { Award } from "lucide-react";
 
 export default function Results() {
   const { t } = useTranslation();
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   return (
     <div className="space-y-6">

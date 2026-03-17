@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 
 export default function UserDashboard() {
   const { t } = useTranslation();
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const stats = [
     { title: t("dashboard.stats.totalQuizzes"), value: "24", icon: BookOpen, trend: 12, description: t("dashboard.stats.newThisWeek", { count: 4 }), color: "bg-blue-500/10 text-blue-500" },

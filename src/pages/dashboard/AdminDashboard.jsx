@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 
 export default function AdminDashboard() {
   const { t } = useTranslation();
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const stats = [
     { title: t("dashboard.stats.totalUsers"), value: "8,542", icon: Users, trend: 15, description: t("dashboard.stats.newToday", { count: 24 }), color: "bg-blue-500/10 text-blue-500" },

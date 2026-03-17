@@ -3,7 +3,6 @@ import { MessageSquare } from "lucide-react";
 
 export default function AIAssistant() {
   const { t } = useTranslation();
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   return (
     <div className="space-y-6">

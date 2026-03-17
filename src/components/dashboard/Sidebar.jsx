@@ -116,122 +116,127 @@ export function Sidebar({ role }) {
     navigate("/login");
   };
 
-  return (
-    <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-screen sticky top-0">
-      {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
-        <div
-          className="flex items-center gap-2 cursor-pointer group opacity-90 hover:opacity-100 transition-opacity"
-          onClick={() => navigate("/dashboard")}
-        >
-          <img src={logo} alt="SynDe Logo" className="h-10 w-auto" />
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="p-4">
-        <div className="relative group">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-          <input
-            type="text"
-            placeholder={t("dashboard.header.search")}
-            className="w-full pl-9 pr-3 py-2 bg-background border border-sidebar-border rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-          />
-        </div>
-      </div>
-
-      <nav className="flex-1 px-3 py-2 space-y-1 overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={i18n.language}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
-            transition={{ duration: 0.2 }}
+  try {
+    return (
+      <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-screen sticky top-0">
+        {/* Logo */}
+        <div className="p-6 border-b border-sidebar-border">
+          <div
+            className="flex items-center gap-2 cursor-pointer group opacity-90 hover:opacity-100 transition-opacity"
+            onClick={() => navigate("/dashboard")}
           >
-            <p className="text-[10px] font-bold text-sidebar-foreground/40 uppercase tracking-[0.2em] px-4 mb-2">
-              {isAdmin
-                ? t("dashboard.sidebar.adminMenu")
-                : t("dashboard.sidebar.userMenu")}
-            </p>
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveMenu(item.id);
-                    navigate(item.id);
-                  }}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative mb-1",
-                    isActive
-                      ? "bg-primary text-white shadow-lg shadow-primary/20"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-primary",
-                  )}
-                >
-                  <Icon
-                    className={cn(
-                      "w-5 h-5",
-                      isActive
-                        ? "text-white"
-                        : "group-hover:scale-110 transition-transform",
-                    )}
-                  />
-                  {item.label}
-                  {isActive && (
-                    <motion.div
-                      layoutId="active-pill"
-                      className="absolute left-0 w-1 h-6 bg-white rounded-r-full"
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </motion.div>
-        </AnimatePresence>
-      </nav>
+            <img src={logo} alt="SynDe Logo" className="h-10 w-auto" />
+          </div>
+        </div>
 
-      {/* Logout & Settings Section */}
-      <div className="p-4 border-t border-sidebar-border space-y-1 overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={i18n.language}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2, delay: 0.1 }}
-          >
-            {settingsItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => navigate(item.id)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 mb-1",
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-primary",
-                  )}
-                >
-                  <Icon className="w-5 h-5" />
-                  {item.label}
-                </button>
-              );
-            })}
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-all duration-200"
+        {/* Search */}
+        <div className="p-4">
+          <div className="relative group">
+            <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <input
+              type="text"
+              placeholder={t("dashboard.header.search") || "Search..."}
+              className="w-full pl-9 pr-3 py-2 bg-background border border-sidebar-border rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            />
+          </div>
+        </div>
+
+        <nav className="flex-1 px-3 py-2 space-y-1 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={i18n?.language || "vi"}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.2 }}
             >
-              <LogOut className="w-5 h-5" />
-              {t("dashboard.sidebar.logout")}
-            </button>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </aside>
-  );
+              <p className="text-[10px] font-bold text-sidebar-foreground/40 uppercase tracking-[0.2em] px-4 mb-2">
+                {isAdmin
+                  ? t("dashboard.sidebar.adminMenu")
+                  : t("dashboard.sidebar.userMenu")}
+              </p>
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname.startsWith(item.id);
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveMenu(item.id);
+                      navigate(item.id);
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative mb-1",
+                      isActive
+                        ? "bg-primary text-white shadow-lg shadow-primary/20"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-primary",
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        "w-5 h-5",
+                        isActive
+                          ? "text-white"
+                          : "group-hover:scale-110 transition-transform",
+                      )}
+                    />
+                    {item.label}
+                    {isActive && (
+                      <motion.div
+                        layoutId="active-pill"
+                        className="absolute left-0 w-1 h-6 bg-white rounded-r-full"
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </motion.div>
+          </AnimatePresence>
+        </nav>
+
+        {/* Logout & Settings Section */}
+        <div className="p-4 border-t border-sidebar-border space-y-1 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={i18n?.language || "vi"}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2, delay: 0.1 }}
+            >
+              {settingsItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => navigate(item.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 mb-1",
+                      isActive
+                        ? "bg-primary/10 text-primary"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-primary",
+                    )}
+                  >
+                    <Icon className="w-5 h-5" />
+                    {item.label}
+                  </button>
+                );
+              })}
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-all duration-200"
+              >
+                <LogOut className="w-5 h-5" />
+                {t("dashboard.sidebar.logout")}
+              </button>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </aside>
+    );
+  } catch (err) {
+    console.error("Sidebar crash:", err);
+    return <aside className="w-64 bg-sidebar border-r border-sidebar-border p-4">Sidebar Failure</aside>;
+  }
 }
