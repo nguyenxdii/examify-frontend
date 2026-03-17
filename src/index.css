@@ -129,6 +129,21 @@
     scrollbar-color: #7e45f1 transparent;
   }
 
+  /* Custom thin scrollbar for components */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(126, 69, 241, 0.3);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(126, 69, 241, 0.5);
+  }
+
   * {
     @apply border-border outline-ring/50;
   }

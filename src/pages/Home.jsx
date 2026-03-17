@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Sparkles,
   Trophy,
@@ -15,20 +15,35 @@ import {
   TrendingUp,
   Smartphone,
   ArrowRight,
+  User,
+  LayoutDashboard,
+  Settings,
+  LogOut,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import logo from "../assets/synde_logo.svg";
 
 export default function Home() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   useEffect(() => {
     // Clear animation flag when returning to home,
     // so it triggers again when navigating back to auth pages
     sessionStorage.removeItem("auth_animated");
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setIsUserMenuOpen(false);
+    navigate("/");
+  };
+
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const toggleLanguage = (lang) => {
     i18n.changeLanguage(lang);
@@ -150,14 +165,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <a
             href="#"
-            className="flex items-center gap-2 opacity-80 hover:opacity-100 transition-opacity"
+            className="flex items-center gap-2 opacity-90 hover:opacity-100 transition-opacity"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary/50 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20 border border-white/20">
-              S
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-secondary/60 bg-clip-text text-transparent">
-              SynDe
-            </span>
+            <img src={logo} alt="SynDe Logo" className="h-10 w-auto" />
           </a>
 
           <div className="hidden md:flex items-center gap-8">
@@ -220,21 +230,117 @@ export default function Home() {
                 EN
               </button>
             </div>
-            <button
-              onClick={() => navigate("/login")}
-              className="px-6 py-2 text-foreground hover:text-primary transition border border-primary rounded-lg"
-            >
-              {t("nav.signIn")}
-            </button>
-            <button
-              onClick={() => navigate("/register")}
-              className="px-6 py-2 bg-primary text-white border-2 border-primary rounded-lg font-medium hover:opacity-90 transition"
-            >
-              {t("nav.register")}
-            </button>
-          </div>
-        </div>
-      </nav>
+            {/* User Profile or Auth Buttons */}
+            {localStorage.getItem("token") && localStorage.getItem("user") ? (
+              <div className="relative">
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary border border-primary/20 rounded-xl font-bold hover:bg-primary/20 transition-all group"
+                >
+                  <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <User className="w-5 h-5" />
+                  </div>
+                  <span className="max-w-[100px] truncate">{user.fullName || t("dashboard.header.account")}</span>
+                </button>
+
+                <AnimatePresence>
+                  {isUserMenuOpen && (
+                    <>
+                      {/* Backdrop for click outside */}
+                      <div 
+                        className="fixed inset-0 z-0" 
+                        onClick={() => setIsUserMenuOpen(false)}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute right-0 mt-2 w-56 bg-white dark:bg-card border border-border rounded-2xl shadow-2xl p-2 z-50 overflow-hidden"
+                      >
+                        <div className="px-4 py-3 border-b border-border/50 mb-1">
+                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">
+                            {t("dashboard.header.account")}
+                          </p>
+                          <p className="text-sm font-bold truncate text-foreground">
+                            {user.email}
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            navigate("/dashboard");
+                            setIsUserMenuOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-all group"
+                        >
+                          <div className="p-2 rounded-lg bg-border/50 group-hover:bg-primary/20 transition-colors">
+                            <LayoutDashboard className="w-4 h-4" />
+                          </div>
+                          {t("dashboard.sidebar.overview")}
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            navigate("/dashboard/profile");
+                            setIsUserMenuOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-all group"
+                        >
+                          <div className="p-2 rounded-lg bg-border/50 group-hover:bg-primary/20 transition-colors">
+                            <User className="w-4 h-4" />
+                          </div>
+                          {t("dashboard.sidebar.profile")}
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            navigate("/dashboard/settings");
+                            setIsUserMenuOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-all group"
+                        >
+                          <div className="p-2 rounded-lg bg-border/50 group-hover:bg-primary/20 transition-colors">
+                            <Settings className="w-4 h-4" />
+                          </div>
+                          {t("dashboard.sidebar.settings")}
+                        </button>
+
+                        <div className="h-px bg-border/50 my-1" />
+
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/5 rounded-xl transition-all"
+                        >
+                          <div className="p-2 rounded-lg bg-destructive/10">
+                            <LogOut className="w-4 h-4" />
+                          </div>
+                          {t("dashboard.sidebar.logout")}
+                        </button>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+      <>
+        <button
+          onClick={() => navigate("/login")}
+          className="px-6 py-2 text-foreground hover:text-primary transition border border-primary rounded-lg"
+        >
+          {t("nav.signIn")}
+        </button>
+        <button
+          onClick={() => navigate("/register")}
+          className="px-6 py-2 bg-primary text-white border-2 border-primary rounded-lg font-medium hover:opacity-90 transition"
+        >
+          {t("nav.register")}
+        </button>
+      </>
+    )}
+  </div>
+</div>
+</nav>
 
       <AnimatePresence mode="wait">
         <motion.section
@@ -486,13 +592,8 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-8">
             <div>
-              <div className="flex items-center gap-2 mb-4 opacity-80 hover:opacity-100 transition-opacity cursor-pointer">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary/50 rounded-lg flex items-center justify-center text-white font-bold text-sm border border-white/20">
-                  S
-                </div>
-                <span className="text-lg font-bold bg-gradient-to-r from-primary to-secondary/60 bg-clip-text text-transparent">
-                  SynDe
-                </span>
+              <div className="flex items-center gap-2 mb-4 opacity-90 hover:opacity-100 transition-opacity cursor-pointer">
+                <img src={logo} alt="SynDe Logo" className="h-10 w-auto" />
               </div>
               <p className="text-muted-foreground text-sm">
                 {t("footer.desc")}

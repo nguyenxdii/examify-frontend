@@ -34,7 +34,7 @@ export function DashboardLayout({ children, user }) {
 
         {/* Dashboard Footer (Optional) */}
         <footer className="p-6 border-t border-border bg-card text-center text-xs text-muted-foreground">
-          &copy; 2025 SynDe Examify System. All rights reserved.
+          &copy; 2025 SynDe System. All rights reserved.
         </footer>
       </div>
     </div>

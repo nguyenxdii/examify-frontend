@@ -103,6 +103,13 @@
     "placeholders": {
       "email": "ten@vidu.com",
       "password": "••••••••••"
+    },
+    "modal": {
+      "successTitle": "Đăng nhập thành công!",
+      "successDesc": "Tuyệt vời! Bạn đang được đưa đến bảng điều khiển.",
+      "errorTitle": "Đăng nhập thất bại",
+      "errorDesc": "Thông tin tài khoản không chính xác. Vui lòng thử lại.",
+      "btnClose": "Đóng"
     }
   },
   "register": {
@@ -118,15 +125,49 @@
     "signIn": "Đăng nhập",
     "fields": {
       "math": "Toán học",
-      "science": "Khoa học",
-      "literature": "Ngữ văn",
+      "vietnamese": "Tiếng Việt",
       "english": "Tiếng Anh",
+      "ethics": "Đạo đức",
+      "nature_society": "Tự nhiên & Xã hội",
+      "music": " Âm nhạc",
+      "arts": "Mỹ thuật",
+      "physical_ed": "Thể dục / GDTC",
+      "literature": "Ngữ văn",
+      "physics": "Vật lý",
+      "chemistry": "Hóa học",
+      "biology": "Sinh học",
+      "history": "Lịch sử",
+      "geography": "Địa lý",
+      "civics": "GDCD",
+      "informatics": "Tin học",
+      "technology": "Công nghệ",
+      "national_defense": "Giáo dục Quốc phòng",
+      "lecturer_general": "Giảng viên đại học (chung)",
+      "engineering": "Kỹ thuật",
+      "economics": "Kinh tế",
+      "medicine": "Y dược",
+      "law": "Luật",
+      "pedagogy": "Sư phạm",
+      "it": "CNTT",
+      "languages": "Ngoại ngữ",
       "other": "Lĩnh vực khác"
     },
     "placeholders": {
       "fullName": "Nguyễn Văn A",
       "institution": "Đại học Bách Khoa",
       "teachingField": "Chọn lĩnh vực của bạn"
+    },
+    "modal": {
+      "successTitle": "Đăng ký thành công!",
+      "successDesc": "Chào mừng bạn gia nhập SynDe. Hệ thống sẽ tự động chuyển hướng sau vài giây.",
+      "errorTitle": "Đăng ký thất bại",
+      "errorDesc": "Đã có lỗi xảy ra. Vui lòng thử lại sau.",
+      "existsTitle": "Email đã tồn tại",
+      "existsDesc": "Email này đã được đăng ký. Bạn có muốn đăng nhập ngay không?",
+      "btnOk": "Có, Đăng nhập ngay",
+      "btnNo": "Không, quay lại",
+      "btnRetry": "Thử lại",
+      "btnClose": "Đóng"
     }
   },
   "notFound": {
@@ -148,7 +189,11 @@
       "profile": "Trang cá nhân",
       "logout": "Đăng xuất",
       "adminMenu": "Danh mục Admin",
-      "userMenu": "Danh mục Người dùng"
+      "userMenu": "Danh mục Giáo viên",
+      "rooms": "Phòng thi",
+      "questions": "Ngân hàng câu hỏi",
+      "results": "Kết quả",
+      "aiAssistant": "Trợ lý AI"
     },
     "header": {
       "welcome": "Chào mừng trở lại,",
@@ -196,7 +241,7 @@
       "viewLogs": "Xem nhật ký"
     },
     "user": {
-      "title": "Bảng điều khiển giáo viên",
+      "title": "Bảng điều khiển Giáo viên",
       "desc": "Theo dõi hiệu suất của học sinh và quản lý các đề thi của bạn."
     }
   }

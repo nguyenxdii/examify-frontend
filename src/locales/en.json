@@ -103,6 +103,13 @@
     "placeholders": {
       "email": "name@example.com",
       "password": "••••••••••"
+    },
+    "modal": {
+      "successTitle": "Login Successful!",
+      "successDesc": "Great! You are being redirected to your dashboard.",
+      "errorTitle": "Login Failed",
+      "errorDesc": "Invalid credentials. Please check and try again.",
+      "btnClose": "Close"
     }
   },
   "register": {
@@ -118,15 +125,49 @@
     "signIn": "Sign In",
     "fields": {
       "math": "Mathematics",
-      "science": "Science",
-      "literature": "Literature",
+      "vietnamese": "Vietnamese",
       "english": "English",
-      "other": "Other"
+      "ethics": "Ethics",
+      "nature_society": "Nature & Society",
+      "music": "Music",
+      "arts": "Arts",
+      "physical_ed": "Physical Education",
+      "literature": "Literature",
+      "physics": "Physics",
+      "chemistry": "Chemistry",
+      "biology": "Biology",
+      "history": "History",
+      "geography": "Geography",
+      "civics": "Civics",
+      "informatics": "Informatics",
+      "technology": "Technology",
+      "national_defense": "National Defense",
+      "lecturer_general": "Lecturer (General)",
+      "engineering": "Engineering",
+      "economics": "Economics",
+      "medicine": "Medicine",
+      "law": "Law",
+      "pedagogy": "Pedagogy",
+      "it": "IT",
+      "languages": "Languages",
+      "other": "Other Fields"
     },
     "placeholders": {
       "fullName": "John Doe",
       "institution": "University of Technology",
       "teachingField": "Select your field"
+    },
+    "modal": {
+      "successTitle": "Registration Success!",
+      "successDesc": "Welcome to SynDe. You will be redirected shortly.",
+      "errorTitle": "Registration Failed",
+      "errorDesc": "An error occurred. Please try again later.",
+      "existsTitle": "Email Already Registered",
+      "existsDesc": "This email is already in our system. Would you like to sign in instead?",
+      "btnOk": "Yes, Sign In Now",
+      "btnNo": "No, stay here",
+      "btnRetry": "Retry",
+      "btnClose": "Close"
     }
   },
   "notFound": {
@@ -148,7 +189,11 @@
       "profile": "Profile",
       "logout": "Logout",
       "adminMenu": "Admin Menu",
-      "userMenu": "User Menu"
+      "userMenu": "Teacher Menu",
+      "rooms": "Exam Rooms",
+      "questions": "Question Bank",
+      "results": "Results",
+      "aiAssistant": "AI Assistant"
     },
     "header": {
       "welcome": "Welcome back,",

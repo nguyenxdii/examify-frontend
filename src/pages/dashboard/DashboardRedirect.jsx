@@ -12,7 +12,7 @@ export default function DashboardRedirect() {
     }
 
     const user = JSON.parse(userString);
-    if (user.role === "ROLE_ADMIN") {
+    if (user.role === "admin") {
       navigate("/dashboard/admin");
     } else {
       navigate("/dashboard/user");

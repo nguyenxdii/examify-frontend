@@ -1,17 +1,36 @@
 import { useState, useEffect } from "react";
-import { Mail, Lock, Sparkles, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Sparkles,
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Check,
+  X,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import authBg from "../assets/auth/auth.jpg";
 import { login } from "../api/authApi";
+import logo from "../assets/synde_logo.svg";
 
 export default function Login() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+    if (token && user) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [modalType, setModalType] = useState(null); // 'success', 'error'
   const [shouldAnimate] = useState(
     () => !sessionStorage.getItem("auth_animated"),
   );
@@ -34,17 +53,24 @@ export default function Login() {
       const response = await login({ email, password });
 
       localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify({
-        id: response.data.id,
-        email: response.data.email,
-        fullName: response.data.fullName,
-        role: response.data.role,
-      }));
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          id: response.data.id,
+          email: response.data.email,
+          fullName: response.data.fullName,
+          role: response.data.role,
+        }),
+      );
 
-      navigate("/dashboard");
+      setModalType("success");
+
+      // Smooth delay before dashboard
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 2000);
     } catch (error) {
-      const message = error.response?.data?.message || "Đăng nhập thất bại!";
-      alert(message);
+      setModalType("error");
     }
   };
 
@@ -80,24 +106,6 @@ export default function Login() {
           <motion.div
             initial={
               shouldAnimate
-                ? { scale: 0, opacity: 0, rotate: -180 }
-                : { scale: 1, opacity: 1, rotate: 0 }
-            }
-            className="mb-6 flex justify-center"
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary to-purple-600/50 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-primary/40 border border-white/20">
-                S
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600/60 bg-clip-text text-transparent">
-                SynDe
-              </span>
-            </div>
-          </motion.div>
-
-          <motion.h1
-            initial={
-              shouldAnimate
                 ? { opacity: 0, filter: "blur(20px)", scale: 0.8 }
                 : { opacity: 1, filter: "blur(0px)", scale: 1 }
             }
@@ -108,16 +116,16 @@ export default function Login() {
               stiffness: 150,
               damping: 25,
             }}
-            className="text-7xl font-bold bg-gradient-to-r from-primary via-purple-400 to-secondary bg-clip-text text-transparent leading-tight pb-2"
-            style={{
-              maskImage:
-                "linear-gradient(to right, black 40%, transparent 95%)",
-              WebkitMaskImage:
-                "linear-gradient(to right, black 40%, transparent 95%)",
-            }}
+            className="mb-8 flex justify-center"
           >
-            SynDe
-          </motion.h1>
+            <div className="flex items-center gap-2">
+              <img
+                src={logo}
+                alt="SynDe Logo"
+                className="h-24 w-auto drop-shadow-2xl"
+              />
+            </div>
+          </motion.div>
 
           <motion.p
             initial={
@@ -125,7 +133,7 @@ export default function Login() {
             }
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.5 }}
-            className="mt-4 text-gray-400 text-lg tracking-widest uppercase font-light"
+            className="mt-6 text-gray-400 text-lg tracking-widest uppercase font-light"
           >
             Ultimate Quiz Experience
           </motion.p>
@@ -205,12 +213,12 @@ export default function Login() {
                   }
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2, duration: 0.5 }}
-                  className="text-4xl font-bold text-primary mb-3 tracking-tight leading-tight pb-2"
+                  className="text-4xl font-bold bg-gradient-to-r from-primary via-primary to-transparent bg-clip-text text-transparent mb-3 tracking-tight leading-tight pb-2"
                   style={{
                     maskImage:
-                      "linear-gradient(to right, black 40%, transparent 95%)",
+                      "linear-gradient(to right, black 30%, transparent 95%)",
                     WebkitMaskImage:
-                      "linear-gradient(to right, black 40%, transparent 95%)",
+                      "linear-gradient(to right, black 30%, transparent 95%)",
                   }}
                 >
                   {t("login.welcome")}
@@ -245,7 +253,7 @@ export default function Login() {
                   className="flex-1 flex items-center justify-center gap-2 border border-border rounded-xl py-3 hover:bg-border/50 transition-colors shadow-sm"
                 >
                   <img
-                    src="https://www.svgrepo.com/show/475647/facebook-color.svg"
+                    src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg"
                     className="w-5 h-5"
                     alt="Facebook"
                   />
@@ -287,20 +295,12 @@ export default function Login() {
 
                 {/* Password */}
                 <div>
-                  <div className="flex justify-between items-center mb-2 ml-1">
-                    <label
-                      htmlFor="password"
-                      className="text-sm font-semibold text-foreground"
-                    >
-                      {t("login.password")}
-                    </label>
-                    <a
-                      href="#"
-                      className="text-xs font-medium text-primary hover:underline transition-colors"
-                    >
-                      {t("login.forgotPassword")}
-                    </a>
-                  </div>
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-semibold text-foreground mb-2 ml-1"
+                  >
+                    {t("login.password")}
+                  </label>
                   <div className="relative group">
                     <Lock className="absolute left-4 top-3.5 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
@@ -322,6 +322,14 @@ export default function Login() {
                         <Eye className="w-5 h-5" />
                       )}
                     </button>
+                  </div>
+                  <div className="flex justify-end mt-2 mr-1">
+                    <a
+                      href="#"
+                      className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      {t("login.forgotPassword")}
+                    </a>
                   </div>
                 </div>
 
@@ -355,6 +363,65 @@ export default function Login() {
           </AnimatePresence>
         </div>
       </div>
+      <AnimatePresence>
+        {modalType && (
+          <FeedbackModal type={modalType} onClose={() => setModalType(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+
+const FeedbackModal = ({ type, onClose }) => {
+  const { t } = useTranslation();
+
+  const config = {
+    success: {
+      icon: <Check className="w-12 h-12 text-green-500" />,
+      title: t("login.modal.successTitle"),
+      desc: t("login.modal.successDesc"),
+      btnText: null,
+    },
+    error: {
+      icon: <X className="w-12 h-12 text-red-500" />,
+      title: t("login.modal.errorTitle"),
+      desc: t("login.modal.errorDesc"),
+      btnText: t("login.modal.btnClose"),
+    },
+  };
+
+  const { icon, title, desc, btnText } = config[type] || {};
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={type !== "success" ? onClose : undefined}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+      />
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        className="relative bg-background border border-border w-full max-w-sm rounded-3xl p-8 shadow-2xl text-center"
+      >
+        <div className="flex justify-center mb-6">
+          <div className="p-4 bg-primary/10 rounded-full">{icon}</div>
+        </div>
+        <h3 className="text-2xl font-bold text-foreground mb-2">{title}</h3>
+        <p className="text-muted-foreground mb-8 text-sm">{desc}</p>
+
+        {btnText && (
+          <button
+            onClick={onClose}
+            className="w-full py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            {btnText}
+          </button>
+        )}
+      </motion.div>
+    </div>
+  );
+};

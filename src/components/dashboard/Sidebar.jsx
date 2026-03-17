@@ -10,19 +10,31 @@ import {
   PlusCircle,
   BarChart3,
   UserCircle,
+  Database,
+  Award,
+  MessageSquare,
+  Zap
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import logo from "../../assets/synde_logo.svg";
 
 export function Sidebar({ role }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeMenu, setActiveMenu] = useState(location.pathname);
 
-  const isAdmin = role === "ROLE_ADMIN";
+  const getIsAdmin = (r) => {
+    if (!r) return false;
+    if (Array.isArray(r)) return r.some(item => String(item).toUpperCase().includes("ADMIN"));
+    return String(r).toUpperCase().includes("ADMIN");
+  };
+
+  const isAdmin = getIsAdmin(role);
+
 
   const menuItems = isAdmin
     ? [
@@ -32,17 +44,17 @@ export function Sidebar({ role }) {
           icon: LayoutDashboard,
         },
         {
-          id: "/dashboard/users",
+          id: "/dashboard/admin/users",
           label: t("dashboard.sidebar.users"),
           icon: Users,
         },
         {
-          id: "/dashboard/all-quizzes",
+          id: "/dashboard/admin/all-quizzes",
           label: t("dashboard.sidebar.allQuizzes"),
           icon: BookOpen,
         },
         {
-          id: "/dashboard/analytics",
+          id: "/dashboard/admin/analytics",
           label: t("dashboard.sidebar.analytics"),
           icon: BarChart3,
         },
@@ -54,19 +66,34 @@ export function Sidebar({ role }) {
           icon: LayoutDashboard,
         },
         {
-          id: "/dashboard/my-quizzes",
+          id: "/dashboard/teacher/my-quizzes",
           label: t("dashboard.sidebar.myQuizzes"),
           icon: BookOpen,
         },
         {
-          id: "/dashboard/create-quiz",
+          id: "/dashboard/teacher/create-quiz",
           label: t("dashboard.sidebar.createQuiz"),
           icon: PlusCircle,
         },
         {
-          id: "/dashboard/students",
-          label: t("dashboard.sidebar.students"),
+          id: "/dashboard/teacher/rooms",
+          label: t("dashboard.sidebar.rooms"),
           icon: Users,
+        },
+        {
+          id: "/dashboard/teacher/questions",
+          label: t("dashboard.sidebar.questions"),
+          icon: Database,
+        },
+        {
+          id: "/dashboard/teacher/results",
+          label: t("dashboard.sidebar.results"),
+          icon: Award,
+        },
+        {
+          id: "/dashboard/teacher/ai-assistant",
+          label: t("dashboard.sidebar.aiAssistant"),
+          icon: MessageSquare,
         },
       ];
 
@@ -94,15 +121,10 @@ export function Sidebar({ role }) {
       {/* Logo */}
       <div className="p-6 border-b border-sidebar-border">
         <div
-          className="flex items-center gap-2 cursor-pointer group opacity-80 hover:opacity-100 transition-opacity"
+          className="flex items-center gap-2 cursor-pointer group opacity-90 hover:opacity-100 transition-opacity"
           onClick={() => navigate("/dashboard")}
         >
-          <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600/50 rounded-xl flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform shadow-lg shadow-primary/20 border border-white/20">
-            S
-          </div>
-          <span className="font-bold text-xl bg-gradient-to-r from-primary to-purple-600/60 bg-clip-text text-transparent">
-            SynDe
-          </span>
+          <img src={logo} alt="SynDe Logo" className="h-10 w-auto" />
         </div>
       </div>
 
@@ -118,78 +140,97 @@ export function Sidebar({ role }) {
         </div>
       </div>
 
-      {/* Main Menu */}
-      <nav className="flex-1 px-3 py-2 space-y-1">
-        <p className="text-[10px] font-bold text-sidebar-foreground/40 uppercase tracking-[0.2em] px-4 mb-2">
-          {isAdmin
-            ? t("dashboard.sidebar.adminMenu")
-            : t("dashboard.sidebar.userMenu")}
-        </p>
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveMenu(item.id);
-                navigate(item.id);
-              }}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative",
-                isActive
-                  ? "bg-primary text-white shadow-lg shadow-primary/20"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-primary",
-              )}
-            >
-              <Icon
-                className={cn(
-                  "w-5 h-5",
-                  isActive
-                    ? "text-white"
-                    : "group-hover:scale-110 transition-transform",
-                )}
-              />
-              {item.label}
-              {isActive && (
-                <motion.div
-                  layoutId="active-pill"
-                  className="absolute left-0 w-1 h-6 bg-white rounded-r-full"
-                />
-              )}
-            </button>
-          );
-        })}
+      <nav className="flex-1 px-3 py-2 space-y-1 overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={i18n.language}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            transition={{ duration: 0.2 }}
+          >
+            <p className="text-[10px] font-bold text-sidebar-foreground/40 uppercase tracking-[0.2em] px-4 mb-2">
+              {isAdmin
+                ? t("dashboard.sidebar.adminMenu")
+                : t("dashboard.sidebar.userMenu")}
+            </p>
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveMenu(item.id);
+                    navigate(item.id);
+                  }}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative mb-1",
+                    isActive
+                      ? "bg-primary text-white shadow-lg shadow-primary/20"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-primary",
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "w-5 h-5",
+                      isActive
+                        ? "text-white"
+                        : "group-hover:scale-110 transition-transform",
+                    )}
+                  />
+                  {item.label}
+                  {isActive && (
+                    <motion.div
+                      layoutId="active-pill"
+                      className="absolute left-0 w-1 h-6 bg-white rounded-r-full"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </motion.div>
+        </AnimatePresence>
       </nav>
 
       {/* Logout & Settings Section */}
-      <div className="p-4 border-t border-sidebar-border space-y-1">
-        {settingsItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname === item.id;
-          return (
+      <div className="p-4 border-t border-sidebar-border space-y-1 overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={i18n.language}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2, delay: 0.1 }}
+          >
+            {settingsItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(item.id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 mb-1",
+                    isActive
+                      ? "bg-primary/10 text-primary"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-primary",
+                  )}
+                >
+                  <Icon className="w-5 h-5" />
+                  {item.label}
+                </button>
+              );
+            })}
             <button
-              key={item.id}
-              onClick={() => navigate(item.id)}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
-                isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-primary",
-              )}
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-all duration-200"
             >
-              <Icon className="w-5 h-5" />
-              {item.label}
+              <LogOut className="w-5 h-5" />
+              {t("dashboard.sidebar.logout")}
             </button>
-          );
-        })}
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-all duration-200"
-        >
-          <LogOut className="w-5 h-5" />
-          {t("dashboard.sidebar.logout")}
-        </button>
+          </motion.div>
+        </AnimatePresence>
       </div>
     </aside>
   );

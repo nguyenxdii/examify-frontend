@@ -9,17 +9,29 @@ import {
   User,
   Building2,
   BookOpen,
-  ChevronDown,
+  Check,
+  X,
+  Info,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import authBg from "../assets/auth/auth.jpg";
 import { register } from "../api/authApi";
+import CustomSelect from "../components/CustomSelect";
+import logo from "../assets/synde_logo.svg";
 
 export default function Register() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+    if (token && user) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -32,6 +44,7 @@ export default function Register() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [modalType, setModalType] = useState(null); // 'success', 'error', 'exists'
   const [shouldAnimate] = useState(
     () => !sessionStorage.getItem("auth_animated"),
   );
@@ -62,7 +75,7 @@ export default function Register() {
     }
 
     try {
-      const response = await register({
+      await register({
         fullName: formData.fullName,
         email: formData.email,
         password: formData.password,
@@ -70,22 +83,57 @@ export default function Register() {
         field: formData.teachingField,
       });
 
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify({
-        id: response.data.id,
-        email: response.data.email,
-        fullName: response.data.fullName,
-        role: response.data.role,
-      }));
+      setModalType("success");
 
-      navigate("/dashboard");
+      // Auto redirect after 3s
+      setTimeout(() => {
+        navigate("/login");
+      }, 3000);
     } catch (error) {
-      const message = error.response?.data?.message || "Đăng ký thất bại!";
-      alert(message);
+      const message = error.response?.data?.message || "";
+      const isExists =
+        message.toLowerCase().includes("exists") ||
+        message.toLowerCase().includes("tồn tại") ||
+        message.toLowerCase().includes("đã được sử dụng") ||
+        message.toLowerCase().includes("already");
+
+      if (isExists) {
+        setModalType("exists");
+      } else {
+        setModalType("error");
+      }
     }
   };
 
-  const teachingFields = ["math", "science", "literature", "english", "other"];
+  const teachingFields = [
+    "math",
+    "vietnamese",
+    "english",
+    "ethics",
+    "nature_society",
+    "music",
+    "arts",
+    "physical_ed",
+    "literature",
+    "physics",
+    "chemistry",
+    "biology",
+    "history",
+    "geography",
+    "civics",
+    "informatics",
+    "technology",
+    "national_defense",
+    "lecturer_general",
+    "engineering",
+    "economics",
+    "medicine",
+    "law",
+    "pedagogy",
+    "it",
+    "languages",
+    "other",
+  ];
 
   return (
     <div className="h-screen flex bg-background text-foreground selection:bg-primary/30 overflow-hidden">
@@ -117,24 +165,6 @@ export default function Register() {
           <motion.div
             initial={
               shouldAnimate
-                ? { scale: 0, opacity: 0, rotate: -180 }
-                : { scale: 1, opacity: 1, rotate: 0 }
-            }
-            className="mb-6 flex justify-center"
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary to-purple-600/50 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-primary/20 border border-white/20">
-                S
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600/60 bg-clip-text text-transparent">
-                SynDe
-              </span>
-            </div>
-          </motion.div>
-
-          <motion.h1
-            initial={
-              shouldAnimate
                 ? { opacity: 0, filter: "blur(20px)", scale: 0.8 }
                 : { opacity: 1, filter: "blur(0px)", scale: 1 }
             }
@@ -145,16 +175,12 @@ export default function Register() {
               stiffness: 150,
               damping: 25,
             }}
-            className="text-7xl font-bold bg-gradient-to-r from-primary via-purple-400 to-secondary bg-clip-text text-transparent leading-tight pb-2"
-            style={{
-              maskImage:
-                "linear-gradient(to right, black 40%, transparent 80%)",
-              WebkitMaskImage:
-                "linear-gradient(to right, black 40%, transparent 95%)",
-            }}
+            className="mb-8 flex justify-center"
           >
-            SynDe
-          </motion.h1>
+            <div className="flex items-center gap-2">
+              <img src={logo} alt="SynDe Logo" className="h-24 w-auto drop-shadow-2xl" />
+            </div>
+          </motion.div>
 
           <motion.p
             initial={
@@ -162,7 +188,7 @@ export default function Register() {
             }
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.5 }}
-            className="mt-4 text-gray-400 text-lg tracking-widest uppercase font-light"
+            className="mt-6 text-gray-400 text-lg tracking-widest uppercase font-light"
           >
             Ultimate Quiz Experience
           </motion.p>
@@ -223,12 +249,12 @@ export default function Register() {
                   }
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2, duration: 0.5 }}
-                  className="text-4xl font-bold text-primary mb-3 tracking-tight leading-tight pb-2"
+                  className="text-4xl font-bold bg-gradient-to-r from-primary via-primary to-transparent bg-clip-text text-transparent mb-3 tracking-tight leading-tight pb-2"
                   style={{
                     maskImage:
-                      "linear-gradient(to right, black 40%, transparent 95%)",
+                      "linear-gradient(to right, black 30%, transparent 95%)",
                     WebkitMaskImage:
-                      "linear-gradient(to right, black 40%, transparent 95%)",
+                      "linear-gradient(to right, black 30%, transparent 95%)",
                   }}
                 >
                   {t("register.title")}
@@ -316,23 +342,13 @@ export default function Register() {
                     {t("register.teachingField")}
                   </label>
                   <div className="relative group">
-                    <BookOpen className="absolute left-4 top-3.5 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none" />
-                    <select
-                      id="teachingField"
+                    <BookOpen className="absolute left-4 top-3.5 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors z-10 pointer-events-none" />
+                    <CustomSelect
                       value={formData.teachingField}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-10 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
-                    >
-                      <option value="" disabled>
-                        {t("register.placeholders.teachingField")}
-                      </option>
-                      {teachingFields.map((f) => (
-                        <option key={f} value={f}>
-                          {t(`register.fields.${f}`)}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-4 top-3.5 w-5 h-5 text-muted-foreground pointer-events-none" />
+                      options={teachingFields}
+                      placeholder={t("register.placeholders.teachingField")}
+                    />
                   </div>
                 </div>
 
@@ -427,6 +443,91 @@ export default function Register() {
           </AnimatePresence>
         </div>
       </div>
+      <AnimatePresence>
+        {modalType && (
+          <FeedbackModal
+            type={modalType}
+            onClose={() => setModalType(null)}
+            onAction={() => {
+              if (modalType === "exists" || modalType === "success") {
+                navigate("/login");
+              }
+              setModalType(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+
+const FeedbackModal = ({ type, onClose, onAction }) => {
+  const { t } = useTranslation();
+
+  const config = {
+    success: {
+      icon: <Check className="w-12 h-12 text-green-500" />,
+      title: t("register.modal.successTitle"),
+      desc: t("register.modal.successDesc"),
+      btnText: null,
+    },
+    error: {
+      icon: <X className="w-12 h-12 text-red-500" />,
+      title: t("register.modal.errorTitle"),
+      desc: t("register.modal.errorDesc"),
+      btnText: t("register.modal.btnRetry"),
+    },
+    exists: {
+      icon: <Info className="w-12 h-12 text-blue-500" />,
+      title: t("register.modal.existsTitle"),
+      desc: t("register.modal.existsDesc"),
+      btnText: t("register.modal.btnOk"),
+    },
+  };
+
+  const { icon, title, desc, btnText } = config[type] || {};
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={type !== "success" ? onClose : undefined}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+      />
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        className="relative bg-background border border-border w-full max-w-sm rounded-3xl p-8 shadow-2xl text-center"
+      >
+        <div className="flex justify-center mb-6">
+          <div className="p-4 bg-primary/10 rounded-full">{icon}</div>
+        </div>
+        <h3 className="text-2xl font-bold text-foreground mb-2">{title}</h3>
+        <p className="text-muted-foreground mb-8 text-sm">{desc}</p>
+
+        {btnText && (
+          <button
+            onClick={onAction}
+            className="w-full py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            {btnText}
+          </button>
+        )}
+
+        {type !== "success" && (
+          <button
+            onClick={onClose}
+            className="mt-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {type === "exists"
+              ? t("register.modal.btnNo")
+              : t("register.modal.btnClose")}
+          </button>
+        )}
+      </motion.div>
+    </div>
+  );
+};
