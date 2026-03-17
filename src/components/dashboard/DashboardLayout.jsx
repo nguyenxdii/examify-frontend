@@ -2,8 +2,9 @@ import { Sidebar } from "./Sidebar";
 import { DashboardHeader } from "./DashboardHeader";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { Outlet } from "react-router-dom";
 
-export function DashboardLayout({ children, user }) {
+export function DashboardLayout({ user }) {
   const { i18n } = useTranslation();
 
   return (
@@ -27,7 +28,7 @@ export function DashboardLayout({ children, user }) {
               transition={{ duration: 0.3 }}
               className="max-w-7xl mx-auto"
             >
-              {children}
+              <Outlet context={{ user }} />
             </motion.div>
           </AnimatePresence>
         </main>

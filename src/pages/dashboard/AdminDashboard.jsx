@@ -1,4 +1,3 @@
-import { DashboardLayout } from "../../components/dashboard/DashboardLayout";
 import { StatsCard } from "../../components/dashboard/StatsCard";
 import { RecentQuizzes } from "../../components/dashboard/RecentQuizzes";
 import { ShieldCheck, Users, Database, Activity } from "lucide-react";
@@ -23,35 +22,33 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <DashboardLayout user={user}>
-      <div className="space-y-8">
-        {/* Welcome Text */}
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{t("dashboard.admin.title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("dashboard.admin.desc")}</p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, i) => (
-            <StatsCard key={i} {...stat} />
-          ))}
-        </div>
-
-        {/* System Activity */}
-        <div className="grid grid-cols-1 gap-8">
-          <RecentQuizzes quizzes={recentGlobalQuizzes} title={t("dashboard.recentQuizzes.globalTitle")} />
-        </div>
-
-        {/* Admin Specific Sections */}
-        <div className="p-8 rounded-3xl bg-primary/5 border border-primary/20">
-          <h3 className="text-xl font-bold text-primary mb-2">{t("dashboard.admin.maintenance")}</h3>
-          <p className="text-muted-foreground text-sm">{t("dashboard.admin.maintenanceDesc")}</p>
-          <button className="mt-4 px-6 py-2 bg-primary text-white rounded-xl font-bold hover:opacity-90 transition-opacity">
-            {t("dashboard.admin.viewLogs")}
-          </button>
-        </div>
+    <div className="space-y-8">
+      {/* Welcome Text */}
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">{t("dashboard.admin.title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("dashboard.admin.desc")}</p>
       </div>
-    </DashboardLayout>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, i) => (
+          <StatsCard key={i} {...stat} />
+        ))}
+      </div>
+
+      {/* System Activity */}
+      <div className="grid grid-cols-1 gap-8">
+        <RecentQuizzes quizzes={recentGlobalQuizzes} title={t("dashboard.recentQuizzes.globalTitle")} />
+      </div>
+
+      {/* Admin Specific Sections */}
+      <div className="p-8 rounded-3xl bg-primary/5 border border-primary/20">
+        <h3 className="text-xl font-bold text-primary mb-2">{t("dashboard.admin.maintenance")}</h3>
+        <p className="text-muted-foreground text-sm">{t("dashboard.admin.maintenanceDesc")}</p>
+        <button className="mt-4 px-6 py-2 bg-primary text-white rounded-xl font-bold hover:opacity-90 transition-opacity">
+          {t("dashboard.admin.viewLogs")}
+        </button>
+      </div>
+    </div>
   );
 }

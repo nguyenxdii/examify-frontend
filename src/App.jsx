@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -21,8 +21,11 @@ import Results from "./pages/dashboard/teacher/Results";
 import AIAssistant from "./pages/dashboard/teacher/AIAssistant";
 
 import ProtectedRoute from "./components/ProtectedRoute";
+import { DashboardLayout } from "./components/dashboard/DashboardLayout";
 
 function App() {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
   return (
     <BrowserRouter>
       <Routes>
@@ -30,71 +33,45 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         
-        {/* Dashboard Routes */}
-        <Route path="/dashboard" element={<DashboardRedirect />} />
-        
-        {/* Admin Routes */}
-        <Route path="/dashboard/admin" element={
-          <ProtectedRoute requiredRole="admin">
-            <AdminDashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/admin/users" element={
-          <ProtectedRoute requiredRole="admin">
-            <UserManagement />
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/admin/all-quizzes" element={
-          <ProtectedRoute requiredRole="admin">
-            <AllExams />
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/admin/analytics" element={
-          <ProtectedRoute requiredRole="admin">
-            <SystemStats />
-          </ProtectedRoute>
-        } />
+        {/* Dashboard Routes with Shared Layout */}
+        <Route element={<ProtectedRoute><DashboardLayout user={user} /></ProtectedRoute>}>
+          <Route path="/dashboard" element={<DashboardRedirect />} />
+          
+          {/* Admin Routes */}
+          <Route path="/dashboard/admin" element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/admin/users" element={
+            <ProtectedRoute requiredRole="admin">
+              <UserManagement />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/admin/all-quizzes" element={
+            <ProtectedRoute requiredRole="admin">
+              <AllExams />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/admin/analytics" element={
+            <ProtectedRoute requiredRole="admin">
+              <SystemStats />
+            </ProtectedRoute>
+          } />
 
-        {/* Teacher/User Routes */}
-        <Route path="/dashboard/user" element={
-          <ProtectedRoute>
-            <UserDashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/teacher/my-quizzes" element={
-          <ProtectedRoute>
-            <MyExams />
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/teacher/create-quiz" element={
-          <ProtectedRoute>
-            <CreateExam />
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/teacher/rooms" element={
-          <ProtectedRoute>
-            <ExamRooms />
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/teacher/questions" element={
-          <ProtectedRoute>
-            <QuestionBank />
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/teacher/results" element={
-          <ProtectedRoute>
-            <Results />
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/teacher/ai-assistant" element={
-          <ProtectedRoute>
-            <AIAssistant />
-          </ProtectedRoute>
-        } />
-        
-        {/* Settings & Profile */}
-        <Route path="/dashboard/settings" element={<ProtectedRoute><div className="p-20 text-center"><h1>Settings Placeholder</h1></div></ProtectedRoute>} />
-        <Route path="/dashboard/profile" element={<ProtectedRoute><div className="p-20 text-center"><h1>Profile Placeholder</h1></div></ProtectedRoute>} />
+          {/* Teacher/User Routes */}
+          <Route path="/dashboard/user" element={<UserDashboard />} />
+          <Route path="/dashboard/teacher/my-quizzes" element={<MyExams />} />
+          <Route path="/dashboard/teacher/create-quiz" element={<CreateExam />} />
+          <Route path="/dashboard/teacher/rooms" element={<ExamRooms />} />
+          <Route path="/dashboard/teacher/questions" element={<QuestionBank />} />
+          <Route path="/dashboard/teacher/results" element={<Results />} />
+          <Route path="/dashboard/teacher/ai-assistant" element={<AIAssistant />} />
+          
+          {/* Settings & Profile */}
+          <Route path="/dashboard/settings" element={<div className="p-20 text-center"><h1>Settings Placeholder</h1></div>} />
+          <Route path="/dashboard/profile" element={<div className="p-20 text-center"><h1>Profile Placeholder</h1></div>} />
+        </Route>
 
         {/* Catch-all route for 404 */}
         <Route path="*" element={<NotFound />} />

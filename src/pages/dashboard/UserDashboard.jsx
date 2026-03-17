@@ -1,4 +1,3 @@
-import { DashboardLayout } from "../../components/dashboard/DashboardLayout";
 import { StatsCard } from "../../components/dashboard/StatsCard";
 import { RecentQuizzes } from "../../components/dashboard/RecentQuizzes";
 import { TopStudents } from "../../components/dashboard/TopStudents";
@@ -32,34 +31,32 @@ export default function UserDashboard() {
   ];
 
   return (
-    <DashboardLayout user={user}>
-      <div className="space-y-8">
-        {/* Welcome Text */}
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{t("dashboard.user.title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("dashboard.user.desc")}</p>
+    <div className="space-y-8">
+      {/* Welcome Text */}
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">{t("dashboard.user.title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("dashboard.user.desc")}</p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, i) => (
+          <StatsCard key={i} {...stat} />
+        ))}
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Recent Quizzes - Left 2/3 */}
+        <div className="lg:col-span-2">
+          <RecentQuizzes quizzes={recentQuizzes} title={t("dashboard.recentQuizzes.title")} />
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, i) => (
-            <StatsCard key={i} {...stat} />
-          ))}
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Quizzes - Left 2/3 */}
-          <div className="lg:col-span-2">
-            <RecentQuizzes quizzes={recentQuizzes} title={t("dashboard.recentQuizzes.title")} />
-          </div>
-
-          {/* Top Students - Right 1/3 */}
-          <div className="lg:col-span-1">
-            <TopStudents students={topStudents} />
-          </div>
+        {/* Top Students - Right 1/3 */}
+        <div className="lg:col-span-1">
+          <TopStudents students={topStudents} />
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }
