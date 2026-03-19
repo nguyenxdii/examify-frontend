@@ -62,6 +62,7 @@ export default function Login() {
           role: response.data.role,
         }),
       );
+      window.dispatchEvent(new Event("authChanged"));
 
       setModalType("success");
 

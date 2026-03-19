@@ -1,4 +1,18 @@
 {
+  "common": {
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "actions": "Actions",
+    "editConfirm": "Do you want to save these changes?",
+    "regenerateOne": "Regenerate this question",
+    "step": "Step",
+    "ok": "Confirm",
+    "loading": "Processing...",
+    "preview": "Preview Draft"
+  },
   "nav": {
     "quizzes": "Quiz",
     "weekly": "Weekly Quiz",
@@ -119,6 +133,9 @@
     "email": "Email",
     "institution": "Institution",
     "teachingField": "Teaching Field",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
     "confirmPassword": "Confirm Password",
     "btn": "Register",
     "haveAccount": "Already have an account?",
@@ -176,6 +193,20 @@
     "desc": "It seems you've wandered into an unexplored space.",
     "backHome": "Back to Home"
   },
+  "profile": {
+    "subtitle": "Manage your personal information and identity",
+    "basic_info": "Basic Information",
+    "verification_status": "Account Verified",
+    "save": "Save",
+    "edit": "Edit Profile",
+    "confirm_save_title": "Save changes?",
+    "confirm_save_desc": "Your information will be updated across the system.",
+    "exit_warning_title": "Unsaved changes?",
+    "exit_warning_desc": "Your changes will be lost if you leave this page now.",
+    "stay": "Stay",
+    "leave": "Leave",
+    "security_note": "Your profile is secure and only used to personalize your experience on the SynDe system."
+  },
   "dashboard": {
     "sidebar": {
       "overview": "Overview",
@@ -199,7 +230,8 @@
       "welcome": "Welcome back,",
       "overviewDesc": "Here's your overview for today.",
       "search": "Search...",
-      "account": "Account",
+      "account": "ACCOUNT",
+      "profile": "PERSONAL PROFILE",
       "signOut": "Sign Out"
     },
     "stats": {
@@ -246,13 +278,29 @@
     }
   },
   "wizard": {
+    "common": {
+      "step": "Step"
+    },
+    "title": "Edit Exam Information",
+    "createTitle": "Create Exam Manually",
+    "subtitle": "Enter basic information to get started",
+    "createButton": "Create Exam Now",
+    "updateButton": "Update Exam",
     "steps": {
-      "input": "Content Input",
-      "analysis": "AI Analysis",
-      "config": "Configuration",
-      "generation": "Generation",
-      "preview": "Preview",
-      "finalize": "Finalize"
+      "basicInfo": {
+        "title": "Exam Title",
+        "titlePlaceholder": "e.g., Mathematics Midterm Exam",
+        "subject": "Subject",
+        "subjectPlaceholder": "e.g., Mathematics, English...",
+        "description": "Description",
+        "descriptionPlaceholder": "Enter a short description for this exam..."
+      },
+      "input": "CONTENT INPUT",
+      "analysis": "AI ANALYSIS",
+      "config": "CONFIGURATION",
+      "generation": "GENERATION",
+      "preview": "PREVIEW",
+      "finalize": "FINALIZE"
     },
     "step1": {
       "title": "What is your exam content?",
@@ -267,7 +315,10 @@
       "uploadFile": "Upload document file (PDF, Word, TXT)",
       "limit": "Limit 10MB",
       "characters": "Characters",
-      "next": "Next"
+      "next": "Next",
+      "validationError": "The input content is not sufficient to generate a quality exam. Please provide more details.",
+      "aiSuggestion": "AI Suggestion",
+      "backToEdit": "Back to edit"
     },
     "step2": {
       "analyzing": "AI is analyzing content...",
@@ -295,7 +346,7 @@
       "custom": "Custom",
       "customDesc": "Your way",
       "qCount": "Number of Questions",
-      "max": "Max 50",
+      "max": "Max",
       "mcLabel": "Multiple Choice",
       "maLabel": "Multiple Answer",
       "essayLabel": "Essay",
@@ -394,6 +445,7 @@
       "error": "An error occurred"
     },
     "list": {
+      "fetchError": "Failed to fetch data. Please try again.",
       "desc": "Manage and organize your exam collections.",
       "empty": "No exams found.",
       "emptyDesc": "Start by creating your first exam for students to join.",
@@ -431,11 +483,113 @@
       "openRoom": "Open Exam Room Now",
       "note": "Note",
       "noteDesc": "You can only edit questions when the exam is in **Draft** status. Once it is ready or shared, editing is locked to ensure data integrity."
-    },
-    "common": {
-      "editConfirm": "Do you want to save these changes?",
-      "regenerateOne": "Regenerate this question",
-      "step": "Step"
     }
+  },
+  "header": {
+    "search": "Search students, submissions..."
+  },
+  "rooms": {
+    "title": "My Exam Rooms",
+    "subtitle": "Manage and monitor ongoing exam rooms",
+    "create_btn": "Create New Room",
+    "create_modal_title": "Create New Exam Room",
+    "create_success": "Exam room created successfully!",
+    "create_error": "Error creating exam room",
+    "copy_success": "Room code copied!",
+    "open_success": "Exam room opened",
+    "close_success": "Exam room closed",
+    "delete_success": "Exam room deleted",
+    "action_error": "Action failed",
+    "delete_error": "Could not delete exam room",
+    "delete_open_error": "Cannot delete room while it is open",
+    "grade_success": "Grade updated successfully",
+    "grade_error": "Error updating grade",
+    "toggle_open_title": "Open Exam Room?",
+    "toggle_open_msg": "Are you sure you want to open \"{{name}}\"? Students can start taking the exam.",
+    "toggle_close_title": "Close Exam Room?",
+    "toggle_close_msg": "Are you sure you want to close \"{{name}}\"? Students will no longer be able to submit.",
+    "delete_title": "Delete Exam Room?",
+    "delete_msg": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+    "fetch_error": "Failed to fetch rooms list",
+    "empty": {
+      "title": "No exam rooms yet",
+      "subtitle": "Start by creating your first exam room so students can join.",
+      "action": "Create Room Now"
+    },
+    "status": {
+      "open": "Open",
+      "closed": "Closed",
+      "pending": "Pending"
+    },
+    "card": {
+      "exam": "Exam",
+      "code": "Room Code",
+      "submissions": "Submissions"
+    },
+    "mode": {
+      "exam": "Official Exam",
+      "practice": "Practice"
+    },
+    "detail": {
+      "back": "Back",
+      "open_btn": "Open Room",
+      "close_btn": "Close Room",
+      "exam": "Exam Title",
+      "duration": "Duration",
+      "mode": "Mode",
+      "tab_submissions": "Submissions",
+      "tab_students": "Student List",
+      "open_at": "Open at",
+      "close_at": "Close at",
+      "require_list": "Require student list",
+      "status_open": "Open",
+      "status_closed": "Closed",
+      "yes": "yes",
+      "no": "no",
+      "minutes": "mins",
+      "preview": "Preview",
+      "no_submissions": "No submissions yet",
+      "import_hint": "Import CSV/TXT: Student ID, Full Name",
+      "student_id": "Student ID",
+      "student_name": "Student Name",
+      "stt": "No.",
+      "search_placeholder": "Search SID or name...",
+      "add_student": "Add Student",
+      "delete_student": "Delete Student",
+      "delete_student_confirm": "Are you sure you want to remove {{name}} from the list?",
+      "status_done": "Submitted",
+      "status_pending": "Pending",
+      "upload_success": "Student list uploaded successfully",
+      "add_success": "Student added successfully",
+      "delete_success": "Student removed successfully"
+    },
+    "form": {
+      "exam": "Select Exam",
+      "select_exam": "Select an exam",
+      "name": "Room Name",
+      "name_placeholder": "e.g., Final Exam Semester 2",
+      "mode": "Mode",
+      "duration": "Duration (minutes)",
+      "open_at": "Open time",
+      "close_at": "Close time",
+      "max_attempts": "Max attempts",
+      "show_answer": "Show answer after submission",
+      "require_list": "Require students list",
+      "submit": "Create Room Now"
+    }
+  },
+  "settings": {
+    "subtitle": "Manage your experience and security preferences",
+    "interface_title": "Interface & Experience",
+    "ai_greeting": "Smart AI Greeting",
+    "ai_greeting_desc": "Use AI to generate personalized greetings based on your time and activity.",
+    "ai_greeting_enabled": "AI Greeting enabled",
+    "ai_greeting_disabled": "AI Greeting disabled",
+    "profile_updated": "Profile updated successfully!",
+    "update_failed": "Failed to update profile, please try again",
+    "dark_mode": "Auto Dark Mode",
+    "coming_soon": "Coming Soon",
+    "account_title": "Account & Security",
+    "account_managed": "Account information is managed through your profile."
   }
 }

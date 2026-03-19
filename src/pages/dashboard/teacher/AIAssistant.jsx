@@ -5,7 +5,7 @@ export default function AIAssistant() {
   const { t } = useTranslation();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-foreground">{t("dashboard.sidebar.aiAssistant")}</h1>
         <p className="text-muted-foreground mt-1">Trò chuyện với AI để nhận gợi ý và hỗ trợ soạn đề.</p>

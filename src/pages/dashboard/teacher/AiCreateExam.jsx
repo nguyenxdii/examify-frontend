@@ -4,23 +4,24 @@ import {
   FileText,
   Layout,
   Sparkles,
+  ArrowLeft,
   ChevronRight,
   ChevronLeft,
   Settings,
   Eye,
   Save,
   Loader2,
+  Trash2,
+  Edit2,
+  X,
   CheckCircle2,
   AlertCircle,
   FileUp,
   Type,
-  BrainCircuit,
   BarChart3,
-  Wand2,
   Plus,
-  Trash2,
-  Edit2,
-  X,
+  BrainCircuit,
+  Wand2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -29,18 +30,24 @@ import { analyzeContent, generateQuestions } from "../../../api/aiApi";
 import { createExam, saveBatchQuestions } from "../../../api/examApi";
 import QuestionModal from "../../../components/dashboard/QuestionModal";
 import { generateQuestions as generateOneQuestion } from "../../../api/aiApi";
+import { KeyboardIcon as Step1Icon } from "../../../components/icons/Step1Icon";
+import { BotMessageSquareIcon as Step2Icon } from "../../../components/icons/Step2Icon";
+import { FileCogIcon as Step3Icon } from "../../../components/icons/Step3Icon";
+import { LaptopMinimalCheckIcon as Step4Icon } from "../../../components/icons/Step4Icon";
+import { ClipboardCheckIcon as Step5Icon } from "../../../components/icons/Step5Icon";
+import { CloudUploadIcon as Step6Icon } from "../../../components/icons/Step6Icon";
 
 const getSteps = (t) => [
-  { id: 1, title: t("wizard.steps.input"), icon: FileText },
-  { id: 2, title: t("wizard.steps.analysis"), icon: BrainCircuit },
-  { id: 3, title: t("wizard.steps.config"), icon: Settings },
-  { id: 4, title: t("wizard.steps.generation"), icon: Wand2 },
-  { id: 5, title: t("wizard.steps.preview"), icon: Eye },
-  { id: 6, title: t("wizard.steps.finalize"), icon: Save },
+  { id: 1, title: t("wizard.steps.input"), icon: Step1Icon },
+  { id: 2, title: t("wizard.steps.analysis"), icon: Step2Icon },
+  { id: 3, title: t("wizard.steps.config"), icon: Step3Icon },
+  { id: 4, title: t("wizard.steps.generation"), icon: Step4Icon },
+  { id: 5, title: t("wizard.steps.preview"), icon: Step5Icon },
+  { id: 6, title: t("wizard.steps.finalize"), icon: Step6Icon },
 ];
 
 export default function AiCreateExam() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const steps = getSteps(t);
   const [currentStep, setCurrentStep] = useState(1);
@@ -93,6 +100,9 @@ export default function AiCreateExam() {
   const [deletingIdx, setDeletingIdx] = useState(null);
   const [regeneratingIdx, setRegeneratingIdx] = useState(null);
   const [isGeneratingMore, setIsGeneratingMore] = useState(false);
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [validationMessage, setValidationMessage] = useState("");
+  const topRef = useRef(null);
   const step4Ref = useRef(null);
 
   const nextStep = () =>
@@ -107,31 +117,24 @@ export default function AiCreateExam() {
 
   // ===== LOGIC TỪNG BƯỚC =====
 
-  // Step 1: Submit Content
+  // Step 1: Submit Content with AI Validation
   const handleStep1Submit = () => {
     if (!wizardData.content.trim()) return;
     
-    // Refresh/Reset data when content changes to avoid using old analysis
+    // Reset data cũ
     setWizardData(prev => ({
       ...prev,
       analysis: null,
       questions: [],
       config: {
+        ...prev.config,
         multipleChoice: 0,
         multipleAnswer: 0,
         essay: 0,
-        difficulty: "easy",
-        easyPercent: 100,
-        mediumPercent: 0,
-        hardPercent: 0,
       }
     }));
 
-    if (wizardData.inputType === "topic") {
-      setCurrentStep(3); // Topic skip step 2
-    } else {
-      nextStep();
-    }
+    nextStep();
   };
 
   // Step 2: AI Analyze logic
@@ -139,17 +142,61 @@ export default function AiCreateExam() {
     if (currentStep === 2 && !wizardData.analysis && !loading) {
       handleAnalyze();
     }
+  }, [currentStep, wizardData.analysis, loading]); // Added missing dependencies to be safe
+
+  // Tự động cuộn lên đầu trang khi chuyển bước
+  useEffect(() => {
+    const scrollToTop = () => {
+      // 1. Cuộn window và body
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+      
+      // 2. Cuộn đến ref đầu trang
+      topRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
+      
+      // 3. Cuộn container chính của Dashboard (quan trọng)
+      const mainContainer = document.querySelector('main.overflow-y-auto');
+      if (mainContainer) {
+        mainContainer.scrollTop = 0;
+      }
+    };
+
+    // Chạy nhiều lần để đảm bảo cuộn thành công kể cả khi đang có animation
+    scrollToTop();
+    const timeout1 = setTimeout(scrollToTop, 100);
+    const timeout2 = setTimeout(scrollToTop, 350); // Sau khi animation kết thúc
+    
+    return () => {
+      clearTimeout(timeout1);
+      clearTimeout(timeout2);
+    };
   }, [currentStep]);
 
   const handleAnalyze = async () => {
     setLoading(true);
     setError(null);
-    setSkipConfigStep(false); // Reset on new analysis
+    setSkipConfigStep(false);
     try {
+      // Gọi API phân tích (bao gồm cả đa ngôn ngữ)
       const res = await analyzeContent({
         inputType: wizardData.inputType,
         content: wizardData.content,
+        language: i18n.language,
       });
+
+      // Kiểm tra độ đầy đủ của nội dung (Validation)
+      // Safety net: Nếu isSufficient = true nhưng không có chủ đề hoặc tóm tắt, coi như không đạt
+      const isSufficient = res.data.isSufficient && 
+                           (res.data.detectedTopics && res.data.detectedTopics.length > 0);
+
+      if (!isSufficient) {
+        setValidationMessage(res.data.message || t("wizard.step1.validationError"));
+        setShowValidationModal(true);
+        setLoading(false);
+        return;
+      }
+
       setWizardData((prev) => ({
         ...prev,
         analysis: res.data,
@@ -162,7 +209,8 @@ export default function AiCreateExam() {
         },
         metadata: {
           ...prev.metadata,
-          title: prev.metadata.title || res.data.suggestedTitle || (res.data.detectedTopics?.[0] ? `${t("wizard.step6.examName")} #1: ${res.data.detectedTopics[0]}` : t("wizard.step6.examNamePlaceholder").split(":")[0])
+          title: prev.metadata.title || res.data.suggestedTitle || (res.data.detectedTopics?.[0] ? `${t("wizard.step6.examName")} #1: ${res.data.detectedTopics[0]}` : t("wizard.step6.examNamePlaceholder").split(":")[0]),
+          description: prev.metadata.description || res.data.suggestedDescription || res.data.summary || ""
         }
       }));
     } catch (err) {
@@ -196,6 +244,7 @@ export default function AiCreateExam() {
       const res = await generateQuestions({
         content: wizardData.content,
         ...wizardData.config,
+        detailedExplanation: wizardData.config.difficulty === "hard" || wizardData.config.difficulty === "mixed",
       });
       setWizardData((prev) => ({ ...prev, questions: res.data }));
       setCurrentStep(5);
@@ -382,6 +431,7 @@ export default function AiCreateExam() {
             </label>
           </div>
         )}
+
         <div className="flex justify-between items-center pt-4">
           <p className="text-sm text-muted-foreground">
             {t("wizard.step1.characters")}: {wizardData.content.length}
@@ -389,7 +439,7 @@ export default function AiCreateExam() {
           <button
             onClick={handleStep1Submit}
             disabled={!wizardData.content.trim()}
-            className="bg-primary text-primary-foreground px-8 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 disabled:opacity-50"
+            className="bg-primary text-primary-foreground px-8 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 disabled:opacity-50 min-w-[140px] justify-center"
           >
             {t("wizard.step1.next")} <ChevronRight className="w-5 h-5" />
           </button>
@@ -1236,8 +1286,20 @@ export default function AiCreateExam() {
         </h3>
         <div className="space-y-6">
           <div className="space-y-3">
-            <label className="text-sm font-black uppercase text-muted-foreground flex items-center gap-2 px-1">
-              {t("wizard.step6.examName")} <span className="text-red-500">*</span>
+            <label className="text-sm font-black uppercase text-muted-foreground flex items-center justify-between px-1">
+              <span>{t("wizard.step6.examName")} <span className="text-red-500">*</span></span>
+              {wizardData.analysis?.suggestedTitle && (
+                <button
+                  type="button"
+                  onClick={() => setWizardData(prev => ({ 
+                    ...prev, 
+                    metadata: { ...prev.metadata, title: wizardData.analysis.suggestedTitle } 
+                  }))}
+                  className="text-[10px] bg-primary/10 text-primary px-2 py-1 rounded-lg hover:bg-primary/20 transition-all flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3" /> {t("wizard.step3.useSuggestions")}
+                </button>
+              )}
             </label>
             <input
               type="text"
@@ -1275,8 +1337,23 @@ export default function AiCreateExam() {
               />
             </div>
             <div className="space-y-3">
-              <label className="text-sm font-black uppercase text-muted-foreground flex items-center gap-2 px-1">
-                {t("wizard.step6.description")}
+              <label className="text-sm font-black uppercase text-muted-foreground flex items-center justify-between px-1">
+                <span>{t("wizard.step6.description")}</span>
+                {(wizardData.analysis?.suggestedDescription || wizardData.analysis?.summary) && (
+                  <button
+                    type="button"
+                    onClick={() => setWizardData(prev => ({ 
+                      ...prev, 
+                      metadata: { 
+                        ...prev.metadata, 
+                        description: wizardData.analysis.suggestedDescription || wizardData.analysis.summary 
+                      } 
+                    }))}
+                    className="text-[10px] bg-primary/10 text-primary px-2 py-1 rounded-lg hover:bg-primary/20 transition-all flex items-center gap-1"
+                  >
+                    <Sparkles className="w-3 h-3" /> {t("wizard.step3.useSuggestions")}
+                  </button>
+                )}
               </label>
               <input
                 type="text"
@@ -1404,12 +1481,27 @@ export default function AiCreateExam() {
 
   return (
     <div className="pb-20">
-      {/* Header with Stepper */}
-      <div className="sticky top-0 z-20 py-6 px-4 mb-8">
-        <div className="max-w-6xl mx-auto bg-card border border-border rounded-[2.5rem] p-6 shadow-lg relative overflow-hidden">
-          <div className="flex items-center justify-between gap-4 relative z-10">
+      <div ref={topRef} />
+
+      {/* Header with Stepper - Scrolls with content */}
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="bg-card border border-border rounded-3xl p-6 shadow-lg">
+          {/* Stepper Header with Back Button */}
+          <div className="flex items-center justify-between mb-6">
+            <button
+              onClick={() => navigate("/dashboard/teacher/create-quiz")}
+              className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors px-4 py-2 rounded-xl hover:bg-muted/50 bg-card border border-border shadow-sm"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {t("dashboard.sidebar.createQuiz")}
+            </button>
+            <div className="text-sm font-bold text-muted-foreground">
+              {t("wizard.common.step")} {currentStep} / 6
+            </div>
+          </div>
+          <div className="flex items-center justify-center gap-4 relative z-10 px-4">
             {/* Connector Line Background */}
-            <div className="absolute top-7 left-[5%] right-[5%] h-[2px] bg-muted z-0 hidden lg:block" />
+            <div className="absolute top-7 left-[8%] right-[8%] h-[2px] bg-muted z-0 hidden lg:block" />
 
             {steps.map((step) => (
               <div
@@ -1420,11 +1512,13 @@ export default function AiCreateExam() {
                   className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 border-4 ${currentStep === step.id ? "bg-primary text-primary-foreground border-primary/20 shadow-2xl shadow-primary/30 scale-110" : currentStep > step.id ? "bg-green-500 text-white border-green-500/20" : "bg-card text-muted-foreground border-transparent"}`}
                 >
                   <step.icon
-                    className={`w-6 h-6 ${currentStep === step.id ? "animate-bounce" : ""}`}
+                    size={24}
+                    isAnimating={currentStep === step.id}
+                    className="w-6 h-6"
                   />
                 </div>
                 <span
-                  className={`text-[10px] font-black uppercase tracking-[0.2em] hidden lg:block transition-colors ${currentStep === step.id ? "text-primary" : "text-muted-foreground"}`}
+                  className={`text-[12px] font-bold hidden lg:block transition-colors text-center leading-tight max-w-[110px] ${currentStep === step.id ? "text-primary" : "text-muted-foreground"}`}
                 >
                   {step.title}
                 </span>
@@ -1444,7 +1538,7 @@ export default function AiCreateExam() {
       </div>
 
       {/* Main Content Area */}
-      <div className="max-w-6xl mx-auto px-4">
+      <div className="max-w-4xl mx-auto px-4">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -1463,40 +1557,47 @@ export default function AiCreateExam() {
         </AnimatePresence>
       </div>
 
-      {/* Basic Navigation */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-background/50 backdrop-blur-md p-2 rounded-2xl border border-border shadow-2xl z-30">
-        <button
-          onClick={prevStep}
-          disabled={
-            currentStep === 1 || loading || savingStatus.exam === "loading"
-          }
-          className="p-3 bg-muted rounded-xl hover:bg-muted/80 disabled:opacity-0 transition-all font-bold group"
-        >
-          <ChevronLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
-        </button>
-        <div className="px-6 font-black tracking-tighter text-sm uppercase text-muted-foreground border-x border-border">
-          {t("wizard.common.step")} {currentStep} / 6
-        </div>
-        <button
-          onClick={nextStep}
-          disabled={
-            currentStep === steps.length ||
-            loading ||
-            (currentStep === 1 && !wizardData.content.trim()) ||
-            (currentStep === 3 &&
-              wizardData.config.difficulty === "mixed" &&
-              wizardData.config.easyPercent +
-                wizardData.config.mediumPercent +
-                wizardData.config.hardPercent !==
-                100) ||
-            (currentStep === 4 && wizardData.questions.length === 0) ||
-            currentStep === 6
-          }
-          className="p-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 disabled:opacity-0 transition-all font-bold group"
-        >
-          <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-        </button>
-      </div>
+      {/* Modal Validation Feedback */}
+      <AnimatePresence>
+        {showValidationModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-card border border-border p-8 rounded-[2.5rem] shadow-2xl max-w-lg w-full text-center space-y-6 overflow-hidden relative"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full -mr-16 -mt-16" />
+              
+              <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-3xl flex items-center justify-center mx-auto relative z-10">
+                <Sparkles className="w-10 h-10" />
+              </div>
+
+              <div className="space-y-2 relative z-10">
+                <h3 className="text-2xl font-black font-heading tracking-tight">
+                  {t("wizard.step1.aiSuggestion")}
+                </h3>
+                <p className="text-muted-foreground leading-relaxed px-4">
+                  {validationMessage}
+                </p>
+              </div>
+
+              <div className="pt-4 relative z-10">
+                <button
+                  onClick={() => {
+                    setShowValidationModal(false);
+                    setCurrentStep(1); // Quay lại bước 1
+                  }}
+                  className="w-full py-4 bg-primary text-primary-foreground font-black rounded-2xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  {t("wizard.step1.backToEdit")}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

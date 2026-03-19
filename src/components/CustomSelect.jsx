@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-export default function CustomSelect({ value, onChange, options, placeholder }) {
+export default function CustomSelect({ id, value, onChange, options, placeholder }) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef(null);
@@ -26,7 +26,7 @@ export default function CustomSelect({ value, onChange, options, placeholder }) 
         setIsOpen(true);
         setActiveIndex(options.indexOf(value));
       } else if (activeIndex >= 0) {
-        onChange({ target: { id: "teachingField", value: options[activeIndex] } });
+        onChange({ target: { id: id || "teachingField", value: options[activeIndex] } });
         setIsOpen(false);
       }
     } else if (e.key === "ArrowDown") {
@@ -81,13 +81,13 @@ export default function CustomSelect({ value, onChange, options, placeholder }) 
                   key={opt}
                   whileHover={{ x: 4, backgroundColor: "rgba(126, 69, 241, 0.1)" }}
                   onClick={() => {
-                    onChange({ target: { id: "teachingField", value: opt } });
+                    onChange({ target: { id: id || "teachingField", value: opt } });
                     setIsOpen(false);
                   }}
                   className={`px-4 py-3 rounded-lg cursor-pointer flex items-center justify-between transition-colors ${
                     (value === opt || activeIndex === index)
                       ? "bg-primary/20 text-primary font-bold"
-                      : "text-muted-foreground hover:text-foreground hover:bg-primary/5"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-primary"
                   }`}
                 >
                   <span>{t(`register.fields.${opt}`)}</span>

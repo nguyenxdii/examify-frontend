@@ -66,14 +66,15 @@ export function Sidebar({ role }) {
           icon: LayoutDashboard,
         },
         {
+          id: "/dashboard/teacher/create-quiz",
+          to: "/dashboard/teacher/create-quiz",
+          label: t("dashboard.sidebar.createQuiz"),
+          icon: PlusCircle,
+        },
+        {
           id: "/dashboard/teacher/my-quizzes",
           label: t("dashboard.sidebar.myQuizzes"),
           icon: BookOpen,
-        },
-        {
-          id: "/dashboard/teacher/create-quiz",
-          label: t("dashboard.sidebar.createQuiz"),
-          icon: PlusCircle,
         },
         {
           id: "/dashboard/teacher/rooms",
@@ -113,6 +114,7 @@ export function Sidebar({ role }) {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    window.dispatchEvent(new Event("authChanged"));
     navigate("/login");
   };
 
@@ -163,12 +165,12 @@ export function Sidebar({ role }) {
                     key={item.id}
                     onClick={() => {
                       setActiveMenu(item.id);
-                      navigate(item.id);
+                      navigate(item.to || item.id);
                     }}
                     className={cn(
                       "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative mb-1",
                       isActive
-                        ? "bg-primary text-white shadow-lg shadow-primary/20"
+                        ? "bg-primary text-white shadow-lg shadow-primary/20 ring-1 ring-white/20"
                         : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-primary",
                     )}
                   >
@@ -181,12 +183,6 @@ export function Sidebar({ role }) {
                       )}
                     />
                     {item.label}
-                    {isActive && (
-                      <motion.div
-                        layoutId="active-pill"
-                        className="absolute left-0 w-1 h-6 bg-white rounded-r-full"
-                      />
-                    )}
                   </button>
                 );
               })}
@@ -212,13 +208,20 @@ export function Sidebar({ role }) {
                     key={item.id}
                     onClick={() => navigate(item.id)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 mb-1",
+                      "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 mb-1 group relative",
                       isActive
-                        ? "bg-primary/10 text-primary"
+                        ? "bg-primary text-white shadow-lg shadow-primary/20 ring-1 ring-white/20"
                         : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-primary",
                     )}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon
+                      className={cn(
+                        "w-5 h-5",
+                        isActive
+                          ? "text-white"
+                          : "group-hover:scale-110 transition-transform",
+                      )}
+                    />
                     {item.label}
                   </button>
                 );

@@ -7,9 +7,11 @@ import {
 } from "lucide-react";
 import { getExamDetail, getQuestions, deleteQuestion, deleteExam, updateExam } from "../../../api/examApi";
 import QuestionModal from "../../../components/dashboard/QuestionModal";
-import { motion } from "framer-motion";
+import ConfirmationModal from "../../../components/dashboard/ConfirmationModal";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { cn } from "../../../lib/utils";
+import { toast } from "react-hot-toast";
 
 export default function ExamDetail() {
   const { t } = useTranslation();
@@ -20,6 +22,14 @@ export default function ExamDetail() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    type: "question", // 'question' or 'exam'
+    targetId: null,
+    title: "",
+    message: ""
+  });
 
   const fetchData = async () => {
     try {
@@ -30,7 +40,7 @@ export default function ExamDetail() {
       setExam(examRes.data);
       setQuestions(questionsRes.data || []);
     } catch (err) {
-      console.error("Lỗi khi tải dữ liệu:", err);
+      toast.error(t("wizard.list.fetchError") || "Lỗi khi tải dữ liệu");
     } finally {
       setLoading(false);
     }
@@ -43,29 +53,50 @@ export default function ExamDetail() {
   const handleSetReady = async () => {
     try {
       await updateExam(examId, { status: "ready" });
+      toast.success(t("common.update_success") || "Đã cập nhật trạng thái");
       fetchData();
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi cập nhật trạng thái");
+      toast.error(err.response?.data?.message || "Lỗi khi cập nhật trạng thái");
     }
   };
 
-  const handleDeleteQuestion = async (qId) => {
-    if (!window.confirm(t("wizard.detail.deleteQuestionConfirm"))) return;
-    try {
-      await deleteQuestion(examId, qId);
-      fetchData();
-    } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi xóa câu hỏi");
-    }
+  const handleDeleteQuestion = (qId) => {
+    setConfirmModal({
+      isOpen: true,
+      type: "question",
+      targetId: qId,
+      title: t("wizard.list.deleteTitle") || "Xác nhận xóa câu hỏi",
+      message: t("wizard.detail.deleteQuestionConfirm") || "Bạn có chắc chắn muốn xóa câu hỏi này?"
+    });
   };
 
-  const handleDeleteExam = async () => {
-    if (!window.confirm(t("wizard.detail.deleteExamConfirm"))) return;
+  const handleDeleteExam = () => {
+    setConfirmModal({
+      isOpen: true,
+      type: "exam",
+      targetId: examId,
+      title: t("wizard.list.deleteTitle") || "Xác nhận xóa đề thi",
+      message: t("wizard.detail.deleteExamConfirm") || "Xác nhận xóa toàn bộ đề thi này?"
+    });
+  };
+
+  const handleConfirmDelete = async () => {
     try {
-      await deleteExam(examId);
-      navigate("/dashboard/teacher/my-quizzes");
+      setDeleteLoading(true);
+      if (confirmModal.type === "question") {
+        await deleteQuestion(examId, confirmModal.targetId);
+        toast.success(t("common.delete_success") || "Đã xóa câu hỏi");
+        fetchData();
+      } else {
+        await deleteExam(examId);
+        toast.success(t("wizard.list.deleteSuccess") || "Đã xóa đề thi");
+        navigate("/dashboard/teacher/my-quizzes");
+      }
+      setConfirmModal({ ...confirmModal, isOpen: false });
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi xóa đề thi");
+      toast.error(err.response?.data?.message || "Lỗi khi xóa");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -124,54 +155,55 @@ export default function ExamDetail() {
     const statusInfo = getStatusInfo(exam.status);
 
     return (
-      <div className="max-w-6xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
+      <div className="max-w-5xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-4">
-            <button
-              onClick={() => navigate("/dashboard/teacher/my-quizzes")}
-              className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-bold"
-            >
-              <ChevronLeft className="w-5 h-5" /> {t("wizard.detail.backToList")}
-            </button>
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <h1 className="text-3xl md:text-4xl font-black font-heading tracking-tight flex-1 break-words min-w-[200px]">
-                {exam?.title || "Untitled Exam"}
-              </h1>
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-white text-[11px] font-black uppercase tracking-widest shadow-lg flex-shrink-0 ${statusInfo?.color || "bg-muted"} shadow-${statusInfo?.color?.split('-')[1] || 'muted'}/20`}>
-                {statusInfo?.icon}
-                <span className="whitespace-nowrap">{statusInfo?.label}</span>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-5">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate("/dashboard/teacher/my-quizzes")}
+                className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground -ml-1.5"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <div>
+                <p className="text-xs font-bold text-primary uppercase tracking-wider">
+                  {t("wizard.detail.backToList")}
+                </p>
+                <h1 className="text-3xl font-bold text-foreground tracking-tight">
+                  {exam?.title || "Untitled Exam"}
+                </h1>
               </div>
             </div>
-            <p className="text-muted-foreground text-lg max-w-2xl">
+            <p className="text-muted-foreground text-base max-w-2xl">
               {exam?.description || t("wizard.detail.noDescription")}
             </p>
             
-            <div className="flex flex-wrap gap-6 pt-2">
+            <div className="flex flex-wrap gap-4 pt-1 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground font-bold">
-                <BookOpen className="w-5 h-5 text-primary" />{" "}
+                <BookOpen className="w-4 h-4 text-primary" />{" "}
                 {exam?.subject || t("wizard.detail.unclassified")}
               </div>
               <div className="flex items-center gap-2 text-muted-foreground font-bold">
-                <Calendar className="w-5 h-5 text-primary" />{" "}
+                <Calendar className="w-4 h-4 text-primary" />{" "}
                 {exam?.createdAt ? new Date(exam.createdAt).toLocaleDateString() : "--/--/----"}
               </div>
               <div className="flex items-center gap-2 text-muted-foreground font-bold">
-                <FileQuestion className="w-5 h-5 text-primary" />{" "}
+                <FileQuestion className="w-4 h-4 text-primary" />{" "}
                 {t("wizard.detail.questionsCount", { count: questions?.length || 0 })}
               </div>
             </div>
           </div>
           
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <button
                 onClick={handleDeleteExam}
-                className="p-4 bg-muted text-muted-foreground hover:bg-red-500/10 hover:text-red-500 rounded-2xl transition-all border border-border"
+                className="p-3 bg-muted text-muted-foreground hover:bg-red-500/10 hover:text-red-500 rounded-xl transition-all border border-border"
               >
-                <Trash2 className="w-6 h-6" />
+                <Trash2 className="w-5 h-5" />
               </button>
-              <button className="flex items-center gap-2 bg-muted text-foreground font-bold py-4 px-8 rounded-2xl border border-border hover:bg-muted/80 transition-all">
-                <Share2 className="w-5 h-5" /> {t("wizard.detail.share")}
+              <button className="flex items-center gap-2 bg-muted text-foreground font-bold py-3 px-6 rounded-xl border border-border hover:bg-muted/80 transition-all text-sm">
+                <Share2 className="w-4 h-4" /> {t("wizard.detail.share")}
               </button>
             </div>
         </div>
@@ -179,22 +211,20 @@ export default function ExamDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 overflow-visible">
           {/* Left: Questions List */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-2xl font-black font-heading flex items-center gap-2">
-                <LayoutGrid className="w-6 h-6 text-primary" />{" "}
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-xl font-black font-heading flex items-center gap-2">
+                <LayoutGrid className="w-5 h-5 text-primary" />{" "}
                 {t("wizard.detail.listHeader")}
               </h2>
-              {exam?.status === "draft" && (
-                <button
-                  onClick={() => {
-                    setSelectedQuestion(null);
-                    setIsModalOpen(true);
-                  }}
-                  className="flex items-center gap-2 bg-primary text-primary-foreground font-black px-6 py-2.5 rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all"
-                >
-                  <Plus className="w-5 h-5" /> {t("wizard.detail.addQuestion")}
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  setSelectedQuestion(null);
+                  setIsModalOpen(true);
+                }}
+                className="flex items-center gap-2 bg-primary text-primary-foreground font-black px-5 py-2 rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all text-sm"
+              >
+                <Plus className="w-4 h-4" /> {t("wizard.detail.addQuestion")}
+              </button>
             </div>
 
             <div className="space-y-4">
@@ -210,7 +240,7 @@ export default function ExamDetail() {
                     key={q?.id || idx}
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-card border border-border rounded-3xl p-6 group hover:border-primary transition-all shadow-sm"
+                    className="bg-card border border-border rounded-2xl p-5 group hover:border-primary transition-all shadow-sm"
                   >
                     <div className="flex gap-6">
                       <div className="w-10 h-10 flex-shrink-0 bg-muted rounded-xl flex items-center justify-center font-black group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
@@ -234,26 +264,24 @@ export default function ExamDetail() {
                                t("wizard.step3.difficultyLevels.medium")}
                             </span>
                           </div>
-                          {exam?.status === 'draft' && (
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                              <button 
-                                onClick={() => { setSelectedQuestion(q); setIsModalOpen(true); }}
-                                className="p-2 hover:bg-primary/10 text-primary rounded-xl transition-colors"
-                                title={t("wizard.step5.edit")}
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteQuestion(q.id)}
-                                className="p-2 hover:bg-red-500/10 text-red-500 rounded-xl transition-colors"
-                                title={t("common.delete")}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          )}
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                            <button 
+                              onClick={() => { setSelectedQuestion(q); setIsModalOpen(true); }}
+                              className="p-2 hover:bg-primary/10 text-primary rounded-xl transition-colors"
+                              title={t("wizard.step5.edit") || "Sửa"}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteQuestion(q.id)}
+                              className="p-2 hover:bg-red-500/10 text-red-500 rounded-xl transition-colors"
+                              title={t("common.delete") || "Xóa"}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                        <h4 className="text-lg font-bold font-heading leading-snug">{q?.content}</h4>
+                        <h4 className="text-base font-bold font-heading leading-snug">{q?.content}</h4>
                         {Array.isArray(q?.choices) && q.choices.length > 0 && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
                             {q.choices.map((c, i) => {
@@ -262,7 +290,7 @@ export default function ExamDetail() {
                                 <div 
                                   key={i} 
                                   className={cn(
-                                    "relative p-4 rounded-2xl border-2 transition-all duration-200 flex items-center gap-4 group/choice",
+                                    "relative p-3.5 rounded-xl border-2 transition-all duration-200 flex items-center gap-3 group/choice",
                                     isCorrect 
                                       ? "border-emerald-500 bg-emerald-50/50 shadow-sm shadow-emerald-500/10" 
                                       : "border-border bg-muted/30 hover:border-primary/30 hover:bg-muted/50"
@@ -309,15 +337,15 @@ export default function ExamDetail() {
             </div>
           </div>
 
-          <div className="space-y-6 lg:sticky lg:top-24 h-fit">
-            <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm space-y-6">
-              <h3 className="text-xl font-black font-heading tracking-tight">
+          <div className="space-y-4 lg:sticky lg:top-24 h-fit">
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-5">
+              <h3 className="text-lg font-black font-heading tracking-tight">
                 {t("wizard.detail.config")}
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between font-bold">
                   <span className="text-muted-foreground flex items-center gap-2">
-                    <Clock className="w-4 h-4" /> {t("wizard.detail.time")}
+                    <Clock className="w-3.5 h-3.5" /> {t("wizard.detail.time")}
                   </span>
                   <span>
                     -- {t("wizard.detail.minutes")}
@@ -325,7 +353,7 @@ export default function ExamDetail() {
                 </div>
                 <div className="flex items-center justify-between font-bold">
                   <span className="text-muted-foreground flex items-center gap-2">
-                    <LayoutGrid className="w-4 h-4" /> {t("wizard.detail.passScore")}
+                    <LayoutGrid className="w-3.5 h-3.5" /> {t("wizard.detail.passScore")}
                   </span>
                   <span>
                     -- {t("wizard.detail.points")}
@@ -335,22 +363,22 @@ export default function ExamDetail() {
               {exam?.status === "draft" ? (
                 <button
                   onClick={handleSetReady}
-                  className="w-full py-4 bg-orange-500 text-white font-black rounded-2xl shadow-xl shadow-orange-500/20 hover:scale-[1.02] transition-all active:scale-100"
+                  className="w-full py-3 bg-orange-500 text-white font-black rounded-xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] transition-all active:scale-100 text-sm"
                 >
                   {t("wizard.detail.setReady")}
                 </button>
               ) : (
-                <button className="w-full py-4 bg-primary text-primary-foreground font-black rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all active:scale-100">
+                <button className="w-full py-3 bg-primary text-primary-foreground font-black rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all active:scale-100 text-sm">
                   {t("wizard.detail.openRoom")}
                 </button>
               )}
             </div>
 
-            <div className="bg-muted/30 border border-border border-dashed rounded-[2.5rem] p-8 space-y-4">
-              <p className="text-sm text-muted-foreground font-bold flex items-center gap-2">
-                <Info className="w-4 h-4" /> {t("wizard.detail.note")}:
+            <div className="bg-muted/30 border border-border border-dashed rounded-2xl p-6 space-y-3">
+              <p className="text-[13px] text-muted-foreground font-bold flex items-center gap-2">
+                <Info className="w-3.5 h-3.5" /> {t("wizard.detail.note")}:
               </p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
                 {t("wizard.detail.noteDesc")}
               </p>
             </div>
@@ -363,6 +391,16 @@ export default function ExamDetail() {
           examId={examId} 
           question={selectedQuestion}
           onSuccess={fetchData}
+        />
+
+        <ConfirmationModal
+          isOpen={confirmModal.isOpen}
+          onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+          onConfirm={handleConfirmDelete}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          type="danger"
+          loading={deleteLoading}
         />
       </div>
     );

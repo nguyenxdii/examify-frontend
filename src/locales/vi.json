@@ -1,4 +1,18 @@
 {
+  "common": {
+    "save": "Lưu",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "actions": "Thao tác",
+    "editConfirm": "Bạn có muốn lưu thay đổi này không?",
+    "regenerateOne": "Sinh lại câu này",
+    "step": "Bước",
+    "ok": "Xác nhận",
+    "loading": "Đang xử lý...",
+    "preview": "Xem bản thảo"
+  },
   "nav": {
     "quizzes": "Đề thi",
     "weekly": "Đề hàng tuần",
@@ -119,6 +133,9 @@
     "email": "Email",
     "institution": "Trường công tác",
     "teachingField": "Lĩnh vực giảng dạy",
+    "gender": "Giới tính",
+    "male": "Nam",
+    "female": "Nữ",
     "confirmPassword": "Xác nhận mật khẩu",
     "btn": "Đăng ký",
     "haveAccount": "Đã có tài khoản?",
@@ -176,6 +193,20 @@
     "desc": "Có vẻ như bạn đã đi lạc vào một không gian chưa được khám phá.",
     "backHome": "Quay lại trang chủ"
   },
+  "profile": {
+    "subtitle": "Quản lý thông tin cá nhân và định danh của bạn",
+    "basic_info": "Thông tin cơ bản",
+    "verification_status": "Tài khoản đã xác thực",
+    "save": "Lưu thay đổi",
+    "edit": "Sửa hồ sơ",
+    "confirm_save_title": "Lưu thay đổi?",
+    "confirm_save_desc": "Thông tin của bạn sẽ được cập nhật đồng bộ trên toàn hệ thống.",
+    "exit_warning_title": "Bạn có thay đổi chưa lưu?",
+    "exit_warning_desc": "Dữ liệu bạn vừa nhập sẽ bị mất nếu bạn rời khỏi trang này ngay bây giờ.",
+    "stay": "Ở lại",
+    "leave": "Rời khỏi",
+    "security_note": "Hồ sơ của bạn được bảo mật và chỉ được sử dụng để cá nhân hóa trải nghiệm trên hệ thống SynDe."
+  },
   "dashboard": {
     "sidebar": {
       "overview": "Tổng quan",
@@ -199,7 +230,8 @@
       "welcome": "Chào mừng trở lại,",
       "overviewDesc": "Đây là tổng quan của bạn hôm nay.",
       "search": "Tìm kiếm...",
-      "account": "Tài khoản",
+      "account": "TÀI KHOẢN",
+      "profile": "HỒ SƠ CÁ NHÂN",
       "signOut": "Đăng xuất"
     },
     "stats": {
@@ -246,13 +278,29 @@
     }
   },
   "wizard": {
+    "common": {
+      "step": "Bước"
+    },
+    "title": "Chỉnh sửa thông tin đề thi",
+    "createTitle": "Tạo đề thi thủ công",
+    "subtitle": "Nhập thông tin cơ bản để bắt đầu",
+    "createButton": "Tạo đề ngay",
+    "updateButton": "Cập nhật đề",
     "steps": {
-      "input": "Nhập nội dung",
-      "analysis": "AI Phân tích",
-      "config": "Cấu hình đề",
-      "generation": "Sinh câu hỏi",
-      "preview": "Xem trước",
-      "finalize": "Lưu đề thi"
+      "basicInfo": {
+        "title": "Tiêu đề đề thi",
+        "titlePlaceholder": "Ví dụ: Kiểm tra giữa kỳ môn Toán",
+        "subject": "Môn học",
+        "subjectPlaceholder": "Ví dụ: Toán học, Tiếng Anh...",
+        "description": "Mô tả",
+        "descriptionPlaceholder": "Nhập mô tả ngắn cho đề thi này..."
+      },
+      "input": "NHẬP NỘI DUNG",
+      "analysis": "AI PHÂN TÍCH",
+      "config": "CẤU HÌNH ĐỀ",
+      "generation": "SINH CÂU HỎI",
+      "preview": "XEM TRƯỚC",
+      "finalize": "LƯU ĐỀ THI"
     },
     "step1": {
       "title": "Nội dung đề thi của bạn là gì?",
@@ -267,7 +315,10 @@
       "uploadFile": "Tải lên file tài liệu (PDF, Word, TXT)",
       "limit": "Giới hạn 10MB",
       "characters": "Ký tự",
-      "next": "Tiếp theo"
+      "next": "Tiếp theo",
+      "validationError": "Nội dung nhập vào chưa đủ thông tin để tạo đề thi chất lượng. Vui lòng mô tả chi tiết hơn.",
+      "aiSuggestion": "Gợi ý từ AI",
+      "backToEdit": "Quay lại chỉnh sửa"
     },
     "step2": {
       "analyzing": "Đang phân tích nội dung...",
@@ -291,7 +342,7 @@
       "custom": "Tùy chỉnh",
       "customDesc": "Theo ý của bạn",
       "qCount": "Số lượng câu hỏi",
-      "max": "Tối đa 50",
+      "max": "Tối đa",
       "mcLabel": "Trắc nghiệm 1 đáp án",
       "maLabel": "Trắc nghiệm nhiều đáp án",
       "essayLabel": "Tự luận",
@@ -390,6 +441,7 @@
       "error": "Đã có lỗi xảy ra"
     },
     "list": {
+      "fetchError": "Không thể tải dữ liệu. Vui lòng thử lại.",
       "desc": "Quản lý và tổ chức các bộ đề thi của bạn.",
       "empty": "Chưa có đề thi nào",
       "emptyDesc": "Hãy bắt đầu bằng cách tạo đề thi đầu tiên của bạn để học sinh có thể tham gia.",
@@ -427,11 +479,113 @@
       "openRoom": "Mở phòng thi ngay",
       "note": "Lưu ý",
       "noteDesc": "Bạn chỉ có thể chỉnh sửa nội dung câu hỏi khi đề thi ở trạng thái **Bản nháp**. Khi đề đã sẵn sàng hoặc phát hành, việc chỉnh sửa sẽ bị khóa để đảm bảo tính toàn vẹn của dữ liệu phòng thi."
-    },
-    "common": {
-      "editConfirm": "Bạn có muốn lưu thay đổi này không?",
-      "regenerateOne": "Sinh lại câu này",
-      "step": "Bước"
     }
+  },
+  "header": {
+    "search": "Tìm kiếm học sinh, bài làm..."
+  },
+  "rooms": {
+    "title": "Phòng thi của tôi",
+    "subtitle": "Quản lý và theo dõi các phòng thi đang diễn ra",
+    "create_btn": "Tạo phòng mới",
+    "create_modal_title": "Tạo phòng thi mới",
+    "create_success": "Tạo phòng thi thành công!",
+    "create_error": "Lỗi khi tạo phòng thi",
+    "copy_success": "Đã sao chép mã phòng",
+    "open_success": "Đã mở phòng thi",
+    "close_success": "Đã đóng phòng thi",
+    "delete_success": "Đã xóa phòng thi",
+    "action_error": "Thao tác thất bại",
+    "delete_error": "Không thể xóa phòng thi",
+    "delete_open_error": "Không thể xóa phòng khi đang mở",
+    "grade_success": "Đã cập nhật điểm",
+    "grade_error": "Lỗi chấm điểm",
+    "toggle_open_title": "Mở phòng thi?",
+    "toggle_open_msg": "Bạn có chắc chắn muốn mở phòng \"{{name}}\"? Sinh viên có thể bắt đầu vào thi.",
+    "toggle_close_title": "Đóng phòng thi?",
+    "toggle_close_msg": "Bạn có chắc chắn muốn đóng phòng \"{{name}}\"? Sinh viên sẽ không thể nộp bài nữa.",
+    "delete_title": "Xóa phòng thi?",
+    "delete_msg": "Bạn có chắc chắn muốn xóa phòng \"{{name}}\"? Hành động này không thể hoàn tác.",
+    "fetch_error": "Không thể tải danh sách phòng thi",
+    "empty": {
+      "title": "Chưa có phòng thi nào",
+      "subtitle": "Hãy tạo phòng thi đầu tiên để học sinh có thể tham gia làm bài.",
+      "action": "Tạo phòng ngay"
+    },
+    "status": {
+      "open": "Đang mở",
+      "closed": "Đã đóng",
+      "pending": "Chờ mở"
+    },
+    "card": {
+      "exam": "Đề thi",
+      "code": "Mã phòng",
+      "submissions": "Bài nộp"
+    },
+    "mode": {
+      "exam": "Thi tập trung",
+      "practice": "Luyện tập"
+    },
+    "detail": {
+      "back": "Quay lại",
+      "open_btn": "Mở phòng",
+      "close_btn": "Đóng phòng",
+      "exam": "Đề thi",
+      "duration": "Thời gian",
+      "mode": "Chế độ",
+      "tab_submissions": "Bài nộp",
+      "tab_students": "Danh sách học sinh",
+      "open_at": "Mở lúc",
+      "close_at": "Đóng lúc",
+      "require_list": "Bắt buộc theo DS",
+      "status_open": "Đang mở",
+      "status_closed": "Đã đóng",
+      "yes": "có",
+      "no": "không",
+      "minutes": "phút",
+      "preview": "Xem trước",
+      "no_submissions": "Chưa có bài nộp nào",
+      "import_hint": "Import CSV/TXT: MSSV, Họ tên",
+      "student_id": "MSSV",
+      "student_name": "Họ tên",
+      "stt": "STT",
+      "search_placeholder": "Tìm kiếm MSSV hoặc tên...",
+      "add_student": "Thêm học sinh",
+      "delete_student": "Xóa học sinh",
+      "delete_student_confirm": "Bạn có chắc chắn muốn xóa học sinh {{name}} khỏi danh sách?",
+      "status_done": "Đã nộp",
+      "status_pending": "Chưa nộp",
+      "upload_success": "Tải lên danh sách thành công",
+      "add_success": "Thêm học sinh thành công",
+      "delete_success": "Xóa học sinh thành công"
+    },
+    "form": {
+      "exam": "Chọn đề thi",
+      "select_exam": "Chọn đề thi",
+      "name": "Tên phòng thi",
+      "name_placeholder": "Ví dụ: Thi cuối kỳ HK2",
+      "mode": "Chế độ",
+      "duration": "Thời gian (phút)",
+      "open_at": "Thời gian mở phòng",
+      "close_at": "Thời gian đóng phòng",
+      "max_attempts": "Lượt thi tối đa",
+      "show_answer": "Xem đáp án sau khi nộp",
+      "require_list": "Bắt buộc theo danh sách",
+      "submit": "Tạo phòng ngay"
+    }
+  },
+  "settings": {
+    "subtitle": "Quản lý tùy chọn trải nghiệm và bảo mật của bạn",
+    "interface_title": "Giao diện & Trải nghiệm",
+    "ai_greeting": "Câu chào AI thông minh",
+    "ai_greeting_desc": "Sử dụng AI để tạo lời chào cá nhân hóa dựa trên thời gian và hoạt động của bạn.",
+    "ai_greeting_enabled": "Đã bật câu chào AI",
+    "ai_greeting_disabled": "Đã tắt câu chào AI",
+    "profile_updated": "Cập nhật hồ sơ thành công!",
+    "update_failed": "Cập nhật thất bại, vui lòng thử lại",
+    "dark_mode": "Chế độ tối tự động",
+    "coming_soon": "Sắp ra mắt",
+    "account_title": "Tài khoản & Bảo mật",
+    "account_managed": "Thông tin tài khoản được quản lý thông qua hồ sơ cá nhân."
   }
 }

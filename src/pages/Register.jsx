@@ -35,6 +35,7 @@ export default function Register() {
 
   const [formData, setFormData] = useState({
     fullName: "",
+    gender: "male",
     email: "",
     password: "",
     confirmPassword: "",
@@ -77,6 +78,7 @@ export default function Register() {
     try {
       await register({
         fullName: formData.fullName,
+        gender: formData.gender,
         email: formData.email,
         password: formData.password,
         school: formData.institution,
@@ -287,6 +289,46 @@ export default function Register() {
                       value={formData.fullName}
                       onChange={handleChange}
                       className="w-full pl-12 pr-4 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Gender Selection */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-foreground ml-1">
+                    {t("register.gender") || "Giới tính (Xưng hô)"}
+                  </label>
+                  <div className="flex bg-border/20 p-1 rounded-xl border border-border gap-1 relative overflow-hidden group">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, gender: "male" }))}
+                      className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all relative z-10 ${
+                        formData.gender === "male" 
+                          ? "text-white" 
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {t("register.male") || "Nam"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, gender: "female" }))}
+                      className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all relative z-10 ${
+                        formData.gender === "female" 
+                          ? "text-white" 
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {t("register.female") || "Nữ"}
+                    </button>
+                    <motion.div
+                      className="absolute inset-y-1 bg-primary rounded-lg shadow-lg"
+                      initial={false}
+                      animate={{
+                        left: formData.gender === "male" ? "4px" : "50%",
+                        right: formData.gender === "male" ? "50%" : "4px",
+                      }}
+                      transition={{ type: "spring", stiffness: 300, damping: 28 }}
                     />
                   </div>
                 </div>

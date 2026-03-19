@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { 
+  createBrowserRouter, 
+  RouterProvider, 
+  Navigate,
+  Outlet
+} from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -16,11 +21,17 @@ import SystemStats from "./pages/dashboard/admin/SystemStats";
 // Teacher Pages
 import MyExams from "./pages/dashboard/teacher/MyExams";
 import AiCreateExam from "./pages/dashboard/teacher/AiCreateExam";
+import CreateExam from "./pages/dashboard/teacher/CreateExam";
+import ManualCreateExam from "./pages/dashboard/teacher/ManualCreateExam";
 import ExamDetail from "./pages/dashboard/teacher/ExamDetail";
 import ExamRooms from "./pages/dashboard/teacher/ExamRooms";
+import RoomDetail from "./pages/dashboard/teacher/RoomDetail";
 import QuestionBank from "./pages/dashboard/teacher/QuestionBank";
 import Results from "./pages/dashboard/teacher/Results";
 import AIAssistant from "./pages/dashboard/teacher/AIAssistant";
+import Settings from "./pages/dashboard/Settings";
+import Profile from "./pages/dashboard/Profile";
+import { Toaster } from "react-hot-toast";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
@@ -53,68 +64,143 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-function App() {
-  let user = {};
+// Function to get current user for the layout
+const getCurrentUser = () => {
   try {
-    user = JSON.parse(localStorage.getItem("user") || "{}");
+    return JSON.parse(localStorage.getItem("user") || "{}");
   } catch (e) {
     console.error("Failed to parse user from localStorage", e);
+    return {};
   }
+};
 
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Home />,
+  },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/register",
+    element: <Register />,
+  },
+  {
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout user={getCurrentUser()} />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: "/dashboard",
+        element: <DashboardRedirect />,
+      },
+      // Admin Routes
+      {
+        path: "/dashboard/admin",
+        element: (
+          <ProtectedRoute requiredRole="admin">
+            <AdminDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/dashboard/admin/users",
+        element: (
+          <ProtectedRoute requiredRole="admin">
+            <UserManagement />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/dashboard/admin/all-quizzes",
+        element: (
+          <ProtectedRoute requiredRole="admin">
+            <AllExams />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/dashboard/admin/analytics",
+        element: (
+          <ProtectedRoute requiredRole="admin">
+            <SystemStats />
+          </ProtectedRoute>
+        ),
+      },
+      // Teacher/User Routes
+      {
+        path: "/dashboard/user",
+        element: <UserDashboard />,
+      },
+      {
+        path: "/dashboard/teacher/my-quizzes",
+        element: <MyExams />,
+      },
+      {
+        path: "/dashboard/teacher/my-quizzes/:examId",
+        element: <ExamDetail />,
+      },
+      {
+        path: "/dashboard/teacher/create-quiz",
+        element: <CreateExam />,
+      },
+      {
+        path: "/dashboard/teacher/create-quiz/manual",
+        element: <ManualCreateExam />,
+      },
+      {
+        path: "/dashboard/teacher/create-quiz/ai",
+        element: <AiCreateExam />,
+      },
+      {
+        path: "/dashboard/teacher/rooms",
+        element: <ExamRooms />,
+      },
+      {
+        path: "/dashboard/teacher/rooms/:roomId",
+        element: <RoomDetail />,
+      },
+      {
+        path: "/dashboard/teacher/questions",
+        element: <QuestionBank />,
+      },
+      {
+        path: "/dashboard/teacher/results",
+        element: <Results />,
+      },
+      {
+        path: "/dashboard/teacher/ai-assistant",
+        element: <AIAssistant />,
+      },
+      // Settings & Profile
+      {
+        path: "/dashboard/settings",
+        element: <Settings />,
+      },
+      {
+        path: "/dashboard/profile",
+        element: <Profile />,
+      },
+    ],
+  },
+  {
+    path: "*",
+    element: <NotFound />,
+  },
+]);
+
+function App() {
   return (
-    <BrowserRouter>
+    <>
+      <Toaster position="top-right" reverseOrder={false} />
       <ErrorBoundary>
-        <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        
-        {/* Dashboard Routes with Shared Layout */}
-        <Route element={<ProtectedRoute><DashboardLayout user={user} /></ProtectedRoute>}>
-          <Route path="/dashboard" element={<DashboardRedirect />} />
-          
-          {/* Admin Routes */}
-          <Route path="/dashboard/admin" element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/admin/users" element={
-            <ProtectedRoute requiredRole="admin">
-              <UserManagement />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/admin/all-quizzes" element={
-            <ProtectedRoute requiredRole="admin">
-              <AllExams />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/admin/analytics" element={
-            <ProtectedRoute requiredRole="admin">
-              <SystemStats />
-            </ProtectedRoute>
-          } />
-
-          {/* Teacher/User Routes */}
-          <Route path="/dashboard/user" element={<UserDashboard />} />
-          <Route path="/dashboard/teacher/my-quizzes" element={<MyExams />} />
-          <Route path="/dashboard/teacher/my-quizzes/:examId" element={<ExamDetail />} />
-          <Route path="/dashboard/teacher/create-quiz/ai" element={<AiCreateExam />} />
-          <Route path="/dashboard/teacher/rooms" element={<ExamRooms />} />
-          <Route path="/dashboard/teacher/questions" element={<QuestionBank />} />
-          <Route path="/dashboard/teacher/results" element={<Results />} />
-          <Route path="/dashboard/teacher/ai-assistant" element={<AIAssistant />} />
-          
-          {/* Settings & Profile */}
-          <Route path="/dashboard/settings" element={<div className="p-20 text-center"><h1>Settings Placeholder</h1></div>} />
-          <Route path="/dashboard/profile" element={<div className="p-20 text-center"><h1>Profile Placeholder</h1></div>} />
-        </Route>
-
-        {/* Catch-all route for 404 */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+        <RouterProvider router={router} />
       </ErrorBoundary>
-    </BrowserRouter>
+    </>
   );
 }
 
