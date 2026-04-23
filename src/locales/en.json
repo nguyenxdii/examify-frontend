@@ -123,6 +123,7 @@
       "successDesc": "Great! You are being redirected to your dashboard.",
       "errorTitle": "Login Failed",
       "errorDesc": "Invalid credentials. Please check and try again.",
+      "emptyError": "Please enter both email and password",
       "btnClose": "Close"
     }
   },
@@ -183,6 +184,9 @@
       "existsDesc": "This email is already in our system. Would you like to sign in instead?",
       "btnOk": "Yes, Sign In Now",
       "btnNo": "No, stay here",
+      "emptyError": "Please fill in all required fields!",
+      "passwordMismatch": "Confirm password does not match!",
+      "passwordTooShort": "Password must be at least 6 characters",
       "btnRetry": "Retry",
       "btnClose": "Close"
     }
@@ -219,6 +223,7 @@
       "settings": "Settings",
       "profile": "Profile",
       "logout": "Logout",
+      "logoutConfirm": "Are you sure you want to log out of the system?",
       "adminMenu": "Admin Menu",
       "userMenu": "Menu",
       "rooms": "Exam Rooms",
@@ -433,18 +438,37 @@
       "addTitle": "Add New Question",
       "type": "Question Type",
       "difficulty": "Difficulty",
+      "topic": "Topic",
       "content": "Question Content",
       "choices": "Choices & Correct Answers",
-      "placeholderChoice": "Choice content...",
+      "placeholderChoice": "Choice",
       "addChoice": "Add Choice",
       "sampleAnswer": "Sample Answer",
       "explanation": "Detailed Explanation",
       "placeholderQuestion": "Enter question content...",
+      "error": "Error saving question",
+      "validation": {
+        "singleChoice": "Please select exactly 1 correct answer for single choice questions!",
+        "multipleChoice": "Please select at least 2 correct answers for multiple answer questions!",
+        "emptyContent": "Please enter question content for AI topic suggestion",
+        "ai_success": "AI suggested a topic!",
+        "ai_error": "Error suggesting topic"
+      },
+      "saveToBank": "Save to Bank",
+      "saveToBankDesc": "Save this question to your personal bank",
+      "topicLabel": "Question Topic",
+      "aiSuggest": "AI Suggest",
       "cancel": "Cancel",
       "save": "Save Changes",
-      "add": "Add New",
-      "error": "An error occurred"
+      "add": "Add New"
     },
+    "saveToBank": "Save to Question Bank",
+    "saveToBankDesc": "Apply a global topic to all questions",
+    "globalTopicLabel": "Global Topic",
+    "aiSuggestGlobal": "AI Suggest",
+    "aiSuggestGlobalBtn": "AI Global Suggest",
+    "ai_suggest_topic_success": "AI suggested a global topic successfully!",
+    "ai_suggest_topic_error": "Error suggesting topic",
     "list": {
       "fetchError": "Failed to fetch data. Please try again.",
       "desc": "Manage and organize your exam collections.",
@@ -469,7 +493,8 @@
       "status": {
         "draft": "Draft",
         "ready": "Ready",
-        "shared": "Shared"
+        "shared": "Shared",
+        "loading": "Processing..."
       },
       "setReady": "Set Ready",
       "share": "Share",
@@ -479,6 +504,8 @@
       "config": "Exam Configuration",
       "time": "Duration",
       "passScore": "Passing Score",
+      "isShuffled": "Shuffle Questions & Answers",
+      "isShuffledDesc": "Automatically randomize question order and choices for each student",
       "minutes": "mins",
       "points": "pts",
       "openRoom": "Open Exam Room Now",
@@ -562,7 +589,9 @@
       "status_pending": "Pending",
       "upload_success": "Student list uploaded successfully",
       "add_success": "Student added successfully",
-      "delete_success": "Student removed successfully"
+      "delete_success": "Student removed successfully",
+      "edit_student": "Edit Student Info",
+      "update_success": "Information updated successfully"
     },
     "form": {
       "exam": "Select Exam",
@@ -576,8 +605,32 @@
       "max_attempts": "Max attempts",
       "show_answer": "Show answer after submission",
       "require_list": "Require students list",
-      "submit": "Create Room Now"
+      "no_ready_exams": "Only ready exams are shown. Please check your exams list.",
+      "submit": "Create Room"
     }
+  },
+  "bank": {
+    "title": "Question Bank",
+    "subtitle": "Manage and reuse your intellectual question bank",
+    "search_placeholder": "Search question content...",
+    "all_topics": "All Topics",
+    "all": "All",
+    "create_single": "Create Single Question",
+    "fetch_error": "Cannot load question bank",
+    "modal_title": "Select from Bank",
+    "add_success": "Question added to exam",
+    "already_exists": "This question already exists in the exam",
+    "empty_title": "Your bank is empty",
+    "empty_desc": "Save questions here to reuse them across different exams.",
+    "clear_filters": "Clear all filters"
+  },
+  "share": {
+    "title": "Share",
+    "url_label": "Join Link",
+    "preview": "Preview Mode",
+    "qr_desc": "Scan to join the exam",
+    "copy_success": "Link copied to clipboard",
+    "preview_btn": "Preview Mode (Student View)"
   },
   "settings": {
     "subtitle": "Manage your experience and security preferences",
@@ -591,6 +644,8 @@
     "dark_mode": "Auto Dark Mode",
     "coming_soon": "Coming Soon",
     "account_title": "Account & Security",
-    "account_managed": "Account information is managed through your profile."
+    "account_managed": "Account information is managed through your profile.",
+    "language": "System Language",
+    "language_desc": "Select the primary display language for your interface."
   }
 }

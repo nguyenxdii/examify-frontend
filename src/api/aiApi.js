@@ -13,5 +13,3 @@ export const analyzeFile = (file) => {
 };
 
 export const generateQuestions = (data) => axiosInstance.post("/ai/generate", data);
-
-export const generateQuestionsV2 = (data) => axiosInstance.post("/ai/generate-v2", data);

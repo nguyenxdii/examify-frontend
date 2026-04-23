@@ -23,23 +23,30 @@ import { createRoom } from "../../api/roomApi";
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 
-export default function CreateRoomModal({ isOpen, onClose, onSuccess }) {
+export default function CreateRoomModal({ isOpen, onClose, onSuccess, initialExamId }) {
   const { t } = useTranslation();
   const [exams, setExams] = useState([]);
   const [loadingExams, setLoadingExams] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
-    examId: "",
+    examId: initialExamId || "",
     name: "",
     mode: "exam",
     durationMinutes: 60,
-    openAt: "",
+    openAt: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16),
     closeAt: "",
     maxAttempts: 1,
     showAnswerAfter: false,
     requireStudentList: false
   });
+
+  // Reset examId when initialExamId changes or modal opens
+  useEffect(() => {
+    if (isOpen && initialExamId) {
+      setFormData(prev => ({ ...prev, examId: initialExamId }));
+    }
+  }, [isOpen, initialExamId]);
 
   // Scroll Lock
   useEffect(() => {
@@ -59,9 +66,12 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }) {
         try {
           setLoadingExams(true);
           const res = await getMyExams();
-          setExams(res.data);
-          if (res.data.length > 0 && !formData.examId) {
-            setFormData(prev => ({ ...prev, examId: res.data[0].id }));
+          const readyExams = res.data.filter(ex => ex.status === "ready" || ex.status === "shared");
+          setExams(readyExams);
+          
+          // Only auto-select if no initialExamId is provided
+          if (!initialExamId && readyExams.length > 0 && !formData.examId) {
+            setFormData(prev => ({ ...prev, examId: readyExams[0].id }));
           }
         } catch (err) {
           toast.error("Error loading exams list");
@@ -163,6 +173,11 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }) {
                     </select>
                     <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 rotate-90 opacity-40 pointer-events-none transition-transform group-hover:scale-110" />
                   </div>
+                  {exams.length === 0 && !loadingExams && (
+                    <p className="text-[11px] text-amber-500 font-medium flex items-center gap-1.5 mt-1 px-1">
+                      <Info className="w-3 h-3" /> {t("rooms.form.no_ready_exams") || "Chỉ hiển thị đề thi ở trạng thái Sẵn sàng. Vui lòng kiểm tra lại danh sách đề thi."}
+                    </p>
+                  )}
                 </div>
 
                 {/* Room Name */}
@@ -252,11 +267,11 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess }) {
                     </label>
                     <input
                       type="datetime-local"
-                      required
                       value={formData.closeAt}
                       onChange={(e) => setFormData({ ...formData, closeAt: e.target.value })}
                       className="w-full bg-muted/50 border border-border rounded-2xl p-3.5 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-[13px] font-medium"
                     />
+                    <p className="text-[10px] text-muted-foreground px-1 italic">Để trống nếu không giới hạn thời gian đóng</p>
                   </div>
                 </div>
 

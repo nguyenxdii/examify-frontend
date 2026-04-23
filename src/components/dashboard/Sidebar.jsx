@@ -112,10 +112,12 @@ export function Sidebar({ role }) {
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.dispatchEvent(new Event("authChanged"));
-    navigate("/login");
+    if (window.confirm(t("dashboard.sidebar.logoutConfirm") || "Bạn có chắc chắn muốn đăng xuất?")) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.dispatchEvent(new Event("authChanged"));
+      navigate("/login");
+    }
   };
 
   try {
@@ -131,17 +133,7 @@ export function Sidebar({ role }) {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="p-4">
-          <div className="relative group">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-            <input
-              type="text"
-              placeholder={t("dashboard.header.search") || "Search..."}
-              className="w-full pl-9 pr-3 py-2 bg-background border border-sidebar-border rounded-lg text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            />
-          </div>
-        </div>
+        {/* Search removed */}
 
         <nav className="flex-1 px-3 py-2 space-y-1 overflow-hidden">
           <AnimatePresence mode="wait">
@@ -159,7 +151,9 @@ export function Sidebar({ role }) {
               </p>
               {menuItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname.startsWith(item.id);
+                const isActive = item.id === "/dashboard/admin" || item.id === "/dashboard/user" 
+                  ? location.pathname === item.id 
+                  : location.pathname.startsWith(item.id);
                 return (
                   <button
                     key={item.id}

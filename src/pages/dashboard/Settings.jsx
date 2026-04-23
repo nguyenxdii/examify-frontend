@@ -8,13 +8,15 @@ import {
   Shield, 
   Moon, 
   Smartphone,
-  Check
+  Check,
+  Globe
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-hot-toast";
 
 export default function Settings() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language?.startsWith("vi") ? "vi" : "en";
   
   // Settings state
   const [currentUser] = useState(() => {
@@ -96,6 +98,42 @@ export default function Settings() {
                   className="inline-block h-5 w-5 transform rounded-full bg-white shadow-md"
                 />
               </button>
+            </div>
+
+            {/* Language Settings */}
+            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50 group hover:border-primary/30 transition-all">
+              <div className="flex gap-4">
+                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                  <Globe className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground">
+                    {t("settings.language") || "Ngôn ngữ hệ thống"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    {t("settings.language_desc") || "Chọn ngôn ngữ hiển thị chính cho toàn bộ giao diện của bạn."}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex bg-muted p-1 rounded-xl border border-border">
+                <button
+                  onClick={() => i18n.changeLanguage("vi")}
+                  className={`px-4 py-1.5 text-xs font-black rounded-lg transition-all ${
+                    currentLang === "vi" ? "bg-primary text-white shadow-md" : "text-muted-foreground hover:text-primary"
+                  }`}
+                >
+                  Tiếng Việt
+                </button>
+                <button
+                  onClick={() => i18n.changeLanguage("en")}
+                  className={`px-4 py-1.5 text-xs font-black rounded-lg transition-all ${
+                    currentLang === "en" ? "bg-primary text-white shadow-md" : "text-muted-foreground hover:text-primary"
+                  }`}
+                >
+                  English
+                </button>
+              </div>
             </div>
 
             {/* Other Placeholders to make it look real */}

@@ -26,6 +26,9 @@ export const getStudentList = (roomId) => axiosInstance.get(`/rooms/${roomId}/st
 export const addStudentManual = (roomId, data) => 
   axiosInstance.post(`/rooms/${roomId}/students/manual`, data);
  
+export const updateStudentManual = (roomId, id, data) => 
+  axiosInstance.put(`/rooms/${roomId}/students/${id}`, data);
+ 
 export const deleteStudentManual = (roomId, id) => 
   axiosInstance.delete(`/rooms/${roomId}/students/${id}`);
  

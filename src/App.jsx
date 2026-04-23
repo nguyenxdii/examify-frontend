@@ -12,6 +12,8 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import UserDashboard from "./pages/dashboard/UserDashboard";
 import DashboardRedirect from "./pages/dashboard/DashboardRedirect";
+import PublicQuiz from "./pages/PublicQuiz";
+import RoomQuiz from "./pages/RoomQuiz";
 
 // Admin Pages
 import UserManagement from "./pages/dashboard/admin/UserManagement";
@@ -86,6 +88,14 @@ const router = createBrowserRouter([
   {
     path: "/register",
     element: <Register />,
+  },
+  {
+    path: "/quiz/:examId",
+    element: <PublicQuiz />,
+  },
+  {
+    path: "/room/:roomId",
+    element: <RoomQuiz />,
   },
   {
     element: (

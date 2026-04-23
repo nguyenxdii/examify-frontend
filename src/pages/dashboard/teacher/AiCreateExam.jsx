@@ -26,13 +26,16 @@ import {
   Info,
   Clock,
   Pencil,
+  Database,
+  ChevronDown,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "../../../lib/utils";
+import { toast } from "react-hot-toast";
 import axiosInstance from "../../../api/axiosInstance";
-import { generateQuestionsV2, analyzeFile } from "../../../api/aiApi";
-import { createExam, saveBatchQuestions } from "../../../api/examApi";
+import { generateQuestions, analyzeFile } from "../../../api/aiApi";
+import { createExam, saveBatchQuestions, getQuestionBank, suggestTopic } from "../../../api/examApi";
 import QuestionModal from "../../../components/dashboard/QuestionModal";
 import { KeyboardIcon as Step1Icon } from "../../../components/icons/Step1Icon";
 import { BotMessageSquareIcon as Step2Icon } from "../../../components/icons/Step2Icon";
@@ -72,6 +75,8 @@ export default function AiCreateExam() {
       subject: "",
       description: "",
     },
+    saveToBank: false,
+    globalTopic: "",
   });
 
   const [savingStatus, setSavingStatus] = useState({
@@ -83,14 +88,25 @@ export default function AiCreateExam() {
   const [deletingIdx, setDeletingIdx] = useState(null);
   const [loadingTextIndex, setLoadingTextIndex] = useState(0);
   const [isAnalyzingFile, setIsAnalyzingFile] = useState(false);
+  const [suggestingGlobalTopic, setSuggestingGlobalTopic] = useState(false);
+  const [bankTopics, setBankTopics] = useState([]);
   const [inlineError, setInlineError] = useState("");
   const [regeneratingIdx, setRegeneratingIdx] = useState(null);
   const topRef = useRef(null);
 
   // Auto scroll to top on step change
   useEffect(() => {
-    window.scrollTo(0, 0);
-    topRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Fetch bank topics
+    const fetchTopics = async () => {
+      try {
+        const res = await getQuestionBank();
+        const topics = [...new Set(res.data.map(q => q.topic).filter(Boolean))];
+        setBankTopics(topics);
+      } catch (err) {
+        console.error("Failed to fetch topics", err);
+      }
+    };
+    if (currentStep === 3) fetchTopics();
   }, [currentStep]);
 
   // Step 1: Handlers
@@ -184,7 +200,7 @@ export default function AiCreateExam() {
     }, 2000);
 
     try {
-      const res = await generateQuestionsV2({
+      const res = await generateQuestions({
         content: wizardData.content,
         inputType: wizardData.inputType,
         ...wizardData.config,
@@ -196,6 +212,7 @@ export default function AiCreateExam() {
         setWizardData(prev => ({
           ...prev,
           questions: res.data.questions,
+          globalTopic: res.data.suggestedTopic || "",
           metadata: {
             ...prev.metadata,
             title: prev.metadata.title || res.data.suggestedTitle,
@@ -231,8 +248,8 @@ export default function AiCreateExam() {
     const q = wizardData.questions[index];
     setRegeneratingIdx(index);
     try {
-      const res = await axiosInstance.post("/ai/generate-v2", {
-        content: `Hãy sinh lại câu hỏi sau đây (giữ cùng chủ đề, độ khó và loại câu hỏi): ${q.content}. Trả về định dạng JSON giống như trước.`,
+      const res = await axiosInstance.post("/ai/generate", {
+        content: `Hãy sinh lại câu hỏi sau đây (giữ cùng chủ đề, độ khó và loại câu hỏi): ${q.content}.`,
         inputType: "topic",
         language: i18n.language,
         multipleChoice: q.type === "multiple_choice" ? 1 : 0,
@@ -261,6 +278,21 @@ export default function AiCreateExam() {
     }
   };
 
+  const handleSuggestGlobalTopic = async () => {
+    if (wizardData.questions.length === 0) return;
+    try {
+      setSuggestingGlobalTopic(true);
+      const allContent = wizardData.questions.map(q => q.content).join("\n");
+      const res = await suggestTopic(allContent);
+      setWizardData(prev => ({ ...prev, globalTopic: res.data.topic }));
+      toast.success(t("wizard.ai_suggest_topic_success") || "AI đã gợi ý chủ đề chung cho bộ đề!");
+    } catch (err) {
+      toast.error(t("wizard.ai_suggest_topic_error") || "Lỗi khi gợi ý chủ đề");
+    } finally {
+      setSuggestingGlobalTopic(false);
+    }
+  };
+
   const handleSaveExam = async (status = "published") => {
     if (!wizardData.metadata.title) return;
     setSavingStatus({ exam: "loading", questions: "pending" });
@@ -276,7 +308,13 @@ export default function AiCreateExam() {
       const examId = examRes.data.id;
       setSavingStatus(prev => ({ ...prev, exam: "success", questions: "loading" }));
 
-      await saveBatchQuestions(examId, wizardData.questions);
+      const finalQuestions = wizardData.questions.map(q => ({
+        ...q,
+        topic: wizardData.saveToBank ? wizardData.globalTopic : q.topic,
+        saveToBank: wizardData.saveToBank
+      }));
+
+      await saveBatchQuestions(examId, finalQuestions);
       setSavingStatus(prev => ({ ...prev, questions: "success" }));
 
       setTimeout(() => navigate(`/dashboard/teacher/my-quizzes/${examId}`), 1500);
@@ -499,10 +537,7 @@ export default function AiCreateExam() {
           </div>
         </div>
 
-        <div className="flex justify-between items-center pt-6">
-          <p className="text-xs text-muted-foreground font-medium italic">
-            AI sẽ tự động bỏ qua các phần chào hỏi và tập trung vào nội dung đề thi.
-          </p>
+        <div className="flex justify-end items-center pt-6">
           <button
             onClick={handleStep1Submit}
             disabled={!wizardData.content.trim() || loading || isAnalyzingFile}
@@ -517,9 +552,9 @@ export default function AiCreateExam() {
 
   const renderStep2 = () => {
     const loadingSteps = [
-      { text: "⚡ Đang phân tích chủ đề...", icon: Sparkles },
-      { text: "✍️ Đang soạn câu hỏi...", icon: Edit2 },
-      { text: "✨ Hoàn tất bản thảo...", icon: CheckCircle2 },
+      { text: "Đang phân tích chủ đề...", icon: Sparkles },
+      { text: "Đang soạn câu hỏi...", icon: Edit2 },
+      { text: "Hoàn tất bản thảo...", icon: CheckCircle2 },
     ];
 
     return (
@@ -581,7 +616,7 @@ export default function AiCreateExam() {
               <button 
                 onClick={() => handleSaveExam("draft")} 
                 disabled={loading || savingStatus.exam === "loading"} 
-                className="px-5 py-2 bg-muted text-muted-foreground hover:bg-muted/80 font-bold rounded-lg text-sm transition-all"
+                className="px-5 py-2 bg-muted text-muted-foreground hover:bg-muted/80 hover:scale-[1.02] active:scale-100 font-bold rounded-lg text-sm transition-all shadow-sm hover:shadow-md disabled:opacity-50"
               >
                 {t("wizard.step6.saveDraft")}
               </button>
@@ -635,6 +670,92 @@ export default function AiCreateExam() {
               {t("wizard.detail.noteDesc") || "Bạn có thể chỉnh sửa lại bất kỳ nội dung nào trước khi lưu chính thức."}
             </p>
           </div>
+
+          {/* Question Bank Logic */}
+          <div className="pt-4 border-t border-border/50 space-y-4">
+            <div 
+              onClick={() => setWizardData(prev => ({ ...prev, saveToBank: !prev.saveToBank }))}
+              className={cn(
+                "flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer",
+                wizardData.saveToBank ? "bg-primary/5 border-primary shadow-sm" : "bg-muted/30 border-transparent hover:border-border"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
+                  wizardData.saveToBank ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                )}>
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-foreground">{t("wizard.saveToBank")}</h4>
+                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">{t("wizard.saveToBankDesc")}</p>
+                </div>
+              </div>
+              <div className={cn(
+                "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
+                wizardData.saveToBank ? "bg-primary border-primary text-white" : "border-muted-foreground/30"
+              )}>
+                {wizardData.saveToBank && <CheckCircle2 className="w-4 h-4" />}
+              </div>
+            </div>
+
+            <AnimatePresence>
+              {wizardData.saveToBank && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden space-y-3 px-1"
+                >
+                  <div className="flex items-end gap-3">
+                    <div className="flex-1 space-y-2">
+                      <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground px-1">{t("wizard.globalTopicLabel")}</label>
+                      <div className="relative group">
+                        <input 
+                          type="text"
+                          value={wizardData.globalTopic}
+                          onChange={(e) => setWizardData(prev => ({ ...prev, globalTopic: e.target.value }))}
+                          placeholder="Ví dụ: Đạo hàm, Lịch sử Đảng,..."
+                          className="w-full bg-muted/50 border border-border rounded-xl p-3 focus:ring-2 focus:ring-primary/50 outline-none font-bold text-sm pr-12"
+                        />
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                          {bankTopics.length > 0 && (
+                            <div className="relative group/dropdown">
+                              <div className="p-1.5 hover:bg-primary/10 rounded-lg transition-colors cursor-pointer text-muted-foreground hover:text-primary">
+                                <ChevronDown className="w-4 h-4" />
+                              </div>
+                              <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-2xl shadow-xl hidden group-hover/dropdown:block z-50 p-2 max-h-48 overflow-y-auto border-t-4 border-t-primary">
+                                {bankTopics.map(t => (
+                                  <button
+                                    key={t}
+                                    type="button"
+                                    onClick={() => setWizardData(prev => ({ ...prev, globalTopic: t }))}
+                                    className="w-full text-left px-4 py-2.5 text-xs font-bold hover:bg-primary/10 rounded-xl transition-colors"
+                                  >
+                                    {t}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSuggestGlobalTopic}
+                      disabled={suggestingGlobalTopic}
+                      className="h-[46px] px-4 bg-secondary text-secondary-foreground rounded-xl font-bold flex items-center gap-2 hover:bg-secondary/80 transition-all text-xs disabled:opacity-50"
+                    >
+                      {suggestingGlobalTopic ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                      {t("wizard.aiSuggestGlobal")}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Questions List Section */}
@@ -651,10 +772,21 @@ export default function AiCreateExam() {
             </div>
             <button
               onClick={() => {
-                setEditingQuestion(null);
-                // logic to open add modal
+                setEditingQuestion({
+                  content: "",
+                  type: "multiple_choice",
+                  choices: [
+                    { key: "A", content: "" },
+                    { key: "B", content: "" },
+                    { key: "C", content: "" },
+                    { key: "D", content: "" }
+                  ],
+                  correctAnswers: [],
+                  difficulty: "medium",
+                  topic: wizardData.globalTopic || ""
+                });
               }}
-              className="flex items-center gap-2 bg-muted hover:bg-primary hover:text-white text-muted-foreground font-bold px-4 py-2 rounded-xl text-sm transition-all border border-border"
+              className="flex items-center gap-2 bg-primary text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all shadow-lg shadow-primary/20 hover:scale-105 active:scale-95"
             >
               <Plus className="w-4 h-4" /> {t("wizard.detail.addQuestion")}
             </button>

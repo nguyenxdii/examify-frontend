@@ -125,6 +125,7 @@
       "successDesc": "Tuyệt vời! Bạn đang được đưa đến bảng điều khiển.",
       "errorTitle": "Đăng nhập thất bại",
       "errorDesc": "Thông tin tài khoản không chính xác. Vui lòng thử lại.",
+      "emptyError": "Vui lòng nhập đầy đủ email và mật khẩu",
       "btnClose": "Đóng"
     }
   },
@@ -185,6 +186,9 @@
       "existsDesc": "Email này đã được đăng ký. Bạn có muốn đăng nhập ngay không?",
       "btnOk": "Có, Đăng nhập ngay",
       "btnNo": "Không, quay lại",
+      "emptyError": "Vui lòng điền đầy đủ tất cả các trường thông tin!",
+      "passwordMismatch": "Mật khẩu xác nhận không khớp!",
+      "passwordTooShort": "Mật khẩu phải có ít nhất 6 ký tự",
       "btnRetry": "Thử lại",
       "btnClose": "Đóng"
     }
@@ -221,6 +225,7 @@
       "settings": "Cài đặt",
       "profile": "Trang cá nhân",
       "logout": "Đăng xuất",
+      "logoutConfirm": "Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?",
       "adminMenu": "Danh mục Admin",
       "userMenu": "Danh mục",
       "rooms": "Phòng thi",
@@ -425,9 +430,10 @@
       "addTitle": "Thêm câu hỏi mới",
       "type": "Loại câu hỏi",
       "difficulty": "Độ khó",
+      "topic": "Chủ đề",
       "content": "Nội dung câu hỏi",
       "choices": "Đáp án & Lựa chọn",
-      "placeholderChoice": "Nội dung đáp án...",
+      "placeholderChoice": "Đáp án",
       "addChoice": "Thêm lựa chọn",
       "sampleAnswer": "Đáp án mẫu",
       "explanation": "Giải thích chi tiết",
@@ -435,8 +441,26 @@
       "cancel": "Hủy bỏ",
       "save": "Lưu thay đổi",
       "add": "Thêm mới",
-      "error": "Đã có lỗi xảy ra"
+      "error": "Lỗi khi lưu câu hỏi",
+      "validation": {
+        "singleChoice": "Vui lòng chọn 1 đáp án đúng cho câu hỏi trắc nghiệm đơn!",
+        "multipleChoice": "Vui lòng chọn ít nhất 2 đáp án đúng cho câu hỏi nhiều đáp án!",
+        "emptyContent": "Vui lòng nhập nội dung câu hỏi để AI gợi ý chủ đề",
+        "ai_success": "AI đã gợi ý chủ đề!",
+        "ai_error": "Lỗi khi gợi ý chủ đề"
+      },
+      "saveToBank": "Lưu vào ngân hàng",
+      "saveToBankDesc": "Lưu câu hỏi này vào kho lưu trữ cá nhân",
+      "topicLabel": "Chủ đề câu hỏi",
+      "aiSuggest": "AI Gợi ý"
     },
+    "saveToBank": "Lưu vào ngân hàng câu hỏi",
+    "saveToBankDesc": "Áp dụng một chủ đề chung cho tất cả câu hỏi",
+    "globalTopicLabel": "Chủ đề chung cho bộ đề",
+    "aiSuggestGlobal": "AI Gợi ý",
+    "aiSuggestGlobalBtn": "AI Gợi ý chung",
+    "ai_suggest_topic_success": "AI đã gợi ý chủ đề chung thành công!",
+    "ai_suggest_topic_error": "Lỗi khi gợi ý chủ đề",
     "list": {
       "fetchError": "Lỗi khi tải danh sách đề thi",
       "desc": "Quản lý và tổ chức các bộ sưu tập đề thi của bạn.",
@@ -463,7 +487,8 @@
       "status": {
         "draft": "Bản thảo",
         "ready": "Sẵn sàng",
-        "shared": "Đã chia sẻ"
+        "shared": "Đã chia sẻ",
+        "loading": "Đang xử lý..."
       },
       "setReady": "Sẵn sàng",
       "share": "Chia sẻ",
@@ -473,11 +498,13 @@
       "config": "Cấu hình đề thi",
       "time": "Thời gian làm bài",
       "passScore": "Điểm đạt",
+      "isShuffled": "Trộn câu hỏi & đáp án",
+      "isShuffledDesc": "Tự động thay đổi thứ tự câu hỏi và các lựa chọn cho mỗi thí sinh",
       "minutes": "phút",
       "points": "điểm",
       "openRoom": "Mở phòng thi ngay",
       "note": "Ghi chú",
-      "noteDesc": "Bạn chỉ có thể sửa câu hỏi khi đề đang ở trạng thái **Bản thảo**. Khi đã sẵn sàng hoặc chia sẻ, việc chỉnh sửa sẽ bị khóa để đảm bảo tính toàn vẹn dữ liệu."
+      "noteDesc": "Bạn chỉ có thể sửa câu hỏi khi đề đang ở trạng thái Bản thảo. Khi đã sẵn sàng hoặc chia sẻ, việc chỉnh sửa sẽ bị khóa để đảm bảo tính toàn vẹn dữ liệu."
     }
   },
   "header": {
@@ -545,7 +572,7 @@
       "preview": "Xem trước",
       "no_submissions": "Chưa có bài nộp nào",
       "import_hint": "Import CSV/TXT: MSSV, Họ tên",
-      "student_id": "MSSV",
+      "student_id": "Mã số",
       "student_name": "Họ tên",
       "stt": "STT",
       "search_placeholder": "Tìm kiếm MSSV hoặc tên...",
@@ -556,7 +583,9 @@
       "status_pending": "Chưa nộp",
       "upload_success": "Tải lên danh sách thành công",
       "add_success": "Thêm học sinh thành công",
-      "delete_success": "Xóa học sinh thành công"
+      "delete_success": "Xóa học sinh thành công",
+      "edit_student": "Sửa thông tin học sinh",
+      "update_success": "Cập nhật thông tin học sinh thành công"
     },
     "form": {
       "exam": "Chọn đề thi",
@@ -570,8 +599,32 @@
       "max_attempts": "Lượt thi tối đa",
       "show_answer": "Xem đáp án sau khi nộp",
       "require_list": "Bắt buộc theo danh sách",
+      "no_ready_exams": "Chỉ hiển thị đề thi ở trạng thái Sẵn sàng. Vui lòng kiểm tra lại danh sách đề thi.",
       "submit": "Tạo phòng ngay"
     }
+  },
+  "bank": {
+    "title": "Ngân hàng câu hỏi",
+    "subtitle": "Quản lý và tái sử dụng kho câu hỏi trí tuệ của bạn",
+    "search_placeholder": "Tìm kiếm nội dung câu hỏi...",
+    "all_topics": "Tất cả chủ đề",
+    "all": "Tất cả",
+    "create_single": "Tạo câu hỏi lẻ",
+    "fetch_error": "Không thể tải ngân hàng câu hỏi",
+    "modal_title": "Chọn từ ngân hàng",
+    "add_success": "Đã thêm câu hỏi vào đề thi",
+    "already_exists": "Câu hỏi này đã tồn tại trong đề thi",
+    "empty_title": "Ngân hàng câu hỏi trống",
+    "empty_desc": "Hãy lưu câu hỏi vào ngân hàng để tái sử dụng cho các đề thi khác.",
+    "clear_filters": "Xóa tất cả bộ lọc"
+  },
+  "share": {
+    "title": "Chia sẻ",
+    "url_label": "Đường dẫn tham gia",
+    "preview": "Chế độ xem trước",
+    "qr_desc": "Quét mã để vào phòng thi",
+    "copy_success": "Đã sao chép đường dẫn",
+    "preview_btn": "Xem thử giao diện (Preview)"
   },
   "settings": {
     "subtitle": "Quản lý tùy chọn trải nghiệm và bảo mật của bạn",
@@ -585,6 +638,8 @@
     "dark_mode": "Chế độ tối tự động",
     "coming_soon": "Sắp ra mắt",
     "account_title": "Tài khoản & Bảo mật",
-    "account_managed": "Thông tin tài khoản được quản lý thông qua hồ sơ cá nhân."
+    "account_managed": "Thông tin tài khoản được quản lý thông qua hồ sơ cá nhân.",
+    "language": "Ngôn ngữ hệ thống",
+    "language_desc": "Chọn ngôn ngữ hiển thị chính cho toàn bộ giao diện của bạn."
     }
 }

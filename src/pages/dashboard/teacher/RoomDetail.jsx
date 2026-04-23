@@ -14,7 +14,9 @@ import {
   Clock,
   Calendar,
   Layout,
-  X
+  X,
+  Share2,
+  Edit2
 } from "lucide-react";
 import { 
   getRoomDetail, 
@@ -33,6 +35,7 @@ import SubmissionDetailModal from "../../../components/dashboard/SubmissionDetai
 import ConfirmationModal from "../../../components/dashboard/ConfirmationModal";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
+import ShareModal from "../../../components/dashboard/ShareModal";
 
 export default function RoomDetail() {
   const { t, i18n } = useTranslation();
@@ -52,6 +55,8 @@ export default function RoomDetail() {
   const studentsPerPage = 10;
   const [copied, setCopied] = useState(false);
   const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null); // { id, studentId, studentName }
   const [newStudent, setNewStudent] = useState({ studentId: "", studentName: "" });
   const studentListRef = useRef(null);
 
@@ -178,9 +183,17 @@ export default function RoomDetail() {
 
     try {
       setActionLoading(true);
-      await addStudentManual(roomId, newStudent);
-      toast.success(t("rooms.detail.add_success") || "Đã thêm học sinh");
+      if (editingStudent) {
+        // Update existing
+        await updateStudentManual(roomId, editingStudent.id, newStudent);
+        toast.success(t("rooms.detail.update_success") || "Đã cập nhật thông tin học sinh");
+      } else {
+        // Add new
+        await addStudentManual(roomId, newStudent);
+        toast.success(t("rooms.detail.add_success") || "Đã thêm học sinh");
+      }
       setIsAddStudentModalOpen(false);
+      setEditingStudent(null);
       setNewStudent({ studentId: "", studentName: "" });
       fetchData();
     } catch (error) {
@@ -212,6 +225,12 @@ export default function RoomDetail() {
     });
   };
 
+  const handleEditStudent = (student) => {
+    setEditingStudent(student);
+    setNewStudent({ studentId: student.studentId, studentName: student.studentName });
+    setIsAddStudentModalOpen(true);
+  };
+
   const scrollToStudentList = () => {
     if (studentListRef.current) {
       studentListRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -235,7 +254,7 @@ export default function RoomDetail() {
   };
 
   const formatDateTime = (dateStr) => {
-    if (!dateStr) return "N/A";
+    if (!dateStr) return "";
     const date = new Date(dateStr);
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
@@ -244,6 +263,11 @@ export default function RoomDetail() {
     const year = date.getFullYear();
     
     return `${hours}:${minutes} ${day}/${month}/${year}`;
+  };
+
+  const formatCloseTime = (dateStr) => {
+    if (!dateStr) return "Vô hạn";
+    return formatDateTime(dateStr);
   };
 
   const filteredSubmissions = submissions.filter(s => 
@@ -303,6 +327,13 @@ export default function RoomDetail() {
             }`}
           >
             {room.status === "open" ? <><Square className="w-3.5 h-3.5 fill-current"/> {t("rooms.detail.close_btn")}</> : <><Play className="w-3.5 h-3.5 fill-current"/> {t("rooms.detail.open_btn")}</>}
+          </button>
+          <button 
+            onClick={() => setIsShareModalOpen(true)}
+            className="w-10 h-10 flex items-center justify-center text-primary hover:bg-primary hover:text-white border border-primary/20 rounded-xl transition-all shadow-sm"
+            title={t("share.title") || "Chia sẻ"}
+          >
+            <Share2 className="w-4 h-4" />
           </button>
           <button 
             onClick={handleDeleteRequest}
@@ -379,7 +410,7 @@ export default function RoomDetail() {
                    <Clock className="w-3.5 h-3.5 text-primary" />
                    <span className="text-[11px] font-bold uppercase tracking-tight">{t("rooms.detail.close_at")}:</span>
                 </div>
-                <span className="font-mono font-bold text-xs bg-muted px-2.5 py-1 rounded-lg">{formatDateTime(room.closeAt)}</span>
+                <span className="font-mono font-bold text-xs bg-muted px-2.5 py-1 rounded-lg">{formatCloseTime(room.closeAt)}</span>
              </div>
              <div className="pt-3 border-t border-border/50 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
@@ -554,7 +585,7 @@ export default function RoomDetail() {
                       >
                          <div className="space-y-4">
                             <Users className="w-16 h-16 mx-auto opacity-10" />
-                            <p>{t("list.empty")}</p>
+                            <p>{t("rooms.detail.empty_students") || "Chưa có học sinh nào trong danh sách."}</p>
                          </div>
                       </motion.div>
                     ) : (
@@ -599,12 +630,20 @@ export default function RoomDetail() {
                               </div>
                             </div>
                             
-                            <button 
-                              onClick={() => handleDeleteStudent(s.id, s.studentName)}
-                              className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button 
+                                onClick={() => handleEditStudent(s)}
+                                className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteStudent(s.id, s.studentName)}
+                                className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </motion.div>
                         );
                       })
@@ -674,6 +713,14 @@ export default function RoomDetail() {
         cancelText={t("common.cancel")}
       />
 
+      <ShareModal 
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        roomId={roomId}
+        roomCode={room?.roomCode}
+        roomName={room?.name}
+      />
+
       {/* Manual Add Student Modal */}
       <AnimatePresence>
         {isAddStudentModalOpen && (
@@ -699,7 +746,7 @@ export default function RoomDetail() {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold">
-                      {t("rooms.detail.add_student")}
+                      {editingStudent ? (t("rooms.detail.edit_student") || "Sửa thông tin học sinh") : t("rooms.detail.add_student")}
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       {room.name}
@@ -707,7 +754,11 @@ export default function RoomDetail() {
                   </div>
                 </div>
                 <button
-                  onClick={() => setIsAddStudentModalOpen(false)}
+                  onClick={() => {
+                    setIsAddStudentModalOpen(false);
+                    setEditingStudent(null);
+                    setNewStudent({ studentId: "", studentName: "" });
+                  }}
                   className="p-2 hover:bg-muted rounded-full transition-colors"
                 >
                   <X className="w-5 h-5 text-muted-foreground" />
@@ -747,7 +798,11 @@ export default function RoomDetail() {
                    <div className="pt-4 flex gap-3">
                       <button 
                         type="button"
-                        onClick={() => setIsAddStudentModalOpen(false)}
+                        onClick={() => {
+                          setIsAddStudentModalOpen(false);
+                          setEditingStudent(null);
+                          setNewStudent({ studentId: "", studentName: "" });
+                        }}
                         className="flex-1 bg-muted hover:bg-muted/80 text-foreground font-bold py-3 px-4 rounded-2xl transition-all font-heading"
                       >
                         {t("common.cancel")}

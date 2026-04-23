@@ -21,3 +21,15 @@ export const deleteQuestion = (examId, questionId) =>
 
 export const saveBatchQuestions = (examId, questions) => 
   axiosInstance.post(`/exams/${examId}/questions/batch`, questions);
+
+export const getQuestionBank = () => axiosInstance.get("/exams/questions/bank");
+
+export const suggestTopic = (content) => axiosInstance.post("/ai/suggest-topic", { content });
+
+export const analyzeRawQuestion = (rawText) => axiosInstance.post("/ai/analyze-raw-question", { rawText });
+export const submitPublicQuiz = (examId, data) => axiosInstance.post(`/exams/${examId}/submit`, data);
+export const saveToBank = (data) => axiosInstance.post("/exams/questions/bank", data);
+
+// Room APIs
+export const getRoomPublic = (roomId) => axiosInstance.get(`/rooms/${roomId}/public`);
+export const submitRoomQuiz = (roomId, data) => axiosInstance.post(`/rooms/${roomId}/submit`, data);

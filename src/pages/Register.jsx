@@ -20,6 +20,7 @@ import authBg from "../assets/auth/auth.jpg";
 import { register } from "../api/authApi";
 import CustomSelect from "../components/CustomSelect";
 import logo from "../assets/synde_logo.svg";
+import { toast } from "react-hot-toast";
 
 export default function Register() {
   const { t, i18n } = useTranslation();
@@ -70,8 +71,26 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Kiểm tra thiếu thông tin
+    if (
+      !formData.fullName ||
+      !formData.email ||
+      !formData.password ||
+      !formData.confirmPassword ||
+      !formData.institution ||
+      !formData.teachingField
+    ) {
+      toast.error(t("register.modal.emptyError") || "Vui lòng nhập đầy đủ tất cả thông tin!");
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp!");
+      toast.error(t("register.modal.passwordMismatch") || "Mật khẩu xác nhận không khớp!");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error(t("register.modal.passwordTooShort") || "Mật khẩu phải có ít nhất 6 ký tự");
       return;
     }
 

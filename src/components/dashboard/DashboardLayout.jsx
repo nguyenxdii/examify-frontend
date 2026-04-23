@@ -1,5 +1,4 @@
 import { Sidebar } from "./Sidebar";
-import { DashboardHeader } from "./DashboardHeader";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation } from "react-router-dom";
@@ -50,8 +49,7 @@ export function DashboardLayout({ user }) {
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          {/* Header */}
-          <DashboardHeader user={currentUser} />
+          {/* Header Removed */}
 
           {/* Dynamic Content */}
           <main

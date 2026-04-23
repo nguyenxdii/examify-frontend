@@ -15,6 +15,7 @@ import { useNavigate, Link } from "react-router-dom";
 import authBg from "../assets/auth/auth.jpg";
 import { login } from "../api/authApi";
 import logo from "../assets/synde_logo.svg";
+import { toast } from "react-hot-toast";
 
 export default function Login() {
   const { t, i18n } = useTranslation();
@@ -49,9 +50,15 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!email || !password) {
+      toast.error(t("login.modal.emptyError") || "Vui lòng nhập đầy đủ email và mật khẩu");
+      return;
+    }
+
     try {
       const response = await login({ email, password });
-
+      // ... (giữ nguyên logic lưu token)
       localStorage.setItem("token", response.data.token);
       localStorage.setItem(
         "user",
@@ -66,7 +73,6 @@ export default function Login() {
 
       setModalType("success");
 
-      // Smooth delay before dashboard
       setTimeout(() => {
         navigate("/dashboard");
       }, 2000);
