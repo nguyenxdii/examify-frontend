@@ -2,48 +2,46 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText,
-  Layout,
   Sparkles,
   ArrowLeft,
   ChevronRight,
   ChevronLeft,
   Settings,
-  Eye,
   Save,
   Loader2,
   Trash2,
   Edit2,
   X,
   CheckCircle2,
+  CheckCircle,
   AlertCircle,
   FileUp,
-  Type,
   BarChart3,
   Plus,
   BrainCircuit,
   Wand2,
+  RotateCw,
+  Rocket,
+  Target,
+  Info,
+  Clock,
+  Pencil,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "../../../lib/utils";
-import { analyzeContent, generateQuestions } from "../../../api/aiApi";
+import axiosInstance from "../../../api/axiosInstance";
+import { generateQuestionsV2, analyzeFile } from "../../../api/aiApi";
 import { createExam, saveBatchQuestions } from "../../../api/examApi";
 import QuestionModal from "../../../components/dashboard/QuestionModal";
-import { generateQuestions as generateOneQuestion } from "../../../api/aiApi";
 import { KeyboardIcon as Step1Icon } from "../../../components/icons/Step1Icon";
 import { BotMessageSquareIcon as Step2Icon } from "../../../components/icons/Step2Icon";
 import { FileCogIcon as Step3Icon } from "../../../components/icons/Step3Icon";
-import { LaptopMinimalCheckIcon as Step4Icon } from "../../../components/icons/Step4Icon";
-import { ClipboardCheckIcon as Step5Icon } from "../../../components/icons/Step5Icon";
-import { CloudUploadIcon as Step6Icon } from "../../../components/icons/Step6Icon";
 
 const getSteps = (t) => [
-  { id: 1, title: t("wizard.steps.input"), icon: Step1Icon },
-  { id: 2, title: t("wizard.steps.analysis"), icon: Step2Icon },
-  { id: 3, title: t("wizard.steps.config"), icon: Step3Icon },
-  { id: 4, title: t("wizard.steps.generation"), icon: Step4Icon },
-  { id: 5, title: t("wizard.steps.preview"), icon: Step5Icon },
-  { id: 6, title: t("wizard.steps.finalize"), icon: Step6Icon },
+  { id: 1, title: t("wizard.steps.config") || "Cấu hình", icon: Step1Icon },
+  { id: 2, title: t("wizard.steps.generation") || "Đang tạo", icon: Step2Icon },
+  { id: 3, title: t("wizard.steps.preview") || "Kết quả", icon: Step3Icon },
 ];
 
 export default function AiCreateExam() {
@@ -51,32 +49,24 @@ export default function AiCreateExam() {
   const navigate = useNavigate();
   const steps = getSteps(t);
   const [currentStep, setCurrentStep] = useState(1);
-  const [skipConfigStep, setSkipConfigStep] = useState(false); // Track if user skipped Step 3
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Toàn bộ data cho wizard
   const [wizardData, setWizardData] = useState({
-    // Step 1
-    inputType: "document", // "document" | "topic"
+    inputType: "topic", // "topic" | "document"
     content: "",
-
-    // Step 2 & 3 (Results from AI analysis & Config)
     analysis: null,
     config: {
-      multipleChoice: 0,
-      multipleAnswer: 0,
-      essay: 0,
-      difficulty: "easy", // "easy" | "medium" | "hard" | "mixed"
-      easyPercent: 100,
-      mediumPercent: 0,
-      hardPercent: 0,
+      multipleChoice: 30,
+      multipleAnswer: 15,
+      essay: 5,
+      easyCount: 20,
+      mediumCount: 20,
+      hardCount: 10,
+      language: "vi",
+      detailedExplanation: true
     },
-
-    // Step 4 & 5 (Generated items)
     questions: [],
-
-    // Step 6 (Final Metadata)
     metadata: {
       title: "",
       subject: "",
@@ -85,237 +75,214 @@ export default function AiCreateExam() {
   });
 
   const [savingStatus, setSavingStatus] = useState({
-    exam: "pending", // "pending" | "loading" | "success" | "error"
+    exam: "pending",
     questions: "pending",
   });
 
   const [editingQuestion, setEditingQuestion] = useState(null);
-  const [showGenerateMore, setShowGenerateMore] = useState(false);
-  const [generateMoreCount, setGenerateMoreCount] = useState(1);
-  const [generateMoreConfig, setGenerateMoreConfig] = useState({
-    type: "multiple_choice",
-    difficulty: "medium",
-  });
-  const [activePreset, setActivePreset] = useState("custom");
   const [deletingIdx, setDeletingIdx] = useState(null);
+  const [loadingTextIndex, setLoadingTextIndex] = useState(0);
+  const [isAnalyzingFile, setIsAnalyzingFile] = useState(false);
+  const [inlineError, setInlineError] = useState("");
   const [regeneratingIdx, setRegeneratingIdx] = useState(null);
-  const [isGeneratingMore, setIsGeneratingMore] = useState(false);
-  const [showValidationModal, setShowValidationModal] = useState(false);
-  const [validationMessage, setValidationMessage] = useState("");
   const topRef = useRef(null);
-  const step4Ref = useRef(null);
 
-  const nextStep = () =>
-    setCurrentStep((prev) => Math.min(prev + 1, steps.length));
-  const prevStep = () => {
-    if (currentStep === 5 && skipConfigStep) {
-      setCurrentStep(2);
-    } else {
-      setCurrentStep((prev) => Math.max(prev - 1, 1));
-    }
-  };
-
-  // ===== LOGIC TỪNG BƯỚC =====
-
-  // Step 1: Submit Content with AI Validation
-  const handleStep1Submit = () => {
-    if (!wizardData.content.trim()) return;
-    
-    // Reset data cũ
-    setWizardData(prev => ({
-      ...prev,
-      analysis: null,
-      questions: [],
-      config: {
-        ...prev.config,
-        multipleChoice: 0,
-        multipleAnswer: 0,
-        essay: 0,
-      }
-    }));
-
-    nextStep();
-  };
-
-  // Step 2: AI Analyze logic
+  // Auto scroll to top on step change
   useEffect(() => {
-    if (currentStep === 2 && !wizardData.analysis && !loading) {
-      handleAnalyze();
-    }
-  }, [currentStep, wizardData.analysis, loading]); // Added missing dependencies to be safe
-
-  // Tự động cuộn lên đầu trang khi chuyển bước
-  useEffect(() => {
-    const scrollToTop = () => {
-      // 1. Cuộn window và body
-      window.scrollTo(0, 0);
-      document.body.scrollTop = 0;
-      document.documentElement.scrollTop = 0;
-      
-      // 2. Cuộn đến ref đầu trang
-      topRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
-      
-      // 3. Cuộn container chính của Dashboard (quan trọng)
-      const mainContainer = document.querySelector('main.overflow-y-auto');
-      if (mainContainer) {
-        mainContainer.scrollTop = 0;
-      }
-    };
-
-    // Chạy nhiều lần để đảm bảo cuộn thành công kể cả khi đang có animation
-    scrollToTop();
-    const timeout1 = setTimeout(scrollToTop, 100);
-    const timeout2 = setTimeout(scrollToTop, 350); // Sau khi animation kết thúc
-    
-    return () => {
-      clearTimeout(timeout1);
-      clearTimeout(timeout2);
-    };
+    window.scrollTo(0, 0);
+    topRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [currentStep]);
 
-  const handleAnalyze = async () => {
-    setLoading(true);
-    setError(null);
-    setSkipConfigStep(false);
+  // Step 1: Handlers
+  const handleStep1Submit = async () => {
+    const content = wizardData.content.trim();
+    if (!content) {
+        setInlineError("Vui lòng nhập nội dung hoặc tải tài liệu.");
+        return;
+    }
+    
+    if (wizardData.inputType === "topic") {
+        const wordCount = content.split(/\s+/).filter(Boolean).length;
+        if (wordCount < 3) {
+          setInlineError(t("wizard.step1.tooShortError") || "Nội dung quá ngắn, vui lòng nhập ít nhất 3 từ.");
+          return;
+        }
+    }
+
+    const totalTypes = wizardData.config.multipleChoice + wizardData.config.multipleAnswer + wizardData.config.essay;
+    const totalDiff = wizardData.config.easyCount + wizardData.config.mediumCount + wizardData.config.hardCount;
+
+    if (totalTypes === 0) {
+      setInlineError("Vui lòng nhập ít nhất 1 câu hỏi.");
+      return;
+    }
+
+    if (totalTypes > 50) {
+      setInlineError("Tổng số lượng câu hỏi không được vượt quá 50.");
+      return;
+    }
+
+    if (totalTypes !== totalDiff) {
+      setInlineError(`Tổng số lượng loại câu (${totalTypes}) và phân bổ độ khó (${totalDiff}) phải bằng nhau.`);
+      return;
+    }
+
+    setInlineError("");
+    handleStartGeneration();
+  };
+
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setInlineError(t("wizard.step1.fileTooLarge") || "File quá lớn, tối đa 10MB.");
+      return;
+    }
+
+    setInlineError("");
+    setIsAnalyzingFile(true);
     try {
-      // Gọi API phân tích (bao gồm cả đa ngôn ngữ)
-      const res = await analyzeContent({
-        inputType: wizardData.inputType,
+      const res = await analyzeFile(file);
+      const isSufficient = res.data.isSufficient !== undefined ? res.data.isSufficient : res.data.sufficient;
+      if (isSufficient) {
+        setWizardData(prev => ({
+          ...prev,
+          content: file.name,
+          analysis: res.data,
+          config: {
+            ...prev.config,
+            multipleChoice: res.data.suggestedMultipleChoice || 30,
+            multipleAnswer: res.data.suggestedMultipleAnswer || 15,
+            essay: res.data.suggestedEssay || 5,
+            easyCount: res.data.suggestedEasy || 20,
+            mediumCount: res.data.suggestedMedium || 20,
+            hardCount: res.data.suggestedHard || 10
+          },
+          metadata: {
+            ...prev.metadata,
+            title: res.data.suggestedTitle || prev.metadata.title,
+            description: res.data.suggestedDescription || res.data.summary || prev.metadata.description,
+          }
+        }));
+      } else {
+        setError(res.data.message || "Tài liệu không phù hợp để tạo câu hỏi.");
+      }
+    } catch (err) {
+      console.error("File analysis error:", err);
+      setError("Có lỗi khi phân tích file: " + (err.response?.data?.message || err.message));
+    } finally {
+      setIsAnalyzingFile(false);
+    }
+  };
+
+  const handleStartGeneration = async () => {
+    setCurrentStep(2);
+    setLoading(true);
+    setLoadingTextIndex(0);
+
+    const timer = setInterval(() => {
+      setLoadingTextIndex(prev => (prev < 1 ? prev + 1 : prev));
+    }, 2000);
+
+    try {
+      const res = await generateQuestionsV2({
         content: wizardData.content,
+        inputType: wizardData.inputType,
+        ...wizardData.config,
         language: i18n.language,
       });
 
-      // Kiểm tra độ đầy đủ của nội dung (Validation)
-      // Safety net: Nếu isSufficient = true nhưng không có chủ đề hoặc tóm tắt, coi như không đạt
-      const isSufficient = res.data.isSufficient && 
-                           (res.data.detectedTopics && res.data.detectedTopics.length > 0);
-
-      if (!isSufficient) {
-        setValidationMessage(res.data.message || t("wizard.step1.validationError"));
-        setShowValidationModal(true);
+      const isValid = res.data.isValid !== undefined ? res.data.isValid : res.data.valid;
+      if (isValid && res.data.questions?.length > 0) {
+        setWizardData(prev => ({
+          ...prev,
+          questions: res.data.questions,
+          metadata: {
+            ...prev.metadata,
+            title: prev.metadata.title || res.data.suggestedTitle,
+          }
+        }));
+        setLoadingTextIndex(2); // Hoàn tất bản thảo
+        setTimeout(() => {
+          setCurrentStep(3);
+          setLoading(false);
+          clearInterval(timer);
+        }, 1000);
+      } else {
+        const errorMsg = res.data.reason || "AI không thể tạo được câu hỏi từ nội dung này.";
+        setError(errorMsg);
+        setCurrentStep(1);
         setLoading(false);
-        return;
+        clearInterval(timer);
       }
-
-      setWizardData((prev) => ({
-        ...prev,
-        analysis: res.data,
-        config: {
-          ...prev.config,
-          multipleChoice: Math.min(res.data.suggestedMultipleChoice || 5, 50),
-          multipleAnswer: 0,
-          essay: Math.min(res.data.suggestedEssay || 0, 10),
-          difficulty: res.data.suggestedDifficulty || "medium",
-        },
-        metadata: {
-          ...prev.metadata,
-          title: prev.metadata.title || res.data.suggestedTitle || (res.data.detectedTopics?.[0] ? `${t("wizard.step6.examName")} #1: ${res.data.detectedTopics[0]}` : t("wizard.step6.examNamePlaceholder").split(":")[0]),
-          description: prev.metadata.description || res.data.suggestedDescription || res.data.summary || ""
-        }
-      }));
     } catch (err) {
-      setError(t("wizard.step2.error"));
-    } finally {
+      console.error("Generation error:", err);
+      let errorMsg = "Có lỗi khi tạo câu hỏi: " + (err.response?.data?.message || err.message);
+      if (err.response?.status === 503) {
+        errorMsg = "Hệ thống AI hiện đang quá tải do nhu cầu cao. Vui lòng thử lại sau vài giây.";
+      }
+      setError(errorMsg);
+      setCurrentStep(1);
       setLoading(false);
+      clearInterval(timer);
     }
   };
 
-  useEffect(() => {
-    if (currentStep === 4 && !loading) {
-      handleGenerate();
-    }
-    if (currentStep === 4 || (currentStep === 4 && loading)) {
-      setTimeout(() => {
-        step4Ref.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }, 600);
-    }
-  }, [currentStep, loading]);
-
-  // Step 4: Generate Questions Logic
-  const handleGenerate = async () => {
+  const handleRegenerateQuestion = async (index) => {
+    const q = wizardData.questions[index];
+    setRegeneratingIdx(index);
     try {
-      setLoading(true);
-      // Clear old questions to avoid UI issues and ensure fresh state
-      setWizardData(prev => ({ ...prev, questions: [] }));
-      
-      const res = await generateQuestions({
-        content: wizardData.content,
-        ...wizardData.config,
-        detailedExplanation: wizardData.config.difficulty === "hard" || wizardData.config.difficulty === "mixed",
+      const res = await axiosInstance.post("/ai/generate-v2", {
+        content: `Hãy sinh lại câu hỏi sau đây (giữ cùng chủ đề, độ khó và loại câu hỏi): ${q.content}. Trả về định dạng JSON giống như trước.`,
+        inputType: "topic",
+        language: i18n.language,
+        multipleChoice: q.type === "multiple_choice" ? 1 : 0,
+        multipleAnswer: q.type === "multiple_answer" ? 1 : 0,
+        essay: q.type === "essay" ? 1 : 0,
+        easyCount: q.difficulty === "easy" ? 1 : 0,
+        mediumCount: q.difficulty === "medium" || !q.difficulty ? 1 : 0,
+        hardCount: q.difficulty === "hard" ? 1 : 0
       });
-      setWizardData((prev) => ({ ...prev, questions: res.data }));
-      setCurrentStep(5);
+      
+      if (res.data.isValid && res.data.questions?.length > 0) {
+        const newQuestions = [...wizardData.questions];
+        newQuestions[index] = res.data.questions[0];
+        setWizardData(prev => ({ ...prev, questions: newQuestions }));
+      } else {
+        setError(res.data.reason || t("wizard.step5.modal.error"));
+      }
     } catch (err) {
-      alert(t("wizard.step4.error"));
-      setCurrentStep(3);
+      let errorMsg = t("wizard.step5.modal.error");
+      if (err.response?.status === 503) {
+        errorMsg = "Hệ thống AI hiện đang quá tải. Vui lòng thử lại sau vài giây.";
+      }
+      setError(errorMsg);
     } finally {
-      setLoading(false);
+      setRegeneratingIdx(null);
     }
   };
 
-  // Step 6: Save logic
   const handleSaveExam = async (status = "published") => {
+    if (!wizardData.metadata.title) return;
     setSavingStatus({ exam: "loading", questions: "pending" });
     try {
-      // 1. Tạo đề thi
       const examPayload = {
         title: wizardData.metadata.title,
         description: wizardData.metadata.description,
-        subject:
-          wizardData.metadata.subject ||
-          wizardData.analysis?.detectedTopics?.[0] ||
-          t("wizard.list.unclassified"),
+        subject: wizardData.metadata.subject || "Chưa phân loại",
+        status: status
       };
 
       const examRes = await createExam(examPayload);
       const examId = examRes.data.id;
-      setSavingStatus((prev) => ({
-        ...prev,
-        exam: "success",
-        questions: "loading",
-      }));
+      setSavingStatus(prev => ({ ...prev, exam: "success", questions: "loading" }));
 
-      // 2. Lưu câu hỏi
       await saveBatchQuestions(examId, wizardData.questions);
-      setSavingStatus((prev) => ({ ...prev, questions: "success" }));
+      setSavingStatus(prev => ({ ...prev, questions: "success" }));
 
-      setTimeout(
-        () => navigate(`/dashboard/teacher/my-quizzes/${examId}`),
-        1500,
-      );
+      setTimeout(() => navigate(`/dashboard/teacher/my-quizzes/${examId}`), 1500);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || t("wizard.step6.saving.error"));
-      setSavingStatus((prev) => ({
-        ...prev,
-        exam: prev.exam === "success" ? "success" : "error",
-        questions: prev.questions === "loading" ? "error" : "pending",
-      }));
-    }
-  };
-
-  const handleRegenerateOne = async (idx) => {
-    setRegeneratingIdx(idx);
-    try {
-      const q = wizardData.questions[idx];
-      const res = await generateOneQuestion({
-        content: wizardData.content,
-        multipleChoice: q.type === "multiple_choice" ? 1 : 0,
-        multipleAnswer: q.type === "multiple_answer" ? 1 : 0,
-        essay: q.type === "essay" ? 1 : 0,
-        difficulty: q.difficulty,
-      });
-      if (res.data && res.data[0]) {
-        const newQuestions = [...wizardData.questions];
-        newQuestions[idx] = res.data[0];
-        setWizardData((prev) => ({ ...prev, questions: newQuestions }));
-      }
-    } catch (err) {
-      alert(t("wizard.step5.modal.error"));
-    } finally {
-      setRegeneratingIdx(null);
+      setError(err.response?.data?.message || "Lỗi khi lưu đề thi.");
+      setSavingStatus({ exam: "error", questions: "error" });
     }
   };
 
@@ -325,906 +292,509 @@ export default function AiCreateExam() {
 
   const confirmDelete = () => {
     if (deletingIdx === null) return;
-    setWizardData((prev) => ({
+    setWizardData(prev => ({
       ...prev,
-      questions: prev.questions.filter((_, i) => i !== deletingIdx),
+      questions: prev.questions.filter((_, i) => i !== deletingIdx)
     }));
     setDeletingIdx(null);
   };
 
   const handleEditSave = (updatedQ) => {
-    if (window.confirm(t("wizard.common.editConfirm"))) {
-      const newQuestions = [...wizardData.questions];
-      const idx = wizardData.questions.findIndex((q) => q === editingQuestion);
-      if (idx !== -1) {
-        newQuestions[idx] = updatedQ;
-        setWizardData((prev) => ({ ...prev, questions: newQuestions }));
-      }
-      setEditingQuestion(null);
+    const newQuestions = [...wizardData.questions];
+    const idx = wizardData.questions.findIndex(q => q === editingQuestion);
+    if (idx !== -1) {
+      newQuestions[idx] = updatedQ;
+      setWizardData(prev => ({ ...prev, questions: newQuestions }));
     }
+    setEditingQuestion(null);
   };
 
-  // ===== RENDER TỪNG STEP =====
+  // ===== RENDER STEPS =====
 
   const renderStep1 = () => (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div
-          onClick={() =>
-            setWizardData({ ...wizardData, inputType: "document" })
-          }
-          className={`cursor-pointer p-8 rounded-3xl border-2 transition-all group ${wizardData.inputType === "document" ? "border-primary bg-primary/5 shadow-xl" : "border-border bg-card hover:border-primary/30"}`}
-        >
-          <div
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-colors ${wizardData.inputType === "document" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"}`}
-          >
-            <FileUp className="w-8 h-8" />
-          </div>
-          <h3 className="text-xl font-bold mb-2">{t("wizard.step1.document")}</h3>
-          <p className="text-muted-foreground">
-            {t("wizard.step1.documentDesc")}
-          </p>
-        </div>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div
           onClick={() => setWizardData({ ...wizardData, inputType: "topic" })}
-          className={`cursor-pointer p-8 rounded-3xl border-2 transition-all group ${wizardData.inputType === "topic" ? "border-primary bg-primary/5 shadow-xl" : "border-border bg-card hover:border-primary/30"}`}
+          className={`cursor-pointer p-6 rounded-2xl border-2 transition-all group ${wizardData.inputType === "topic" ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-card hover:border-primary/30"}`}
         >
-          <div
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-colors ${wizardData.inputType === "topic" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"}`}
-          >
-            <Type className="w-8 h-8" />
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-colors ${wizardData.inputType === "topic" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"}`}>
+            <Sparkles className="w-6 h-6" />
           </div>
-          <h3 className="text-xl font-bold mb-2">{t("wizard.step1.topic")}</h3>
-          <p className="text-muted-foreground">
-            {t("wizard.step1.topicDesc")}
-          </p>
+          <h3 className="text-lg font-bold mb-1">{t("wizard.step1.topic")}</h3>
+          <p className="text-sm text-muted-foreground">{t("wizard.step1.topicDesc")}</p>
+        </div>
+        <div
+          onClick={() => setWizardData({ ...wizardData, inputType: "document" })}
+          className={`cursor-pointer p-6 rounded-2xl border-2 transition-all group ${wizardData.inputType === "document" ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-card hover:border-primary/30"}`}
+        >
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-colors ${wizardData.inputType === "document" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"}`}>
+            <FileUp className="w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-bold mb-1">{t("wizard.step1.document")}</h3>
+          <p className="text-sm text-muted-foreground">{t("wizard.step1.documentDesc")}</p>
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-3xl p-8 space-y-4 shadow-lg">
-        <label className="text-lg font-bold flex items-center gap-2">
-          {wizardData.inputType === "document" ? (
-            <FileText className="w-5 h-5 text-primary" />
-          ) : (
-            <Sparkles className="w-5 h-5 text-primary" />
-          )}
-          {wizardData.inputType === "document"
-            ? t("wizard.step1.contentLabel")
-            : t("wizard.step1.topicLabel")}
-        </label>
-        <textarea
-          rows={6}
-          value={wizardData.content}
-          onChange={(e) =>
-            setWizardData({ ...wizardData, content: e.target.value })
-          }
-          placeholder={
-            wizardData.inputType === "document"
-              ? t("wizard.step1.placeholderDoc")
-              : t("wizard.step1.placeholderTopic")
-          }
-          className="w-full bg-muted/30 border border-border rounded-2xl p-6 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-heading text-lg leading-relaxed resize-none"
-        />
-
-        {wizardData.inputType === "document" && (
-          <div className="pt-4 border-t border-border border-dashed">
-            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-2xl cursor-pointer hover:bg-muted/30 transition-all group">
-              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <FileUp className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors mb-2" />
-                <p className="text-sm font-bold text-muted-foreground group-hover:text-primary transition-colors">
-                  {t("wizard.step1.uploadFile")}
-                </p>
-                <p className="text-[10px] text-muted-foreground/50 uppercase mt-1">
-                  {t("wizard.step1.limit")}
-                </p>
-              </div>
-              <input
-                type="file"
-                className="hidden"
-                accept=".pdf,.doc,.docx,.txt"
-                onChange={(e) =>
-                  alert(
-                    "Tính năng trích xuất văn bản từ file đang được phát triển. Vui lòng dán nội dung trực tiếp.",
-                  )
-                }
-              />
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-5 shadow-lg relative overflow-hidden">
+        {wizardData.inputType === "topic" ? (
+          <div className="space-y-4">
+            <label className="text-base font-bold flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              {t("wizard.step1.topicLabel")}
             </label>
+            <textarea
+              rows={4}
+              value={wizardData.content}
+              onChange={(e) => {
+                setWizardData({ ...wizardData, content: e.target.value });
+                if (inlineError) setInlineError("");
+              }}
+              placeholder={t("wizard.step1.placeholderTopic")}
+              className={cn(
+                "w-full bg-muted/30 border rounded-xl p-4 focus:outline-none focus:ring-2 transition-all font-heading text-base leading-relaxed resize-none",
+                inlineError ? "border-red-500 focus:ring-red-500/50" : "border-border focus:ring-primary/50"
+              )}
+            />
           </div>
+        ) : (
+          <>
+            <label className="text-lg font-bold flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" />
+              Tài liệu học tập
+            </label>
+            
+            {!wizardData.analysis ? (
+              <label className={cn(
+                "flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-2xl cursor-pointer transition-all group",
+                isAnalyzingFile ? "bg-primary/5 border-primary animate-pulse" : "border-border bg-muted/20 hover:bg-primary/5 hover:border-primary/30"
+              )}>
+                <div className="flex flex-col items-center justify-center pt-4 pb-5">
+                  {isAnalyzingFile ? (
+                    <Loader2 className="w-10 h-10 text-primary animate-spin mb-3" />
+                  ) : (
+                    <FileUp className="w-10 h-10 text-muted-foreground group-hover:text-primary transition-colors mb-3" />
+                  )}
+                  <p className="text-base font-bold text-muted-foreground group-hover:text-primary transition-colors">
+                    {isAnalyzingFile ? "Đang trích xuất nội dung..." : t("wizard.step1.uploadFile")}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground/50 uppercase mt-1">
+                    PDF, DOCX, TXT (MAX 10MB)
+                  </p>
+                </div>
+                {!isAnalyzingFile && (
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.docx,.txt"
+                    onChange={(e) => handleFileUpload(e.target.files[0])}
+                  />
+                )}
+              </label>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-muted p-6 rounded-2xl border border-border relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => setWizardData(prev => ({ ...prev, analysis: null, content: "" }))}
+                      className="p-2 bg-white/80 hover:bg-white rounded-full text-red-500 shadow-sm"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <h4 className="font-black text-primary mb-3 flex items-center gap-2 text-xs uppercase tracking-widest">
+                    <CheckCircle2 className="w-4 h-4" /> Tài liệu đã sẵn sàng
+                  </h4>
+                  <p className="text-sm font-medium leading-relaxed text-muted-foreground line-clamp-4 italic bg-white/50 p-4 rounded-xl border border-dashed border-primary/20">
+                    "{wizardData.analysis.summary || "Chúng tôi đã tóm tắt được nội dung của bạn. Nhấn 'Bắt đầu tạo đề' để tiếp tục."}"
+                  </p>
+                  <div className="mt-4 flex gap-4">
+                     <span className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-lg uppercase">AI Đã hiểu tài liệu</span>
+                     <span className="px-3 py-1 bg-blue-500/10 text-blue-500 text-[10px] font-black rounded-lg uppercase">{wizardData.analysis.suggestedTotal || 50} Câu hỏi gợi ý</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
-        <div className="flex justify-between items-center pt-4">
-          <p className="text-sm text-muted-foreground">
-            {t("wizard.step1.characters")}: {wizardData.content.length}
+        {inlineError && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-red-500 text-sm font-bold bg-red-500/5 p-3 rounded-xl border border-red-500/20">
+            <AlertCircle className="w-4 h-4" /> {inlineError}
+          </motion.div>
+        )}
+
+        <div className="pt-6 space-y-8 border-t border-border border-dashed mt-4">
+          {/* Row 1: Question Types (Total 50) */}
+          <div className="space-y-4">
+            <label className="text-xs font-black uppercase text-muted-foreground flex items-center gap-2">
+              <Plus className="w-4 h-4 text-primary" /> Thiết lập số lượng câu hỏi (Tối đa: 50)
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {[
+                { label: "Trắc nghiệm", key: "multipleChoice" },
+                { label: "Nhiều đáp án", key: "multipleAnswer" },
+                { label: "Tự luận", key: "essay" }
+              ].map(type => (
+                <div key={type.key} className="bg-muted/30 p-4 rounded-2xl border border-border">
+                  <label className="text-[10px] font-black uppercase text-muted-foreground block mb-2">{type.label}</label>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="number" min="0" max="50"
+                      value={wizardData.config[type.key]}
+                      onChange={(e) => {
+                        const val = Math.max(0, parseInt(e.target.value) || 0);
+                        setWizardData(prev => ({...prev, config: { ...prev.config, [type.key]: val }}));
+                      }}
+                      className="w-full bg-card border border-border rounded-xl px-3 py-2 font-black text-primary focus:ring-2 focus:ring-primary/50 outline-none"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            {wizardData.config.multipleChoice + wizardData.config.multipleAnswer + wizardData.config.essay > 50 && (
+              <p className="text-[10px] text-red-500 font-bold italic">
+                * Tổng loại câu đang là {wizardData.config.multipleChoice + wizardData.config.multipleAnswer + wizardData.config.essay}. Vui lòng giảm bớt để không vượt quá 50.
+              </p>
+            )}
+            {wizardData.config.multipleChoice + wizardData.config.multipleAnswer + wizardData.config.essay !== (wizardData.config.easyCount + wizardData.config.mediumCount + wizardData.config.hardCount) && (
+              <p className="text-[10px] text-orange-500 font-bold italic">
+                * Tổng loại câu ({wizardData.config.multipleChoice + wizardData.config.multipleAnswer + wizardData.config.essay}) đang khác tổng độ khó ({wizardData.config.easyCount + wizardData.config.mediumCount + wizardData.config.hardCount}).
+              </p>
+            )}
+          </div>
+
+          {/* Row 2: Difficulty (Total 50) */}
+          <div className="space-y-4">
+            <label className="text-xs font-black uppercase text-muted-foreground flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-primary" /> Phân bổ độ khó (Tổng phải khớp với loại câu)
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {[
+                { label: "Dễ", key: "easyCount" },
+                { label: "Vừa", key: "mediumCount" },
+                { label: "Khó", key: "hardCount" }
+              ].map(diff => (
+                <div key={diff.key} className="bg-muted/30 p-4 rounded-2xl border border-border">
+                  <label className="text-[10px] font-black uppercase text-muted-foreground block mb-2">{diff.label}</label>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="number" min="0" max="50"
+                      value={wizardData.config[diff.key]}
+                      onChange={(e) => {
+                        const val = Math.max(0, parseInt(e.target.value) || 0);
+                        setWizardData(prev => ({...prev, config: { ...prev.config, [diff.key]: val }}));
+                      }}
+                      className="w-full bg-card border border-border rounded-xl px-3 py-2 font-black text-blue-500 focus:ring-2 focus:ring-blue-500/50 outline-none"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            {wizardData.config.easyCount + wizardData.config.mediumCount + wizardData.config.hardCount > 50 && (
+              <p className="text-[10px] text-red-500 font-bold italic">
+                * Tổng độ khó đang là {wizardData.config.easyCount + wizardData.config.mediumCount + wizardData.config.hardCount}. Vui lòng giảm bớt để không vượt quá 50.
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center pt-6">
+          <p className="text-xs text-muted-foreground font-medium italic">
+            AI sẽ tự động bỏ qua các phần chào hỏi và tập trung vào nội dung đề thi.
           </p>
           <button
             onClick={handleStep1Submit}
-            disabled={!wizardData.content.trim()}
-            className="bg-primary text-primary-foreground px-8 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 disabled:opacity-50 min-w-[140px] justify-center"
+            disabled={!wizardData.content.trim() || loading || isAnalyzingFile}
+            className="bg-primary text-primary-foreground px-10 py-3.5 rounded-2xl font-black flex items-center gap-2 hover:bg-primary/90 transition-all shadow-xl shadow-primary/25 disabled:opacity-50"
           >
-            {t("wizard.step1.next")} <ChevronRight className="w-5 h-5" />
+            Bắt đầu tạo đề <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>
     </div>
   );
 
-  const renderStep2 = () => (
-    <div className="max-w-4xl mx-auto space-y-8">
-      {loading ? (
-        <div className="bg-card border border-border rounded-3xl p-20 flex flex-col items-center justify-center space-y-6 text-center">
+  const renderStep2 = () => {
+    const loadingSteps = [
+      { text: "⚡ Đang phân tích chủ đề...", icon: Sparkles },
+      { text: "✍️ Đang soạn câu hỏi...", icon: Edit2 },
+      { text: "✨ Hoàn tất bản thảo...", icon: CheckCircle2 },
+    ];
+
+    return (
+      <div className="max-w-xl mx-auto py-10">
+        <div className="bg-card border border-border rounded-2xl p-8 flex flex-col items-center justify-center space-y-8 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-muted">
+            <motion.div 
+              className="h-full bg-primary shadow-[0_0_8px_#7c3aed]"
+              initial={{ width: "0%" }}
+              animate={{ width: `${(loadingTextIndex + 1) * 33.33}%` }}
+              transition={{ duration: 1 }}
+            />
+          </div>
+
           <div className="relative">
-            <div className="w-24 h-24 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+            <div className="w-20 h-20 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
             <BrainCircuit className="w-10 h-10 text-primary absolute inset-0 m-auto animate-pulse" />
           </div>
-          <div>
-            <h2 className="text-2xl font-black mb-2">
-              {t("wizard.step2.analyzing")}
-            </h2>
-              <p className="text-muted-foreground font-medium animate-pulse">
-                {t("wizard.step4.loading")}
-              </p>
+
+          <div className="space-y-4 w-full max-w-xs">
+            {loadingSteps.map((step, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: loadingTextIndex >= idx ? 1 : 0.3 }}
+                className={cn(
+                  "flex items-center gap-3 p-3 rounded-xl transition-all",
+                  loadingTextIndex === idx && "bg-primary/5 border border-primary/20"
+                )}
+              >
+                <div className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                  loadingTextIndex >= idx ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                )}>
+                  {loadingTextIndex > idx ? <CheckCircle2 className="w-5 h-5" /> : <step.icon className={cn("w-5 h-5", loadingTextIndex === idx && "animate-bounce")} />}
+                </div>
+                <span className={cn("font-bold text-sm", loadingTextIndex === idx ? "text-primary" : "text-muted-foreground")}>
+                  {step.text}
+                </span>
+              </motion.div>
+            ))}
           </div>
+          <p className="text-muted-foreground text-xs font-medium italic animate-pulse">Vui lòng chờ trong giây lát...</p>
         </div>
-      ) : error ? (
-        <div className="bg-red-500/5 border-2 border-red-500/20 rounded-3xl p-12 text-center text-red-500 space-y-4">
-          <AlertCircle className="w-16 h-16 mx-auto" />
-          <p className="text-xl font-bold">{error}</p>
-          <button
-            onClick={handleAnalyze}
-            className="px-8 py-2 bg-red-500 text-white rounded-xl font-bold"
-          >
-            {t("wizard.step2.retry")}
-          </button>
-        </div>
-      ) : (
-        wizardData.analysis && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8"
-          >
-            <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl" />
-              
-              <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-16">
-                <div className="flex flex-col items-center justify-center p-8 bg-primary/10 rounded-[2rem] min-w-[200px]">
-                  <p className="text-sm text-primary uppercase tracking-widest font-black mb-2">
-                    {t("wizard.step2.suggestedTotal")}
-                  </p>
-                  <p className="text-6xl font-black text-primary">
-                    {wizardData.config.multipleChoice + wizardData.config.multipleAnswer + wizardData.config.essay}
-                  </p>
-                </div>
-
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-8 w-full">
-                  <div className="space-y-4">
-                    <p className="text-xs font-black uppercase text-muted-foreground tracking-wider border-b border-border pb-2">
-                      {t("wizard.questionModal.type")}
-                    </p>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center bg-muted/30 p-3 rounded-xl">
-                        <span className="text-sm font-bold">{t("wizard.step5.types.mc")}</span>
-                        <span className="bg-primary text-primary-foreground px-3 py-1 rounded-lg text-xs font-black">{wizardData.config.multipleChoice}</span>
-                      </div>
-                      <div className="flex justify-between items-center bg-muted/30 p-3 rounded-xl text-muted-foreground opacity-60">
-                        <span className="text-sm font-bold">{t("wizard.step5.types.ma")}</span>
-                        <span className="bg-muted text-muted-foreground px-3 py-1 rounded-lg text-xs font-black">{wizardData.config.multipleAnswer}</span>
-                      </div>
-                      <div className="flex justify-between items-center bg-muted/30 p-3 rounded-xl">
-                        <span className="text-sm font-bold">{t("wizard.step5.types.essay")}</span>
-                        <span className="bg-primary text-primary-foreground px-3 py-1 rounded-lg text-xs font-black">{wizardData.config.essay}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <p className="text-xs font-black uppercase text-muted-foreground tracking-wider border-b border-border pb-2">
-                      {t("wizard.step3.difficulty")}
-                    </p>
-                    <div className="pt-2">
-                      <p className="text-3xl font-black text-primary uppercase tracking-tight">
-                        {t(`wizard.step3.difficultyLevels.${wizardData.config.difficulty || 'medium'}`)}
-                      </p>
-                      <p className="text-xs text-muted-foreground italic mt-2">
-                        {t("wizard.step2.suggestedDesc")}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-card border border-border rounded-3xl p-6 shadow-sm">
-              <p className="text-sm text-muted-foreground uppercase tracking-widest font-black mb-2">
-                {t("wizard.step2.detectedTopics")}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {wizardData.analysis.detectedTopics.map((t, i) => (
-                  <span
-                    key={i}
-                    className="px-4 py-1.5 bg-primary/10 text-primary rounded-xl font-bold text-sm"
-                  >
-                    #{t}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-card border border-border rounded-3xl p-8 space-y-6">
-              <div>
-                <h3 className="text-xl font-bold mb-2">{t("wizard.step2.summary")}</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  {wizardData.analysis.summary}
-                </p>
-              </div>
-
-              <div className="pt-6 border-t border-border flex justify-end gap-4">
-                <button
-                  onClick={() => setCurrentStep(3)}
-                  className="px-8 py-3 bg-muted rounded-2xl font-bold"
-                >
-                  {t("wizard.step2.customConfig")}
-                </button>
-                <button
-                  onClick={() => {
-                    setSkipConfigStep(true);
-                    setWizardData(prev => ({ ...prev, questions: [] }));
-                    setCurrentStep(4);
-                  }}
-                  className="px-8 py-3 bg-primary text-primary-foreground rounded-2xl font-black shadow-lg shadow-primary/20 hover:scale-105 transition-all"
-                >
-                  {t("wizard.step2.useSuggestions")}
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )
-      )}
-    </div>
-  );
+      </div>
+    );
+  };
 
   const renderStep3 = () => (
-    <div className="max-w-5xl mx-auto space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[
-          {
-            id: "mc",
-            title: t("wizard.step3.mc"),
-            desc: t("wizard.step3.mcDesc"),
-            presets: { mc: 10, ma: 0, es: 0 },
-          },
-          {
-            id: "basic",
-            title: t("wizard.step3.basic"),
-            desc: t("wizard.step3.basicDesc"),
-            presets: { mc: 7, ma: 3, es: 0 },
-          },
-          {
-            id: "adv",
-            title: t("wizard.step3.adv"),
-            desc: t("wizard.step3.advDesc"),
-            presets: { mc: 6, ma: 2, es: 2 },
-          },
-          {
-            id: "custom",
-            title: t("wizard.step3.custom"),
-            desc: t("wizard.step3.customDesc"),
-            presets: null,
-          },
-        ].map((p) => (
-          <div
-            key={p.id}
-            onClick={() => {
-              if (p.presets) {
-                setWizardData({
-                  ...wizardData,
-                  config: {
-                    ...wizardData.config,
-                    multipleChoice: p.presets.mc,
-                    multipleAnswer: p.presets.ma,
-                    essay: p.presets.es,
-                  },
-                });
-                setActivePreset(p.id);
-              } else {
-                setActivePreset("custom");
-              }
-            }}
-            className={cn(
-              "bg-card border-2 p-5 rounded-3xl cursor-pointer transition-all text-center space-y-1 hover:shadow-md",
-              activePreset === p.id
-                ? "border-primary shadow-lg bg-primary/5"
-                : "border-border hover:border-primary/30",
-            )}
-          >
-            <p className="font-bold text-sm">{p.title}</p>
-            <p className="text-[10px] text-muted-foreground uppercase">
-              {p.desc}
+    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-5 duration-700">
+      <div className="flex flex-col gap-6">
+        {/* Exam Settings - Full Width Top */}
+        <div className="bg-card border-2 border-primary/10 rounded-2xl p-6 shadow-xl space-y-5">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold font-heading flex items-center gap-2">
+              <Settings className="w-4 h-4 text-primary" /> {t("wizard.detail.config")}
+            </h3>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => handleSaveExam("draft")} 
+                disabled={loading || savingStatus.exam === "loading"} 
+                className="px-5 py-2 bg-muted text-muted-foreground hover:bg-muted/80 font-bold rounded-lg text-sm transition-all"
+              >
+                {t("wizard.step6.saveDraft")}
+              </button>
+              <button 
+                onClick={() => handleSaveExam("published")} 
+                disabled={loading || savingStatus.exam === "loading" || !wizardData.metadata.title} 
+                className="px-5 py-2 bg-primary text-primary-foreground font-black rounded-lg text-sm shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-100 transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                {savingStatus.exam === "loading" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />} 
+                {t("wizard.step6.saveFinish")}
+              </button>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">{t("wizard.step6.examName")}</label>
+              <input 
+                type="text" 
+                value={wizardData.metadata.title} 
+                onChange={(e) => setWizardData(prev => ({...prev, metadata: {...prev.metadata, title: e.target.value}}))} 
+                placeholder={t("wizard.step6.examNamePlaceholder")}
+                className="w-full bg-muted/30 border border-border rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-primary/50 outline-none" 
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">{t("wizard.step6.subject")}</label>
+              <input 
+                type="text" 
+                value={wizardData.metadata.subject} 
+                onChange={(e) => setWizardData(prev => ({...prev, metadata: {...prev.metadata, subject: e.target.value}}))} 
+                placeholder={t("wizard.step6.subjectPlaceholder")}
+                className="w-full bg-muted/30 border border-border rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-primary/50 outline-none" 
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">{t("wizard.step6.description")}</label>
+              <input 
+                type="text" 
+                value={wizardData.metadata.description} 
+                onChange={(e) => setWizardData(prev => ({...prev, metadata: {...prev.metadata, description: e.target.value}}))} 
+                placeholder={t("wizard.step6.descriptionPlaceholder")}
+                className="w-full bg-muted/30 border border-border rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-primary/50 outline-none" 
+              />
+            </div>
+          </div>
+          
+          <div className="bg-primary/5 border border-primary/10 rounded-xl p-3 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
+            <p className="text-xs text-muted-foreground italic">
+              {t("wizard.detail.noteDesc") || "Bạn có thể chỉnh sửa lại bất kỳ nội dung nào trước khi lưu chính thức."}
             </p>
           </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-card border border-border rounded-3xl p-8 space-y-8 shadow-sm">
-          <h3 className="text-xl font-bold flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-primary" /> {t("wizard.step3.qCount")} ({t("wizard.step3.max")} 50)
-          </h3>
-
-          <div className="space-y-6">
-            {[
-              {
-                id: "multipleChoice",
-                label: t("wizard.step3.mcLabel"),
-                color: "bg-blue-500",
-                accent: "accent-blue-500",
-              },
-              {
-                id: "multipleAnswer",
-                label: t("wizard.step3.maLabel"),
-                color: "bg-amber-500",
-                accent: "accent-amber-500",
-              },
-              {
-                id: "essay",
-                label: t("wizard.step3.essayLabel"),
-                color: "bg-emerald-500",
-                accent: "accent-emerald-500",
-              },
-            ].map((type) => {
-              const totalOthers =
-                wizardData.config.multipleChoice +
-                wizardData.config.multipleAnswer +
-                wizardData.config.essay -
-                wizardData.config[type.id];
-              const maxForThis = 50 - totalOthers;
-
-              return (
-                <div key={type.id} className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <label className="text-sm font-bold text-muted-foreground">
-                      {type.label}
-                    </label>
-                    <span
-                      className={`text-lg font-black ${wizardData.config[type.id] > 0 ? "text-primary" : "text-muted-foreground"}`}
-                    >
-                      {wizardData.config[type.id]} {t("wizard.step3.totalQ").toLowerCase().split(" ")[2]}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max={50}
-                    value={wizardData.config[type.id]}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value);
-                      if (totalOthers + val <= 50) {
-                        setWizardData({
-                          ...wizardData,
-                          config: { ...wizardData.config, [type.id]: val },
-                        });
-                        setActivePreset("custom");
-                      }
-                    }}
-                    className={`w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer ${type.accent}`}
-                  />
-                  <div className="flex justify-between text-[10px] font-bold text-muted-foreground/50">
-                    <span>0</span>
-                    <span>{t("wizard.step3.maxAdd")}: {maxForThis}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="pt-4 border-t border-border">
-            <div className="flex justify-between items-center mb-2">
-              <p className="font-bold">{t("wizard.step3.totalQ")}</p>
-              <p
-                className={`text-3xl font-black ${wizardData.config.multipleChoice + wizardData.config.multipleAnswer + wizardData.config.essay > 0 ? "text-primary" : "text-muted-foreground"}`}
-              >
-                {wizardData.config.multipleChoice +
-                  wizardData.config.multipleAnswer +
-                  wizardData.config.essay}{" "}
-                <span className="text-sm text-muted-foreground">/ 50</span>
-              </p>
-            </div>
-            <div className="h-3 w-full bg-muted rounded-full overflow-hidden flex">
-              <div
-                style={{
-                  width: `${(wizardData.config.multipleChoice / 50) * 100}%`,
-                }}
-                className="bg-blue-500 transition-all duration-500"
-              />
-              <div
-                style={{
-                  width: `${(wizardData.config.multipleAnswer / 50) * 100}%`,
-                }}
-                className="bg-amber-500 transition-all duration-500"
-              />
-              <div
-                style={{ width: `${(wizardData.config.essay / 50) * 100}%` }}
-                className="bg-emerald-500 transition-all duration-500"
-              />
-            </div>
-          </div>
         </div>
 
-        <div className="bg-card border border-border rounded-3xl p-8 space-y-8 shadow-sm">
-          <h3 className="text-xl font-bold flex items-center gap-2">
-            <BrainCircuit className="w-6 h-6 text-primary" /> Độ khó
-          </h3>
-
-          <div className="flex flex-wrap gap-3">
-            {["easy", "medium", "hard", "mixed"].map((d) => (
-              <button
-                key={d}
-                onClick={() => {
-                  setWizardData({
-                    ...wizardData,
-                  config: { ...wizardData.config, difficulty: d },
-                  });
-                  setActivePreset("custom");
-                }}
-                className={`flex-1 py-3 rounded-2xl font-bold capitalize transition-all ${wizardData.config.difficulty === d ? "bg-primary text-primary-foreground shadow-lg" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
-              >
-                {d === "easy"
-                  ? t("wizard.step3.difficultyLevels.easy")
-                  : d === "medium"
-                    ? t("wizard.step3.difficultyLevels.medium")
-                    : d === "hard"
-                      ? t("wizard.step3.difficultyLevels.hard")
-                      : t("wizard.step3.difficultyLevels.mixed")}
-              </button>
-            ))}
-          </div>
-
-          {wizardData.config.difficulty === "mixed" && (
-            <div className="space-y-6 pt-4 animate-in slide-in-from-top duration-500">
-              {[
-                {
-                  id: "easyPercent",
-                  label: t("wizard.step3.difficultyLevels.easy"),
-                  color: "text-green-500",
-                  bg: "accent-green-500",
-                },
-                {
-                  id: "mediumPercent",
-                  label: t("wizard.step3.difficultyLevels.medium"),
-                  color: "text-yellow-500",
-                  bg: "accent-yellow-500",
-                },
-                {
-                  id: "hardPercent",
-                  label: t("wizard.step3.difficultyLevels.hard"),
-                  color: "text-red-500",
-                  bg: "accent-red-500",
-                },
-              ].map((p) => {
-                const totalOthers =
-                  wizardData.config.easyPercent +
-                  wizardData.config.mediumPercent +
-                  wizardData.config.hardPercent -
-                  wizardData.config[p.id];
-                const maxVal = 100 - totalOthers;
-
-                return (
-                  <div key={p.id} className="space-y-2">
-                    <div className="flex justify-between items-center text-sm font-bold">
-                      <span className={p.color}>{p.label}</span>
-                      <span className="font-black">
-                        {wizardData.config[p.id]}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max={100}
-                      value={wizardData.config[p.id]}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value);
-                        if (totalOthers + val <= 100) {
-                          setWizardData({
-                            ...wizardData,
-                            config: { ...wizardData.config, [p.id]: val },
-                          });
-                        }
-                      }}
-                      className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-muted ${p.bg}`}
-                    />
-                    <div className="flex justify-between px-1 text-[10px] font-bold text-muted-foreground/40">
-                      {[0, 20, 40, 60, 80, 100].map((v) => (
-                        <span key={v}>{v}%</span>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-              <p
-                className={`text-center font-black ${wizardData.config.easyPercent + wizardData.config.mediumPercent + wizardData.config.hardPercent === 100 ? "text-green-500" : "text-red-500"}`}
-              >
-                {t("wizard.step3.totalRatio")}:{" "}
-                {wizardData.config.easyPercent +
-                  wizardData.config.mediumPercent +
-                  wizardData.config.hardPercent}
-                %{" "}
-                {wizardData.config.easyPercent +
-                  wizardData.config.mediumPercent +
-                  wizardData.config.hardPercent !==
-                  100 && t("wizard.step3.mustBe100")}
+        {/* Questions List Section */}
+        <div className="space-y-5">
+          <div className="flex items-center justify-between px-2">
+            <div>
+              <h2 className="text-xl font-black text-foreground font-heading uppercase tracking-tight flex items-center gap-2">
+                <span className="w-1.5 h-6 bg-primary rounded-full" />
+                {t("wizard.detail.listHeader")}
+              </h2>
+              <p className="text-xs text-muted-foreground font-medium italic mt-0.5">
+                {t("wizard.step5.generated", { count: wizardData.questions.length })}
               </p>
             </div>
-          )}
-
-          <div className="pt-10 flex gap-4">
-            <button
-              onClick={prevStep}
-              className="flex-1 px-8 py-3 bg-muted rounded-2xl font-bold"
-            >
-              {t("wizard.step3.back")}
-            </button>
             <button
               onClick={() => {
-                setWizardData((prev) => ({ ...prev, questions: [] }));
-                nextStep();
+                setEditingQuestion(null);
+                // logic to open add modal
               }}
-              disabled={
-                wizardData.config.difficulty === "mixed" &&
-                wizardData.config.easyPercent +
-                  wizardData.config.mediumPercent +
-                  wizardData.config.hardPercent !==
-                  100
-              }
-              className="flex-[2] px-8 py-3 bg-primary text-primary-foreground rounded-2xl font-black shadow-lg shadow-primary/20 transition-all hover:-translate-y-1 active:translate-y-0"
+              className="flex items-center gap-2 bg-muted hover:bg-primary hover:text-white text-muted-foreground font-bold px-4 py-2 rounded-xl text-sm transition-all border border-border"
             >
-              {t("wizard.step3.generate")} <ChevronRight className="w-5 h-5 inline ml-1" />
+              <Plus className="w-4 h-4" /> {t("wizard.detail.addQuestion")}
             </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {wizardData.questions.map((q, i) => (
+              <motion.div 
+                key={i} 
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="group bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-xl transition-all relative overflow-hidden text-left"
+              >
+                <div className="absolute top-0 left-0 w-1.5 h-full bg-primary/10 group-hover:bg-primary transition-colors" />
+                
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="w-11 h-11 flex-shrink-0 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-black text-lg group-hover:scale-105 transition-transform">
+                    {i + 1}
+                  </div>
+                  
+                  <div className="flex-1 space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-[10px] font-black uppercase tracking-wider border border-primary/20">
+                          {q.type === "multiple_choice" ? t("wizard.step5.types.mc") : q.type === "essay" ? t("wizard.step5.types.essay") : t("wizard.step5.types.ma")}
+                        </span>
+                        <span className={cn(
+                          "px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg border",
+                          q.difficulty === 'easy' ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" :
+                          q.difficulty === 'hard' ? "bg-rose-500/10 text-rose-600 border-rose-500/20" :
+                          "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                        )}>
+                          {t(`wizard.step3.difficultyLevels.${q.difficulty || 'medium'}`)}
+                        </span>
+                      </div>
+                      
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleRegenerateQuestion(i); }} 
+                          title={t("common.regenerateOne")}
+                          disabled={regeneratingIdx !== null}
+                          className="p-2 bg-muted hover:bg-amber-500/10 text-muted-foreground hover:text-amber-500 rounded-lg transition-all border border-border disabled:opacity-50"
+                        >
+                          <RotateCw className={cn("w-4 h-4", regeneratingIdx === i && "animate-spin")} />
+                        </button>
+                        <button 
+                          onClick={() => setEditingQuestion(q)} 
+                          title={t("common.edit")}
+                          className="p-2 bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary rounded-lg transition-all border border-border"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => setDeletingIdx(i)} 
+                          title={t("common.delete")}
+                          className="p-2 bg-muted hover:bg-red-500/10 text-muted-foreground hover:text-red-500 rounded-lg transition-all border border-border"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <h4 className="text-xl font-bold font-heading leading-relaxed">{q.content}</h4>
+
+                    {q.type !== "essay" && q.choices && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {q.choices.map((c, ci) => {
+                          const isCorrect = q.answer === c.key || 
+                                          (Array.isArray(q.answer) && q.answer.includes(c.key)) ||
+                                          (Array.isArray(q.correctAnswers) && q.correctAnswers.includes(c.key)) ||
+                                          q.correctAnswers === c.key;
+                          return (
+                            <div 
+                              key={ci} 
+                              className={cn(
+                                "relative p-5 rounded-2xl border-2 transition-all duration-300 flex items-center gap-4 group/choice",
+                                isCorrect 
+                                  ? "border-emerald-500 bg-emerald-50/50 shadow-sm shadow-emerald-500/10" 
+                                  : "border-border bg-muted/20 hover:border-primary/30"
+                              )}
+                            >
+                              <div className={cn(
+                                "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-black transition-all",
+                                isCorrect ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 rotate-3" : "bg-card border border-border text-muted-foreground"
+                              )}>
+                                {c.key}
+                              </div>
+                              <span className={cn(
+                                "text-base leading-relaxed",
+                                isCorrect ? "font-bold text-emerald-900" : "text-foreground/80"
+                              )}>
+                                {c.content}
+                              </span>
+                              {isCorrect && (
+                                <div className="absolute -top-2 -right-2 bg-emerald-500 text-white p-1 rounded-full shadow-lg border-2 border-white animate-in zoom-in duration-300">
+                                  <CheckCircle className="w-4 h-4" />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {q.explanation && (
+                      <div className="p-4 bg-primary/5 rounded-xl border border-primary/10 flex gap-3 mt-3">
+                        <Info className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                        <div className="space-y-0.5">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-primary/60">{t("wizard.questionModal.explanation")}</p>
+                          <p className="text-sm text-muted-foreground italic leading-relaxed">{q.explanation}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </div>
-    </div>
-  );
-
-  const renderStep4 = () => (
-    <div className="max-w-4xl mx-auto py-12 scroll-mt-32" ref={step4Ref}>
-      <div className="bg-card border border-border rounded-[3rem] p-20 flex flex-col items-center justify-center space-y-8 text-center shadow-2xl">
-        <div className="relative">
-          <div className="w-32 h-32 border-[6px] border-primary/10 border-t-primary rounded-full animate-spin" />
-          <Wand2 className="w-14 h-14 text-primary absolute inset-0 m-auto animate-pulse" />
-        </div>
-        <div>
-          <h2 className="text-3xl font-black mb-3 font-heading tracking-tight">
-            {t("wizard.step4.generating")}
-          </h2>
-          <p className="text-muted-foreground text-xl max-w-md mx-auto">
-            {t("wizard.step4.generatingDesc")}
-          </p>
-        </div>
-
-        <div className="w-72 space-y-4 mx-auto bg-muted/20 p-6 rounded-3xl border border-border">
-          {[
-            {
-              label: t("wizard.step4.generatingContent"),
-              done: wizardData.questions.length > 0,
-              active: loading
-            },
-            {
-              label: t("wizard.step4.qualityCheck"),
-              done: wizardData.questions.length > 0,
-            },
-          ].map((item, idx) => (
-              <div
-                key={idx}
-                className={`flex items-center gap-3 transition-all duration-500 ${item.done ? "opacity-100 text-green-500" : item.active ? "opacity-100 text-primary" : "opacity-30"}`}
-              >
-                {item.done ? (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center"
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                  </motion.div>
-                ) : item.active ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <div className="w-5 h-5 rounded-full bg-muted border border-border" />
-                )}
-                <span className="text-sm font-bold">{item.label}</span>
-              </div>
-            ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderStep5 = () => (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center bg-card border border-border p-6 rounded-3xl sticky top-4 z-[25] shadow-lg">
-        <div>
-          <h3 className="text-xl font-bold bg-primary/10 text-primary px-6 py-2 rounded-2xl w-fit">
-            {t("wizard.step5.generated", { count: wizardData.questions.length })}
-          </h3>
-        </div>
-        <div className="flex gap-4">
-          <button
-            onClick={() => setCurrentStep(3)}
-            className="px-6 py-2.5 bg-muted rounded-xl font-bold hover:bg-muted/80 transition-all"
-          >
-            {t("wizard.step5.backEdit")}
-          </button>
-          <button
-            onClick={nextStep}
-            className="px-8 py-2.5 bg-primary text-primary-foreground rounded-xl font-black shadow-lg shadow-primary/20"
-          >
-            {t("wizard.step5.continue")} <ChevronRight className="w-5 h-5 inline ml-1" />
-          </button>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        {wizardData.questions.map((q, idx) => (
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            className="group bg-card border border-border rounded-[2rem] overflow-hidden hover:border-primary transition-all p-8 flex gap-8 shadow-sm relative"
-          >
-            {/* Regenerate Button Overlay */}
-            <div className="absolute top-4 right-4 z-10 flex gap-2">
-              {regeneratingIdx === idx ? (
-                <div className="p-2 bg-primary/10 rounded-xl">
-                  <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                </div>
-              ) : (
-                <button
-                  onClick={() => handleRegenerateOne(idx)}
-                  className="p-2 bg-card border border-border rounded-xl shadow-sm text-primary hover:bg-primary hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                  title={t("common.regenerateOne")}
-                >
-                  <Wand2 className="w-5 h-5" />
-                </button>
-              )}
-              <button
-                onClick={() => setEditingQuestion(q)}
-                className="p-2 bg-card border border-border rounded-xl shadow-sm text-blue-600 hover:bg-blue-600 hover:text-white transition-all opacity-0 group-hover:opacity-100"
-              >
-                <Edit2 className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => handleDeleteQuestion(idx)}
-                className="p-2 bg-card border border-border rounded-xl shadow-sm text-red-600 hover:bg-red-600 hover:text-white transition-all opacity-0 group-hover:opacity-100"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
-            </div>
-
-            {regeneratingIdx === idx && (
-              <div className="absolute inset-0 bg-card/60 backdrop-blur-[1px] z-20 flex items-center justify-center rounded-[2rem]">
-                <div className="bg-background/80 p-4 rounded-2xl shadow-xl flex items-center gap-3">
-                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                  <span className="font-bold text-sm">
-                    {t("wizard.step5.regenerating")}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            <div className="w-12 h-12 flex-shrink-0 bg-primary/10 rounded-2xl flex items-center justify-center text-primary font-black text-xl">
-              {idx + 1}
-            </div>
-            <div className="flex-1 space-y-6">
-              <div className="flex flex-wrap gap-2">
-                <span className="px-3 py-1 bg-muted rounded-lg text-[10px] font-black uppercase tracking-wider">
-                  {q.type === "multiple_choice"
-                    ? t("wizard.step5.types.mc")
-                    : q.type === "multiple_answer"
-                      ? t("wizard.step5.types.ma")
-                      : t("wizard.step5.types.essay")}
-                </span>
-                <span
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${q.difficulty === "easy" ? "bg-green-500/10 text-green-500" : q.difficulty === "hard" ? "bg-red-500/10 text-red-500" : "bg-yellow-500/10 text-yellow-500"}`}
-                >
-                  {t(`wizard.step3.difficultyLevels.${q.difficulty}`)}
-                </span>
-              </div>
-
-              <h4 className="text-xl font-bold font-heading leading-snug">
-                {q.content}
-              </h4>
-
-              {q.choices && q.choices.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {q.choices.map((c, i) => (
-                    <div
-                      key={i}
-                      className={`p-4 rounded-[1.5rem] border-2 transition-all flex items-start gap-4 ${q.correctAnswers.includes(c.key) ? "border-green-500/50 bg-green-500/5 shadow-sm shadow-green-500/10" : "border-border hover:border-primary/30"}`}
-                    >
-                      <div
-                        className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center font-black text-sm transition-colors ${q.correctAnswers.includes(c.key) ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"}`}
-                      >
-                        {c.key}
-                      </div>
-                      <div className="flex-1 pt-2 font-medium leading-relaxed">
-                        {c.content}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {q.type === "essay" && q.sampleAnswer && (
-                <div className="p-4 bg-muted/30 rounded-2xl border border-dashed border-border italic text-muted-foreground">
-                  <span className="font-bold text-primary not-italic">
-                    {t("wizard.step5.sampleAnswer")}:
-                  </span>{" "}
-                  {q.sampleAnswer}
-                </div>
-              )}
-
-              <div className="pt-6 border-t border-border flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="text-sm text-muted-foreground italic flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" />{" "}
-                  {q.explanation || t("wizard.step5.noExplanation")}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      <div className="flex flex-col items-center py-12 gap-4">
-        <button
-          onClick={() => setShowGenerateMore(true)}
-          className="flex items-center gap-2 px-8 py-4 bg-muted text-foreground rounded-2xl font-black border border-border border-dashed hover:border-primary transition-all"
-        >
-          <Plus className="w-6 h-6" /> {t("wizard.step5.generateMore")}
-        </button>
-      </div>
-
-      {/* Popup Sinh thêm */}
+      
+      {/* Modal xác nhận xóa */}
       <AnimatePresence>
-        {showGenerateMore && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-card border border-border p-8 rounded-[2.5rem] shadow-2xl max-w-md w-full space-y-6"
-            >
-              <h3 className="text-2xl font-black font-heading tracking-tight text-center">
-                {t("wizard.step5.modal.title")}
-              </h3>
-
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase text-muted-foreground px-1">
-                    {t("wizard.step5.modal.type")}
-                  </label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {[
-                      { id: "multiple_choice", label: t("wizard.step5.types.mc") },
-                      { id: "multiple_answer", label: t("wizard.step5.types.ma") },
-                      { id: "essay", label: t("wizard.step5.types.essay") },
-                    ].map((t) => (
-                      <button
-                        key={t.id}
-                        onClick={() =>
-                          setGenerateMoreConfig({
-                            ...generateMoreConfig,
-                            type: t.id,
-                          })
-                        }
-                        className={`p-3 rounded-xl border-2 text-sm font-bold transition-all ${generateMoreConfig.type === t.id ? "border-primary bg-primary/5 text-primary" : "border-border hover:border-primary/30"}`}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase text-muted-foreground px-1">
-                    {t("wizard.step5.modal.difficulty")}
-                  </label>
-                  <div className="flex gap-2">
-                    {["easy", "medium", "hard"].map((d) => (
-                      <button
-                        key={d}
-                        onClick={() =>
-                          setGenerateMoreConfig({
-                            ...generateMoreConfig,
-                            difficulty: d,
-                          })
-                        }
-                        className={`flex-1 p-3 rounded-xl border-2 text-xs font-bold capitalize transition-all ${generateMoreConfig.difficulty === d ? "border-primary bg-primary/5 text-primary" : "border-border hover:border-primary/30"}`}
-                      >
-                        {t(`wizard.step3.difficultyLevels.${d}`)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-xs font-black uppercase text-muted-foreground px-1 flex justify-between">
-                    <span>{t("wizard.step5.modal.count")}</span>
-                    <span className="text-primary">{generateMoreCount}</span>
-                  </label>
-                  <input
-                    type="range"
-                    min="1"
-                    max={Math.max(1, 50 - wizardData.questions.length)}
-                    value={generateMoreCount}
-                    onChange={(e) =>
-                      setGenerateMoreCount(parseInt(e.target.value))
-                    }
-                    className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setShowGenerateMore(false)}
-                  disabled={isGeneratingMore}
-                  className="flex-1 py-4 bg-muted font-bold rounded-2xl"
-                >
-                  {t("wizard.step5.modal.cancel")}
-                </button>
-                <button
-                  onClick={async () => {
-                    if (generateMoreCount > 50 - wizardData.questions.length) {
-                      alert(
-                        `Chỉ có thể sinh thêm tối đa ${50 - wizardData.questions.length} câu.`,
-                      );
-                      return;
-                    }
-                    setIsGeneratingMore(true);
-                    try {
-                      const res = await generateQuestions({
-                        content: wizardData.content,
-                        multipleChoice:
-                          generateMoreConfig.type === "multiple_choice"
-                            ? generateMoreCount
-                            : 0,
-                        multipleAnswer:
-                          generateMoreConfig.type === "multiple_answer"
-                            ? generateMoreCount
-                            : 0,
-                        essay:
-                          generateMoreConfig.type === "essay"
-                            ? generateMoreCount
-                            : 0,
-                        difficulty: generateMoreConfig.difficulty,
-                      });
-                      setWizardData((prev) => ({
-                        ...prev,
-                        questions: [...prev.questions, ...res.data],
-                      }));
-                      setShowGenerateMore(false);
-                    } catch (err) {
-                      alert("Lỗi khi sinh thêm câu hỏi");
-                    } finally {
-                      setIsGeneratingMore(false);
-                    }
-                  }}
-                  disabled={isGeneratingMore}
-                  className="flex-[2] py-4 bg-primary text-primary-foreground font-black rounded-2xl shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {isGeneratingMore ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    t("wizard.step5.modal.start")
-                  )}
-                </button>
+        {deletingIdx !== null && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-card border border-border p-6 rounded-2xl shadow-xl max-w-sm w-full text-center space-y-5">
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto"><AlertCircle className="w-8 h-8" /></div>
+              <h3 className="text-xl font-black">Xác nhận xóa câu hỏi?</h3>
+              <p className="text-sm text-muted-foreground">Câu hỏi này sẽ bị loại bỏ khỏi đề thi hiện tại.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setDeletingIdx(null)} className="flex-1 py-3 bg-muted rounded-xl font-bold text-sm">Hủy</button>
+                <button onClick={confirmDelete} className="flex-1 py-3 bg-red-600 text-white font-black rounded-xl text-sm">Xóa ngay</button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-
-      {/* Modal Sửa câu hỏi */}
+      
+      {/* Modal sửa câu hỏi */}
       {editingQuestion && (
         <QuestionModal
           isOpen={!!editingQuestion}
@@ -1235,369 +805,79 @@ export default function AiCreateExam() {
           isAiPreview={true}
         />
       )}
-
-      {/* Modal Xác nhận xóa */}
-      <AnimatePresence>
-        {deletingIdx !== null && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-card border border-border p-8 rounded-[2.5rem] shadow-2xl max-w-md w-full text-center space-y-6"
-            >
-              <div className="w-20 h-20 bg-red-100 text-red-600 rounded-3xl flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="w-10 h-10" />
-              </div>
-              <div>
-                <h3 className="text-2xl font-black font-heading mb-2">
-                  {t("wizard.step5.deleteConfirm.title")}
-                </h3>
-                <p className="text-muted-foreground">
-                  {t("wizard.step5.deleteConfirm.desc", { index: deletingIdx + 1 })}
-                </p>
-              </div>
-              <div className="flex gap-4 pt-4">
-                <button
-                  onClick={() => setDeletingIdx(null)}
-                  className="flex-1 py-4 bg-muted rounded-2xl font-bold hover:bg-muted/80 transition-all"
-                >
-                  {t("wizard.step5.deleteConfirm.cancel")}
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="flex-1 py-4 bg-red-600 text-white font-black rounded-2xl shadow-lg shadow-red-200 hover:bg-red-700 transition-all"
-                >
-                  {t("wizard.step5.deleteConfirm.confirm")}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-
-  const renderStep6 = () => (
-    <div className="max-w-4xl mx-auto space-y-12">
-      <div className="bg-card border border-border rounded-[2.5rem] p-10 space-y-8 shadow-sm">
-        <h3 className="text-2xl font-black font-heading mb-6 flex items-center gap-3">
-          <Save className="w-8 h-8 text-primary" /> {t("wizard.step6.title")}
-        </h3>
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <label className="text-sm font-black uppercase text-muted-foreground flex items-center justify-between px-1">
-              <span>{t("wizard.step6.examName")} <span className="text-red-500">*</span></span>
-              {wizardData.analysis?.suggestedTitle && (
-                <button
-                  type="button"
-                  onClick={() => setWizardData(prev => ({ 
-                    ...prev, 
-                    metadata: { ...prev.metadata, title: wizardData.analysis.suggestedTitle } 
-                  }))}
-                  className="text-[10px] bg-primary/10 text-primary px-2 py-1 rounded-lg hover:bg-primary/20 transition-all flex items-center gap-1"
-                >
-                  <Sparkles className="w-3 h-3" /> {t("wizard.step3.useSuggestions")}
-                </button>
-              )}
-            </label>
-            <input
-              type="text"
-              required
-              value={wizardData.metadata.title}
-              onChange={(e) =>
-                setWizardData({
-                  ...wizardData,
-                  metadata: { ...wizardData.metadata, title: e.target.value },
-                })
-              }
-              placeholder={t("wizard.step6.examNamePlaceholder")}
-              className="w-full bg-muted/30 border border-border rounded-2xl p-4 focus:ring-2 focus:ring-primary/50 outline-none font-black text-xl font-heading"
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <label className="text-sm font-black uppercase text-muted-foreground flex items-center gap-2 px-1">
-                {t("wizard.step6.subject")}
-              </label>
-              <input
-                type="text"
-                value={wizardData.metadata.subject}
-                onChange={(e) =>
-                  setWizardData({
-                    ...wizardData,
-                    metadata: {
-                      ...wizardData.metadata,
-                      subject: e.target.value,
-                    },
-                  })
-                }
-                placeholder={t("wizard.step6.subjectPlaceholder")}
-                className="w-full bg-muted/30 border border-border rounded-2xl p-4 outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-            <div className="space-y-3">
-              <label className="text-sm font-black uppercase text-muted-foreground flex items-center justify-between px-1">
-                <span>{t("wizard.step6.description")}</span>
-                {(wizardData.analysis?.suggestedDescription || wizardData.analysis?.summary) && (
-                  <button
-                    type="button"
-                    onClick={() => setWizardData(prev => ({ 
-                      ...prev, 
-                      metadata: { 
-                        ...prev.metadata, 
-                        description: wizardData.analysis.suggestedDescription || wizardData.analysis.summary 
-                      } 
-                    }))}
-                    className="text-[10px] bg-primary/10 text-primary px-2 py-1 rounded-lg hover:bg-primary/20 transition-all flex items-center gap-1"
-                  >
-                    <Sparkles className="w-3 h-3" /> {t("wizard.step3.useSuggestions")}
-                  </button>
-                )}
-              </label>
-              <input
-                type="text"
-                value={wizardData.metadata.description}
-                onChange={(e) =>
-                  setWizardData({
-                    ...wizardData,
-                    metadata: {
-                      ...wizardData.metadata,
-                      description: e.target.value,
-                    },
-                  })
-                }
-                placeholder={t("wizard.step6.descriptionPlaceholder")}
-                className="w-full bg-muted/30 border border-border rounded-2xl p-4 outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-card border border-border rounded-[2.5rem] p-8 space-y-6 shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16" />
-
-        <h3 className="text-xl font-bold font-heading">Trạng thái lưu trữ</h3>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl">
-            <div className="flex items-center gap-4">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center ${savingStatus.exam === "success" ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"}`}
-              >
-                {savingStatus.exam === "loading" ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-5 h-5" />
-                )}
-              </div>
-              <span className="font-bold">{t("wizard.step6.saving.exam")}</span>
-            </div>
-            {savingStatus.exam === "success" && (
-              <span className="text-green-500 font-extrabold text-xs uppercase tracking-tighter">
-                {t("wizard.step6.saving.success").split("!")[0]}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl">
-            <div className="flex items-center gap-4">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center ${savingStatus.questions === "success" ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"}`}
-              >
-                {savingStatus.questions === "loading" ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-5 h-5" />
-                )}
-              </div>
-              <span className="font-bold">
-                {t("wizard.step6.saving.questions", { count: wizardData.questions.length })}
-              </span>
-            </div>
-            {savingStatus.questions === "success" && (
-              <span className="text-green-500 font-extrabold text-xs uppercase tracking-tighter">
-                {t("wizard.step6.saving.success").split("!")[0]}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3 text-red-600 animate-in fade-in slide-in-from-top-2">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <span className="text-sm font-bold">{error}</span>
-            <button
-              onClick={() => setError("")}
-              className="ml-auto p-1 hover:bg-red-100 rounded-lg transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        <div className="pt-6 flex flex-col md:flex-row gap-4">
-          <button
-            onClick={() => handleSaveExam("draft")}
-            disabled={
-              !wizardData.metadata.title || loading || savingStatus.exam === "loading" || savingStatus.questions === "loading"
-            }
-            className="flex-1 bg-muted text-foreground py-6 rounded-3xl font-black text-xl hover:bg-muted/80 transition-all disabled:opacity-50"
-          >
-            {savingStatus.exam === "loading" || savingStatus.questions === "loading"
-              ? <Loader2 className="w-6 h-6 animate-spin mx-auto" />
-              : t("wizard.step6.saveDraft")}
-          </button>
-          <button
-            onClick={() => handleSaveExam("published")}
-            disabled={
-              !wizardData.metadata.title || loading || savingStatus.exam === "loading" || savingStatus.questions === "loading" || savingStatus.questions === "success"
-            }
-            className="flex-[2] bg-primary text-primary-foreground py-6 rounded-3xl font-black text-2xl shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all active:scale-100 disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3"
-          >
-            {savingStatus.exam === "loading" ? (
-              <>
-                <Loader2 className="w-6 h-6 animate-spin" />
-                {t("wizard.step6.saving.exam")}
-              </>
-            ) : savingStatus.questions === "loading" ? (
-              <>
-                <Loader2 className="w-6 h-6 animate-spin" />
-                {t("wizard.step6.saving.questions", { count: wizardData.questions.length })}
-              </>
-            ) : savingStatus.questions === "success" ? (
-              <>
-                <CheckCircle2 className="w-7 h-7" />
-                {t("wizard.step6.saving.success")}
-              </>
-            ) : (
-              t("wizard.step6.saveFinish")
-            )}
-          </button>
-        </div>
-      </div>
     </div>
   );
 
   return (
     <div className="pb-20">
       <div ref={topRef} />
-
-      {/* Header with Stepper - Scrolls with content */}
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="bg-card border border-border rounded-3xl p-6 shadow-lg">
-          {/* Stepper Header with Back Button */}
           <div className="flex items-center justify-between mb-6">
-            <button
-              onClick={() => navigate("/dashboard/teacher/create-quiz")}
-              className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors px-4 py-2 rounded-xl hover:bg-muted/50 bg-card border border-border shadow-sm"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              {t("dashboard.sidebar.createQuiz")}
+            <button onClick={() => navigate("/dashboard/teacher/create-quiz")} className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors px-4 py-2 rounded-xl hover:bg-muted/50 bg-card border border-border">
+              <ArrowLeft className="w-4 h-4" /> Quay lại
             </button>
-            <div className="text-sm font-bold text-muted-foreground">
-              {t("wizard.common.step")} {currentStep} / 6
-            </div>
+            <div className="text-sm font-black text-muted-foreground uppercase tracking-widest">Bước {currentStep} / {steps.length}</div>
           </div>
-          <div className="flex items-center justify-center gap-4 relative z-10 px-4">
-            {/* Connector Line Background */}
-            <div className="absolute top-7 left-[8%] right-[8%] h-[2px] bg-muted z-0 hidden lg:block" />
-
+          <div className="flex items-center justify-center gap-4 relative">
+            <div className="absolute top-7 left-[10%] right-[10%] h-[2px] bg-muted z-0 hidden lg:block" />
             {steps.map((step) => (
-              <div
-                key={step.id}
-                className="flex-1 flex flex-col items-center gap-3 relative z-10"
-              >
-                <div
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 border-4 ${currentStep === step.id ? "bg-primary text-primary-foreground border-primary/20 shadow-2xl shadow-primary/30 scale-110" : currentStep > step.id ? "bg-green-500 text-white border-green-500/20" : "bg-card text-muted-foreground border-transparent"}`}
-                >
-                  <step.icon
-                    size={24}
-                    isAnimating={currentStep === step.id}
-                    className="w-6 h-6"
-                  />
+              <div key={step.id} className="flex-1 flex flex-col items-center gap-1.5 relative z-10">
+                <div className={cn(
+                  "w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-500 border-2",
+                  currentStep === step.id ? "bg-primary text-primary-foreground border-primary/20 scale-105 shadow-lg" : currentStep > step.id ? "bg-green-500 text-white border-green-500/20" : "bg-card text-muted-foreground border-transparent"
+                )}>
+                  <step.icon size={20} />
                 </div>
-                <span
-                  className={`text-[12px] font-bold hidden lg:block transition-colors text-center leading-tight max-w-[110px] ${currentStep === step.id ? "text-primary" : "text-muted-foreground"}`}
-                >
-                  {step.title}
-                </span>
-
-                {/* Active Connector Overlay */}
-                {step.id < steps.length && (
-                  <div className="absolute top-7 left-[50%] w-full h-[2px] z-[-1] hidden lg:block">
-                    <div
-                      className={`h-full bg-primary transition-all duration-700 ${currentStep > step.id ? "w-full" : "w-0"}`}
-                    />
-                  </div>
-                )}
+                <span className={cn("text-[9px] font-black uppercase tracking-tighter hidden lg:block transition-colors", currentStep === step.id ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-5xl mx-auto px-4">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            transition={{ duration: 0.3 }}
           >
             {currentStep === 1 && renderStep1()}
             {currentStep === 2 && renderStep2()}
             {currentStep === 3 && renderStep3()}
-            {currentStep === 4 && renderStep4()}
-            {currentStep === 5 && renderStep5()}
-            {currentStep === 6 && renderStep6()}
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Modal Validation Feedback */}
-      <AnimatePresence>
-        {showValidationModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-card border border-border p-8 rounded-[2.5rem] shadow-2xl max-w-lg w-full text-center space-y-6 overflow-hidden relative"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full -mr-16 -mt-16" />
-              
-              <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-3xl flex items-center justify-center mx-auto relative z-10">
-                <Sparkles className="w-10 h-10" />
-              </div>
-
-              <div className="space-y-2 relative z-10">
-                <h3 className="text-2xl font-black font-heading tracking-tight">
-                  {t("wizard.step1.aiSuggestion")}
-                </h3>
-                <p className="text-muted-foreground leading-relaxed px-4">
-                  {validationMessage}
-                </p>
-              </div>
-
-              <div className="pt-4 relative z-10">
-                <button
-                  onClick={() => {
-                    setShowValidationModal(false);
-                    setCurrentStep(1); // Quay lại bước 1
-                  }}
-                  className="w-full py-4 bg-primary text-primary-foreground font-black rounded-2xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  {t("wizard.step1.backToEdit")}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {error && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-card border-2 border-red-500/20 p-8 rounded-[2.5rem] shadow-2xl max-w-md w-full text-center space-y-6">
+            <div className="w-20 h-20 bg-red-100 text-red-600 rounded-3xl flex items-center justify-center mx-auto">
+              <AlertCircle className="w-10 h-10" />
+            </div>
+            <h3 className="text-2xl font-black text-red-600">Úi, có lỗi rồi!</h3>
+            <p className="text-muted-foreground font-medium leading-relaxed">
+              {error}
+            </p>
+            <div className="flex gap-4">
+              <button 
+                onClick={() => {
+                  setError("");
+                  if (currentStep === 1) {
+                    setWizardData(prev => ({ ...prev, analysis: null, content: "" }));
+                  }
+                }} 
+                className="flex-1 py-4 bg-red-600 text-white font-black rounded-2xl shadow-lg shadow-red-500/20 hover:bg-red-700 transition-all"
+              >
+                Tải lại / Thử lại
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

@@ -99,7 +99,7 @@
       "careers": "Careers",
       "culture": "Culture"
     },
-    "copyright": "Copyright © 2025 SynDe. All rights reserved",
+    "copyright": "",
     "terms": "Terms and Conditions",
     "privacy": "Privacy Policy"
   },
@@ -318,7 +318,8 @@
       "next": "Next",
       "validationError": "The input content is not sufficient to generate a quality exam. Please provide more details.",
       "aiSuggestion": "AI Suggestion",
-      "backToEdit": "Back to edit"
+      "backToEdit": "Back to edit",
+      "tooShortError": "Content too short. Please enter at least 3 words."
     },
     "step2": {
       "analyzing": "AI is analyzing content...",

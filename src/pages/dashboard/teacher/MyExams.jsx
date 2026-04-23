@@ -130,7 +130,12 @@ export default function MyExams() {
 
   useEffect(() => {
     setCurrentPage(1);
+    document.querySelector('main')?.scrollTo({ top: 0, behavior: "smooth" });
   }, [activeTab, searchQuery]);
+
+  useEffect(() => {
+    document.querySelector('main')?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage]);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -268,11 +273,13 @@ export default function MyExams() {
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-1">
-                          <h3 className="text-xl font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                        <div className="flex items-center gap-3 mb-1 min-w-0">
+                          <h3 className="text-xl font-bold text-foreground truncate group-hover:text-primary transition-colors flex-1 min-w-0">
                             {exam.title}
                           </h3>
-                          {getStatusBadge(exam.status)}
+                          <div className="flex-shrink-0">
+                            {getStatusBadge(exam.status)}
+                          </div>
                         </div>
                         <p className="text-muted-foreground text-sm line-clamp-1 mb-4">
                           {exam.description || t("wizard.list.noDescription")}

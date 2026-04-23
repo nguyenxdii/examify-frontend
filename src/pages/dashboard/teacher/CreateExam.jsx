@@ -48,10 +48,6 @@ export default function CreateExam() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="mt-auto pt-12 text-center text-xs text-muted-foreground">
-        &copy; 2025 SynDe System. All rights reserved.
-      </footer>
     </div>
   );
 }

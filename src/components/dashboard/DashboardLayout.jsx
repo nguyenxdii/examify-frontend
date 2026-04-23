@@ -57,7 +57,7 @@ export function DashboardLayout({ user }) {
           <main
             ref={mainRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto p-8 bg-muted/20"
+            className="flex-1 overflow-y-auto p-6 bg-muted/20"
           >
             <AnimatePresence mode="wait">
               <motion.div
@@ -72,12 +72,6 @@ export function DashboardLayout({ user }) {
               </motion.div>
             </AnimatePresence>
 
-            {/* Dashboard Footer - only visible at bottom */}
-            <footer
-              className={`mt-8 p-6 border-t border-border bg-card text-center text-xs text-muted-foreground transition-all duration-300 ${showFooter ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"}`}
-            >
-              &copy; 2025 SynDe System. All rights reserved.
-            </footer>
           </main>
         </div>
       </div>
