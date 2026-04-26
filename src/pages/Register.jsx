@@ -47,6 +47,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [modalType, setModalType] = useState(null); // 'success', 'error', 'exists'
+  const [isLoading, setIsLoading] = useState(false);
   const [shouldAnimate] = useState(
     () => !sessionStorage.getItem("auth_animated"),
   );
@@ -94,6 +95,7 @@ export default function Register() {
       return;
     }
 
+    setIsLoading(true);
     try {
       await register({
         fullName: formData.fullName,
@@ -123,6 +125,8 @@ export default function Register() {
       } else {
         setModalType("error");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -307,7 +311,8 @@ export default function Register() {
                       placeholder={t("register.placeholders.fullName")}
                       value={formData.fullName}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-4 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      disabled={isLoading}
+                      className="w-full pl-12 pr-4 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -320,6 +325,7 @@ export default function Register() {
                   <div className="flex bg-border/20 p-1 rounded-xl border border-border gap-1 relative overflow-hidden group">
                     <button
                       type="button"
+                      disabled={isLoading}
                       onClick={() => setFormData(prev => ({ ...prev, gender: "male" }))}
                       className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all relative z-10 ${
                         formData.gender === "male" 
@@ -331,6 +337,7 @@ export default function Register() {
                     </button>
                     <button
                       type="button"
+                      disabled={isLoading}
                       onClick={() => setFormData(prev => ({ ...prev, gender: "female" }))}
                       className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all relative z-10 ${
                         formData.gender === "female" 
@@ -344,8 +351,8 @@ export default function Register() {
                       className="absolute inset-y-1 bg-primary rounded-lg shadow-lg"
                       initial={false}
                       animate={{
-                        left: formData.gender === "male" ? "4px" : "50%",
-                        right: formData.gender === "male" ? "50%" : "4px",
+                        x: formData.gender === "male" ? 0 : "100%",
+                        width: "50%",
                       }}
                       transition={{ type: "spring", stiffness: 300, damping: 28 }}
                     />
@@ -368,7 +375,8 @@ export default function Register() {
                       placeholder={t("login.placeholders.email")}
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-4 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      disabled={isLoading}
+                      className="w-full pl-12 pr-4 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -389,7 +397,8 @@ export default function Register() {
                       placeholder={t("register.placeholders.institution")}
                       value={formData.institution}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-4 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      disabled={isLoading}
+                      className="w-full pl-12 pr-4 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -429,7 +438,8 @@ export default function Register() {
                       placeholder={t("login.placeholders.password")}
                       value={formData.password}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-12 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      disabled={isLoading}
+                      className="w-full pl-12 pr-12 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:opacity-50"
                     />
                     <button
                       type="button"
@@ -461,7 +471,8 @@ export default function Register() {
                       placeholder={t("login.placeholders.password")}
                       value={formData.confirmPassword}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-12 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      disabled={isLoading}
+                      className="w-full pl-12 pr-12 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:opacity-50"
                     />
                     <button
                       type="button"
@@ -483,8 +494,12 @@ export default function Register() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
-                  className="w-full py-4 px-4 bg-primary text-white rounded-xl font-bold transition-all shadow-lg shadow-primary/20"
+                  disabled={isLoading}
+                  className="w-full py-4 px-4 bg-primary text-white rounded-xl font-bold transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait"
                 >
+                  {isLoading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : null}
                   {t("register.btn")}
                 </motion.button>
               </form>

@@ -33,3 +33,4 @@ export const saveToBank = (data) => axiosInstance.post("/exams/questions/bank", 
 // Room APIs
 export const getRoomPublic = (roomId) => axiosInstance.get(`/rooms/${roomId}/public`);
 export const submitRoomQuiz = (roomId, data) => axiosInstance.post(`/rooms/${roomId}/submit`, data);
+export const validateRoom = (roomId, data) => axiosInstance.post(`/rooms/${roomId}/validate`, data);

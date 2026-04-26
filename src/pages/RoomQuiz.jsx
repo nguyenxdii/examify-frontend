@@ -4,9 +4,9 @@ import {
   Loader2, AlertCircle, CheckCircle2, Clock, 
   ChevronRight, ChevronLeft, Send, User, 
   Info, Award, BarChart3, RotateCcw,
-  Home, Share2, Eye, Sparkles, LogIn
+  Home, Share2, Eye, Sparkles, LogIn, Lock
 } from "lucide-react";
-import { getRoomPublic, submitRoomQuiz } from "../api/examApi";
+import { getRoomPublic, submitRoomQuiz, validateRoom } from "../api/examApi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { cn } from "../lib/utils";
@@ -22,8 +22,11 @@ export default function RoomQuiz() {
   const [room, setRoom] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [step, setStep] = useState("welcome"); // welcome, quiz, result
+  const [welcomeStep, setWelcomeStep] = useState(1); // 1: StudentID, 2: Name, 3: RoomCode
   const [studentName, setStudentName] = useState("");
   const [studentId, setStudentId] = useState("");
+  const [roomCode, setRoomCode] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({}); // questionId -> list of keys
   const [timeLeft, setTimeLeft] = useState(0);
@@ -62,7 +65,29 @@ export default function RoomQuiz() {
         
         setRoom(roomData);
         setQuestions(questionsData);
-        setTimeLeft((roomData.durationMinutes || 10) * 60);
+
+        // Check persistent timer
+        const savedTimer = localStorage.getItem(`examify_timer_${roomId}`);
+        if (savedTimer) {
+          try {
+            const { endTime, savedStudentId, savedStudentName } = JSON.parse(savedTimer);
+            const remaining = Math.floor((endTime - Date.now()) / 1000);
+            
+            if (remaining > 0) {
+              setStudentId(savedStudentId);
+              setStudentName(savedStudentName);
+              setTimeLeft(remaining);
+              setStep("quiz");
+            } else {
+              localStorage.removeItem(`examify_timer_${roomId}`);
+              setTimeLeft((roomData.durationMinutes || 10) * 60);
+            }
+          } catch (e) {
+            setTimeLeft((roomData.durationMinutes || 10) * 60);
+          }
+        } else {
+          setTimeLeft((roomData.durationMinutes || 10) * 60);
+        }
       } catch (err) {
         toast.error(err.response?.data?.message || "Không thể tải phòng thi");
         navigate("/");
@@ -92,16 +117,52 @@ export default function RoomQuiz() {
     return () => clearInterval(timer);
   }, [step, timeLeft, isSubmitting]);
 
+  const handleNextStep = async () => {
+    if (welcomeStep === 1) {
+      if (room?.requireStudentList && !studentId.trim()) {
+        toast.error("Vui lòng nhập Mã số học sinh");
+        return;
+      }
+      setWelcomeStep(2);
+    } else if (welcomeStep === 2) {
+      if (!studentName.trim()) {
+        toast.error("Vui lòng nhập Họ và tên");
+        return;
+      }
+      setWelcomeStep(3);
+    } else if (welcomeStep === 3) {
+      if (!roomCode.trim()) {
+        toast.error("Vui lòng nhập Mã phòng thi");
+        return;
+      }
+      
+      setIsValidating(true);
+      try {
+        await validateRoom(roomId, {
+          studentId,
+          studentName,
+          roomCode
+        });
+        
+        // Start Quiz
+        const endTime = Date.now() + timeLeft * 1000;
+        localStorage.setItem(`examify_timer_${roomId}`, JSON.stringify({
+          endTime,
+          savedStudentId: studentId,
+          savedStudentName: studentName
+        }));
+        
+        setStep("quiz");
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Xác thực không thành công");
+      } finally {
+        setIsValidating(false);
+      }
+    }
+  };
+
   const handleStart = () => {
-    if (!studentName.trim()) {
-      toast.error("Vui lòng nhập tên của bạn");
-      return;
-    }
-    if (room?.requireStudentList && !studentId.trim()) {
-      toast.error("Phòng thi yêu cầu nhập Mã số học sinh");
-      return;
-    }
-    setStep("quiz");
+    handleNextStep();
   };
 
   const handleAnswerChange = (questionId, choiceKey, type) => {
@@ -144,6 +205,7 @@ export default function RoomQuiz() {
       });
       setResult(res.data);
       setStep("result");
+      localStorage.removeItem(`examify_timer_${roomId}`);
       toast.success("Nộp bài thành công!");
     } catch (err) {
       toast.error(err.response?.data?.message || "Lỗi khi nộp bài");
@@ -204,45 +266,108 @@ export default function RoomQuiz() {
         </div>
 
         <div className="space-y-5">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 flex items-center gap-2">
-                <User className="w-3.5 h-3.5 text-primary" /> Họ và tên của bạn
-              </label>
-              <input 
-                type="text"
-                placeholder="Ví dụ: Nguyễn Văn A"
-                value={studentName}
-                onChange={(e) => setStudentName(e.target.value)}
-                className="w-full h-12 bg-muted/50 border-2 border-border rounded-xl px-5 font-bold text-base focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-center"
-              />
-            </div>
+          <div className="relative min-h-[140px]">
+            <AnimatePresence mode="wait">
+              {welcomeStep === 1 && (
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 flex items-center gap-2">
+                      <LogIn className="w-3.5 h-3.5 text-primary" /> 1. Nhập Mã số học sinh (MSSV)
+                    </label>
+                    <input 
+                      type="text"
+                      placeholder="MSSV của bạn..."
+                      value={studentId}
+                      onChange={(e) => setStudentId(e.target.value)}
+                      className="w-full h-12 bg-muted/50 border-2 border-border rounded-xl px-5 font-bold text-base focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-center"
+                    />
+                    {!room?.requireStudentList && (
+                      <p className="text-[10px] text-muted-foreground px-2 italic text-center">
+                        (Phòng thi này không bắt buộc MSSV, bạn có thể để trống)
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
+              )}
 
-            {room?.requireStudentList && (
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 flex items-center gap-2">
-                  <LogIn className="w-3.5 h-3.5 text-primary" /> Mã số học sinh
-                </label>
-                <input 
-                  type="text"
-                  placeholder="Nhập mã số của bạn"
-                  value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
-                  className="w-full h-12 bg-muted/50 border-2 border-border rounded-xl px-5 font-bold text-base focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-center"
-                />
-                <p className="text-[10px] text-muted-foreground px-2 italic text-center">
-                  Phòng thi này yêu cầu xác thực theo danh sách của giáo viên.
-                </p>
-              </div>
-            )}
+              {welcomeStep === 2 && (
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 flex items-center gap-2">
+                      <User className="w-3.5 h-3.5 text-primary" /> 2. Nhập Họ và tên của bạn
+                    </label>
+                    <input 
+                      type="text"
+                      placeholder="Ví dụ: Nguyễn Văn A"
+                      value={studentName}
+                      onChange={(e) => setStudentName(e.target.value)}
+                      className="w-full h-12 bg-muted/50 border-2 border-border rounded-xl px-5 font-bold text-base focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-center"
+                    />
+                  </div>
+                </motion.div>
+              )}
+
+              {welcomeStep === 3 && (
+                <motion.div
+                  key="step3"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 flex items-center gap-2">
+                      <Lock className="w-3.5 h-3.5 text-primary" /> 3. Nhập Mã phòng thi
+                    </label>
+                    <input 
+                      type="text"
+                      placeholder="Nhập 6 ký tự mã phòng..."
+                      value={roomCode}
+                      onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                      className="w-full h-12 bg-muted/50 border-2 border-border rounded-xl px-5 font-bold text-base focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-center tracking-[0.2em] uppercase"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          <button 
-            onClick={handleStart}
-            className="w-full h-12 bg-primary text-primary-foreground font-black rounded-xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-base flex items-center justify-center gap-3 uppercase tracking-wider"
-          >
-            Vào phòng thi <ChevronRight className="w-5 h-5" />
-          </button>
+          <div className="flex gap-3">
+            {welcomeStep > 1 && (
+              <button 
+                onClick={() => setWelcomeStep(prev => prev - 1)}
+                className="flex-1 h-12 bg-muted text-foreground font-black rounded-xl hover:bg-muted/80 transition-all text-base uppercase tracking-wider"
+              >
+                Quay lại
+              </button>
+            )}
+            <button 
+              onClick={handleNextStep}
+              disabled={isValidating}
+              className="flex-[2] h-12 bg-primary text-primary-foreground font-black rounded-xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-base flex items-center justify-center gap-3 uppercase tracking-wider disabled:opacity-70"
+            >
+              {isValidating ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  {welcomeStep === 3 ? "Bắt đầu làm bài" : "Tiếp theo"}
+                  <ChevronRight className="w-5 h-5" />
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </motion.div>
     </div>

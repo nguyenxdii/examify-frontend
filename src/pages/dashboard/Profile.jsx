@@ -82,13 +82,13 @@ export default function Profile() {
     return () => window.removeEventListener("settingsChanged", handleStorageChange);
   }, [currentUser]);
 
-  // Router-level blocker (SPA navigation)
+  // Setup navigation blocker
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       hasChanges && currentLocation.pathname !== nextLocation.pathname,
   );
 
-  // Sync blocker state with our warning popup
+  // Handle blocker state changes
   useEffect(() => {
     if (blocker.state === "blocked") {
       setShowExitWarning(true);
@@ -322,12 +322,13 @@ export default function Profile() {
                     {t("register.female")}
                   </button>
                   <motion.div
-                    className="absolute inset-y-1.5 bg-primary rounded-xl shadow-lg shadow-primary/30"
+                    className="absolute inset-y-1 bg-primary rounded-xl shadow-lg z-0"
+                    initial={false}
                     animate={{
-                      left: formData.gender === "male" ? "6px" : "50%",
-                      right: formData.gender === "male" ? "50%" : "6px",
+                      x: formData.gender === "male" ? 0 : "100%",
+                      width: "50%",
                     }}
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   />
                 </div>
               </div>

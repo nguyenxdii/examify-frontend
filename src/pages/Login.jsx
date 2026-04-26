@@ -32,6 +32,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [modalType, setModalType] = useState(null); // 'success', 'error'
+  const [isLoading, setIsLoading] = useState(false);
   const [shouldAnimate] = useState(
     () => !sessionStorage.getItem("auth_animated"),
   );
@@ -56,6 +57,7 @@ export default function Login() {
       return;
     }
 
+    setIsLoading(true);
     try {
       const response = await login({ email, password });
       // ... (giữ nguyên logic lưu token)
@@ -78,6 +80,8 @@ export default function Login() {
       }, 2000);
     } catch (error) {
       setModalType("error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -295,7 +299,8 @@ export default function Login() {
                       placeholder={t("login.placeholders.email")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-muted-foreground/50"
+                      disabled={isLoading}
+                      className="w-full pl-12 pr-4 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -316,7 +321,8 @@ export default function Login() {
                       placeholder={t("login.placeholders.password")}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-12 pr-12 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-muted-foreground/50"
+                      disabled={isLoading}
+                      className="w-full pl-12 pr-12 py-3 bg-border/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
                     />
                     <button
                       type="button"
@@ -348,8 +354,12 @@ export default function Login() {
                   }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
-                  className="w-full py-4 px-4 bg-primary text-white rounded-xl font-bold transition-all duration-200 shadow-lg shadow-primary/20"
+                  disabled={isLoading}
+                  className="w-full py-4 px-4 bg-primary text-white rounded-xl font-bold transition-all duration-200 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait"
                 >
+                  {isLoading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : null}
                   {t("login.signIn")}
                 </motion.button>
               </form>
