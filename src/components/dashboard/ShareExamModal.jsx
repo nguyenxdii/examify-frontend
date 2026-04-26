@@ -11,7 +11,7 @@ export default function ShareExamModal({ isOpen, onClose, examId, examTitle }) {
   const [copied, setCopied] = React.useState(false);
   
   // Generate the public quiz link
-  const shareLink = `${window.location.origin}/quiz/${examId}`;
+  const shareLink = `${window.location.origin}/public-quiz/${examId}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareLink);

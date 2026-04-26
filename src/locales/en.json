@@ -560,6 +560,11 @@
     },
     "detail": {
       "back": "Back",
+      "card": {
+        "exam": "Exam",
+        "code": "Room Code",
+        "submissions": "Submissions"
+      },
       "open_btn": "Open Room",
       "close_btn": "Close Room",
       "exam": "Exam Title",
@@ -582,6 +587,7 @@
       "student_name": "Student Name",
       "stt": "No.",
       "search_placeholder": "Search SID or name...",
+      "empty_students": "No students in the list yet. Please upload an Excel file or add manually.",
       "add_student": "Add Student",
       "delete_student": "Delete Student",
       "delete_student_confirm": "Are you sure you want to remove {{name}} from the list?",
@@ -591,7 +597,24 @@
       "add_success": "Student added successfully",
       "delete_success": "Student removed successfully",
       "edit_student": "Edit Student Info",
-      "update_success": "Information updated successfully"
+      "update_success": "Student information updated successfully",
+      "list_details": "View Submission Details",
+      "grading": {
+        "title": "Grading: {{name}}",
+        "essay_confirm_title": "Confirm Result?",
+        "essay_confirm_msg": "Are you sure you want to mark this answer as CORRECT?",
+        "essay_reject_title": "Confirm Result?",
+        "essay_reject_msg": "Are you sure you want to mark this answer as INCORRECT?",
+        "accept": "Accept (Correct)",
+        "reject": "Reject (Incorrect)",
+        "ai_suggestion": "AI Suggestion",
+        "student_answer": "Student Answer",
+        "correct_answer": "Correct/Sample Answer",
+        "explanation": "Explanation",
+        "status_graded": "Graded",
+        "status_pending": "Pending Review",
+        "final_score": "Final Score"
+      }
     },
     "form": {
       "exam": "Select Exam",

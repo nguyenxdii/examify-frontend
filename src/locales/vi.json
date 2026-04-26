@@ -554,6 +554,11 @@
     },
     "detail": {
       "back": "Quay lại",
+      "card": {
+        "exam": "Đề thi",
+        "code": "Mã phòng",
+        "submissions": "Bài nộp"
+      },
       "open_btn": "Mở phòng",
       "close_btn": "Đóng phòng",
       "exam": "Đề thi",
@@ -576,6 +581,8 @@
       "student_name": "Họ tên",
       "stt": "STT",
       "search_placeholder": "Tìm kiếm MSSV hoặc tên...",
+      "student_list": "Danh sách học sinh",
+      "empty_students": "Chưa có học sinh nào trong danh sách. Vui lòng tải lên file Excel hoặc thêm thủ công.",
       "add_student": "Thêm học sinh",
       "delete_student": "Xóa học sinh",
       "delete_student_confirm": "Bạn có chắc chắn muốn xóa học sinh {{name}} khỏi danh sách?",
@@ -585,7 +592,24 @@
       "add_success": "Thêm học sinh thành công",
       "delete_success": "Xóa học sinh thành công",
       "edit_student": "Sửa thông tin học sinh",
-      "update_success": "Cập nhật thông tin học sinh thành công"
+      "update_success": "Cập nhật thông tin học sinh thành công",
+      "list_details": "Xem chi tiết",
+      "grading": {
+        "title": "Chấm bài: {{name}}",
+        "essay_confirm_title": "Xác nhận kết quả?",
+        "essay_confirm_msg": "Bạn có chắc chắn muốn xác nhận câu trả lời này là ĐÚNG không?",
+        "essay_reject_title": "Xác nhận kết quả?",
+        "essay_reject_msg": "Bạn có chắc chắn muốn xác nhận câu trả lời này là SAI không?",
+        "accept": "Chấp nhận (Đúng)",
+        "reject": "Từ chối (Sai)",
+        "ai_suggestion": "Gợi ý từ AI",
+        "student_answer": "Bài làm của học sinh",
+        "correct_answer": "Đáp án đúng/mẫu",
+        "explanation": "Giải thích",
+        "status_graded": "Đã chấm",
+        "status_pending": "Chờ giáo viên chấm",
+        "final_score": "Điểm tổng kết"
+      }
     },
     "form": {
       "exam": "Chọn đề thi",

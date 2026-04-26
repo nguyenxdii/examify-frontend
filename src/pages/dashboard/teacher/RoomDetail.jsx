@@ -27,15 +27,16 @@ import {
   getRoomSubmissions, 
   uploadStudentList,
   addStudentManual,
+  updateStudentManual,
   deleteStudentManual
 } from "../../../api/roomApi";
 import { Plus } from "lucide-react";
 import { toast } from "react-hot-toast";
-import SubmissionDetailModal from "../../../components/dashboard/SubmissionDetailModal";
 import ConfirmationModal from "../../../components/dashboard/ConfirmationModal";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import ShareModal from "../../../components/dashboard/ShareModal";
+import { cn } from "../../../lib/utils";
 
 export default function RoomDetail() {
   const { t, i18n } = useTranslation();
@@ -76,7 +77,11 @@ export default function RoomDetail() {
         getRoomSubmissions(roomId)
       ]);
       setRoom(roomRes.data);
-      setSubmissions(subRes.data);
+      // Sort submissions by date ascending (oldest first) as requested
+      const sortedSubs = [...subRes.data].sort((a, b) => 
+        new Date(a.submittedAt) - new Date(b.submittedAt)
+      );
+      setSubmissions(sortedSubs);
       
       if (roomRes.data.requireStudentList) {
         const studentRes = await getStudentList(roomId);
@@ -391,6 +396,10 @@ export default function RoomDetail() {
                 <p className="text-lg font-bold">{room.submissionCount}</p>
               </div>
               <div className="space-y-1 bg-muted/30 p-3.5 rounded-2xl border border-border/50 hover:bg-muted/50 transition-colors">
+                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">{t("rooms.form.max_attempts")}</p>
+                <p className="text-lg font-bold">{room.maxAttempts > 0 ? room.maxAttempts : "Vô hạn"}</p>
+              </div>
+              <div className="space-y-1 bg-muted/30 p-3.5 rounded-2xl border border-border/50 hover:bg-muted/50 transition-colors">
                 <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">{t("rooms.detail.mode")}</p>
                 <p className="text-[11px] font-bold uppercase tracking-tight text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-lg text-center">{room.mode === "exam" ? t("rooms.mode.exam") : t("rooms.mode.practice")}</p>
               </div>
@@ -470,12 +479,13 @@ export default function RoomDetail() {
 
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead className="bg-muted/30 text-[10px] font-bold uppercase text-muted-foreground tracking-[0.2em] border-b border-border">
+                <thead className="bg-muted/30 text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] border-b border-border">
                   <tr>
-                    <th className="px-8 py-5">{t("register.fullName")}</th>
-                    <th className="px-8 py-5">{t("dashboard.recentQuizzes.table.date")}</th>
-                    <th className="px-8 py-5 text-center">{t("dashboard.topStudents.avgScore")}</th>
-                    <th className="px-8 py-5 text-right font-bold text-primary">{t("rooms.detail.preview")}</th>
+                    <th className="px-8 py-5 text-center min-w-[200px]">{t("register.fullName")}</th>
+                    <th className="px-8 py-5 text-center whitespace-nowrap">Lượt thi</th>
+                    <th className="px-8 py-5 text-center min-w-[180px]">{t("dashboard.recentQuizzes.table.date")}</th>
+                    <th className="px-8 py-5 text-center whitespace-nowrap">{t("dashboard.topStudents.avgScore")}</th>
+                    <th className="px-8 py-5 text-center font-bold text-primary whitespace-nowrap">{t("rooms.detail.preview")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50 text-sm">
@@ -489,44 +499,46 @@ export default function RoomDetail() {
                       </td>
                     </tr>
                   ) : (
-                    filteredSubmissions.map((sub) => (
+                    filteredSubmissions.map((sub, idx) => (
                       <tr key={sub.submissionId} className="hover:bg-muted/5 transition-all group cursor-default">
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-4">
-                             <div className="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center font-bold text-primary border border-primary/10">
-                               {sub.studentName?.charAt(0)}
-                             </div>
-                             <div>
+                         <td className="px-8 py-6 text-center">
+                            <div className="flex flex-col items-center">
                                <p className="font-bold text-lg group-hover:text-primary transition-colors">{sub.studentName}</p>
                                <p className="text-xs text-muted-foreground font-mono font-bold opacity-60">ID: {sub.studentId}</p>
-                             </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6 text-xs text-muted-foreground font-bold">
-                           <div className="flex items-center gap-2">
+                            </div>
+                         </td>
+                         <td className="px-8 py-6 text-center">
+                           <div className="flex flex-col items-center gap-1">
+                             <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-black whitespace-nowrap">
+                               {sub.attemptNumber} / {room.maxAttempts > 0 ? room.maxAttempts : "∞"}
+                             </span>
+                           </div>
+                         </td>
+                         <td className="px-8 py-6 text-xs text-muted-foreground font-bold whitespace-nowrap text-center">
+                           <div className="flex items-center justify-center gap-2">
                              <Calendar className="w-3.5 h-3.5 opacity-40" />
                              {formatDateTime(sub.submittedAt)}
                            </div>
-                        </td>
-                        <td className="px-8 py-6 text-center">
-                          <div className="flex items-center justify-center gap-3">
-                             <div className={`text-2xl font-bold ${sub.score >= (sub.totalQuestions / 2) ? "text-green-500" : "text-red-500"}`}>
-                               {sub.score?.toFixed(1)}
-                             </div>
-                             <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter opacity-40 border-l border-border pl-3 text-left leading-none">
-                               / {sub.totalQuestions}<br/>{t("wizard.steps.generation")}
-                             </div>
+                         </td>
+                        <td className="px-8 py-6 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center">
+                           <p className={cn(
+                             "text-2xl font-black tabular-nums",
+                             sub.score >= 5 ? "text-emerald-500" : "text-rose-500"
+                           )}>
+                             {sub.score?.toFixed(1)}
+                           </p>
                           </div>
                         </td>
-                        <td className="px-8 py-6 text-right">
-                          <button 
-                            onClick={() => setSelectedSubmissionId(sub.submissionId)}
-                            className="bg-primary/5 hover:bg-primary text-primary hover:text-white px-5 py-2.5 rounded-xl transition-all font-bold text-xs uppercase tracking-widest inline-flex items-center gap-2 group/btn shadow-sm"
-                          >
-                            {t("list.details")} 
-                            <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                          </button>
-                        </td>
+                         <td className="px-8 py-6 text-center whitespace-nowrap">
+                           <button 
+                             onClick={() => navigate(`/dashboard/teacher/rooms/${roomId}/submissions/${sub.submissionId}`)}
+                             className="bg-primary/5 hover:bg-primary text-primary hover:text-white px-5 py-2.5 rounded-xl transition-all font-bold text-xs uppercase tracking-widest inline-flex items-center gap-2 group/btn shadow-sm mx-auto"
+                           >
+                             {t("rooms.detail.list_details")} 
+                             <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                           </button>
+                         </td>
                       </tr>
                     ))
                   )}
@@ -691,15 +703,6 @@ export default function RoomDetail() {
         )}
       </div>
 
-      {selectedSubmissionId && (
-        <SubmissionDetailModal
-           isOpen={!!selectedSubmissionId}
-           onClose={() => setSelectedSubmissionId(null)}
-           roomId={roomId}
-           submissionId={selectedSubmissionId}
-           onGraded={fetchData}
-        />
-      )}
 
       <ConfirmationModal
         isOpen={confirmModal.isOpen}

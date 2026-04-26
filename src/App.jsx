@@ -28,6 +28,7 @@ import ManualCreateExam from "./pages/dashboard/teacher/ManualCreateExam";
 import ExamDetail from "./pages/dashboard/teacher/ExamDetail";
 import ExamRooms from "./pages/dashboard/teacher/ExamRooms";
 import RoomDetail from "./pages/dashboard/teacher/RoomDetail";
+import SubmissionDetail from "./pages/dashboard/teacher/SubmissionDetail";
 import QuestionBank from "./pages/dashboard/teacher/QuestionBank";
 import Results from "./pages/dashboard/teacher/Results";
 import AIAssistant from "./pages/dashboard/teacher/AIAssistant";
@@ -90,12 +91,16 @@ const router = createBrowserRouter([
     element: <Register />,
   },
   {
-    path: "/quiz/:examId",
-    element: <PublicQuiz />,
+    path: "/quiz/:roomId",
+    element: <RoomQuiz />,
   },
   {
     path: "/room/:roomId",
     element: <RoomQuiz />,
+  },
+  {
+    path: "/public-quiz/:examId",
+    element: <PublicQuiz />,
   },
   {
     element: (
@@ -173,6 +178,10 @@ const router = createBrowserRouter([
       {
         path: "/dashboard/teacher/rooms/:roomId",
         element: <RoomDetail />,
+      },
+      {
+        path: "/dashboard/teacher/rooms/:roomId/submissions/:submissionId",
+        element: <SubmissionDetail />,
       },
       {
         path: "/dashboard/teacher/questions",

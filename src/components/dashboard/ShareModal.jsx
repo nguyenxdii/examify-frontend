@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Copy, Check, Share2, QrCode, Link as LinkIcon, Download, Eye, EyeOff } from 'lucide-react';
+import { X, Copy, Check, Share2, QrCode, Link as LinkIcon, Eye, EyeOff } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -21,27 +21,6 @@ export default function ShareModal({ isOpen, onClose, roomId, roomCode, roomName
     } catch (err) {
       toast.error("Không thể sao chép");
     }
-  };
-
-  const downloadQRCode = () => {
-    const svg = document.getElementById('room-qr-code');
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-      const pngFile = canvas.toDataURL('image/png');
-      const downloadLink = document.createElement('a');
-      downloadLink.download = `QR_Room_${roomCode}.png`;
-      downloadLink.href = pngFile;
-      downloadLink.click();
-    };
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   };
 
   if (!isOpen) return null;
@@ -85,7 +64,7 @@ export default function ShareModal({ isOpen, onClose, roomId, roomCode, roomName
           <div className="p-8 space-y-8">
             {/* QR Code Section */}
             <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="p-6 bg-white rounded-3xl shadow-inner border-2 border-primary/5 relative group">
+              <div className="p-6 bg-white rounded-3xl shadow-inner border-2 border-primary/5">
                 <QRCodeSVG
                   id="room-qr-code"
                   value={shareUrl}
@@ -102,13 +81,6 @@ export default function ShareModal({ isOpen, onClose, roomId, roomCode, roomName
                     excavate: true,
                   }}
                 />
-                <button 
-                  onClick={downloadQRCode}
-                  className="absolute inset-0 bg-primary/90 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl gap-2 font-black text-xs uppercase tracking-widest"
-                >
-                  <Download className="w-6 h-6 animate-bounce" />
-                  Tải mã QR
-                </button>
               </div>
               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">{t("share.qr_desc") || "Quét để vào phòng thi"}</p>
             </div>
@@ -143,7 +115,16 @@ export default function ShareModal({ isOpen, onClose, roomId, roomCode, roomName
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-tight">Mã phòng thi</p>
               </div>
               <div className="flex items-center gap-3">
-                <p className="text-lg font-mono font-black text-primary tracking-tighter">
+                <p 
+                  className="text-lg font-mono font-black text-primary tracking-tighter cursor-pointer hover:scale-110 transition-transform active:scale-95"
+                  onClick={() => {
+                    if (showCode) {
+                      navigator.clipboard.writeText(roomCode);
+                      toast.success("Đã copy mã phòng!");
+                    }
+                  }}
+                  title="Click để copy mã"
+                >
                   {showCode ? roomCode : "••••••"}
                 </p>
                 <button 

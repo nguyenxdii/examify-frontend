@@ -230,8 +230,16 @@ export default function PublicQuiz() {
 
   // --- QUIZ PLAYER ---
   if (step === "quiz") {
-    const currentQ = questions[currentQuestionIndex];
-    const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+    const currentQ = questions?.[currentQuestionIndex];
+    const progress = questions?.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
+
+    if (!currentQ && step === "quiz") return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
+        <AlertCircle className="w-12 h-12 text-destructive" />
+        <p className="text-muted-foreground font-bold">Không tìm thấy nội dung câu hỏi</p>
+        <button onClick={() => window.location.reload()} className="bg-primary text-white px-4 py-2 rounded-xl">Thử lại</button>
+      </div>
+    );
 
     return (
       <div className="min-h-screen bg-background flex flex-col">
@@ -562,7 +570,7 @@ export default function PublicQuiz() {
                   // Safe sort without mutating original array
                   const isCorrect = isEssay 
                     ? false 
-                    : JSON.stringify([...studentAns].sort()) === JSON.stringify([...(q.correctAnswers || [])].sort());
+                    : JSON.stringify([...studentAns].sort()) === JSON.stringify([...(q?.correctAnswers || [])].sort());
                   
                   let badgeText = isCorrect ? "Đúng" : "Sai";
                   let badgeColor = isCorrect ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500";

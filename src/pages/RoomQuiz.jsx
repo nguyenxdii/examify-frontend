@@ -4,7 +4,7 @@ import {
   Loader2, AlertCircle, CheckCircle2, Clock, 
   ChevronRight, ChevronLeft, Send, User, 
   Info, Award, BarChart3, RotateCcw,
-  Home, Share2, Eye, Sparkles, LogIn, Lock
+  Home, Share2, Eye, Sparkles, LogIn, Lock, QrCode
 } from "lucide-react";
 import { getRoomPublic, submitRoomQuiz, validateRoom } from "../api/examApi";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,6 +35,27 @@ export default function RoomQuiz() {
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(false);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
+
+  // Anti-copy logic
+  useEffect(() => {
+    if (step === "quiz") {
+      const handleCopy = (e) => {
+        e.preventDefault();
+        toast.error("Hành động sao chép bị chặn để đảm bảo tính công bằng!");
+      };
+      const handleContextMenu = (e) => e.preventDefault();
+
+      document.addEventListener("copy", handleCopy);
+      document.addEventListener("cut", handleCopy);
+      document.addEventListener("contextmenu", handleContextMenu);
+
+      return () => {
+        document.removeEventListener("copy", handleCopy);
+        document.removeEventListener("cut", handleCopy);
+        document.removeEventListener("contextmenu", handleContextMenu);
+      };
+    }
+  }, [step]);
 
   // Load data
   useEffect(() => {
@@ -77,6 +98,13 @@ export default function RoomQuiz() {
               setStudentId(savedStudentId);
               setStudentName(savedStudentName);
               setTimeLeft(remaining);
+              
+              // Load saved answers
+              const savedAnswers = localStorage.getItem(`examify_answers_${roomId}`);
+              if (savedAnswers) {
+                setAnswers(JSON.parse(savedAnswers));
+              }
+              
               setStep("quiz");
             } else {
               localStorage.removeItem(`examify_timer_${roomId}`);
@@ -123,14 +151,22 @@ export default function RoomQuiz() {
         toast.error("Vui lòng nhập Mã số học sinh");
         return;
       }
-      setWelcomeStep(2);
-    } else if (welcomeStep === 2) {
       if (!studentName.trim()) {
         toast.error("Vui lòng nhập Họ và tên");
         return;
       }
-      setWelcomeStep(3);
-    } else if (welcomeStep === 3) {
+      
+      // Step 1 validation: Check student info on server
+      setIsValidating(true);
+      try {
+        await validateRoom(roomId, { studentId, studentName, roomCode: "" });
+        setWelcomeStep(2);
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Thông tin sinh viên không hợp lệ");
+      } finally {
+        setIsValidating(false);
+      }
+    } else if (welcomeStep === 2) {
       if (!roomCode.trim()) {
         toast.error("Vui lòng nhập Mã phòng thi");
         return;
@@ -138,16 +174,22 @@ export default function RoomQuiz() {
       
       setIsValidating(true);
       try {
-        await validateRoom(roomId, {
+        const res = await validateRoom(roomId, {
           studentId,
           studentName,
           roomCode
         });
         
+        // Sync with Server-side timer
+        const serverEndTime = new Date(res.data.endTime).getTime();
+        const now = Date.now();
+        const remaining = Math.max(0, Math.floor((serverEndTime - now) / 1000));
+        
+        setTimeLeft(remaining);
+        
         // Start Quiz
-        const endTime = Date.now() + timeLeft * 1000;
         localStorage.setItem(`examify_timer_${roomId}`, JSON.stringify({
-          endTime,
+          endTime: serverEndTime,
           savedStudentId: studentId,
           savedStudentName: studentName
         }));
@@ -168,21 +210,32 @@ export default function RoomQuiz() {
   const handleAnswerChange = (questionId, choiceKey, type) => {
     setAnswers(prev => {
       const current = prev[questionId] || [];
-      if (type === "multiple_choice") {
-        return { ...prev, [questionId]: [choiceKey] };
+      let newAnswers;
+      
+      if (type === "multiple_choice" || type === "boolean") {
+        // Single choice logic
+        newAnswers = { ...prev, [questionId]: [choiceKey] };
+      } else if (type === "essay") {
+        // Essay logic
+        newAnswers = { ...prev, [questionId]: [choiceKey] };
       } else {
+        // Multiple answers logic (type === "multiple_answer")
         if (current.includes(choiceKey)) {
-          return { ...prev, [questionId]: current.filter(k => k !== choiceKey) };
+          newAnswers = { ...prev, [questionId]: current.filter(k => k !== choiceKey) };
         } else {
-          return { ...prev, [questionId]: [...current, choiceKey] };
+          newAnswers = { ...prev, [questionId]: [...current, choiceKey] };
         }
       }
+      
+      localStorage.setItem(`examify_answers_${roomId}`, JSON.stringify(newAnswers));
+      return newAnswers;
     });
 
-    if (autoAdvance && type === "multiple_choice") {
+    // Only auto-advance for single choice types
+    if (autoAdvance && (type === "multiple_choice" || type === "boolean")) {
       setTimeout(() => {
         setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1));
-      }, 300);
+      }, 400);
     }
   };
 
@@ -206,6 +259,7 @@ export default function RoomQuiz() {
       setResult(res.data);
       setStep("result");
       localStorage.removeItem(`examify_timer_${roomId}`);
+      localStorage.removeItem(`examify_answers_${roomId}`);
       toast.success("Nộp bài thành công!");
     } catch (err) {
       toast.error(err.response?.data?.message || "Lỗi khi nộp bài");
@@ -276,22 +330,26 @@ export default function RoomQuiz() {
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-4"
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 flex items-center gap-2">
-                      <LogIn className="w-3.5 h-3.5 text-primary" /> 1. Nhập Mã số học sinh (MSSV)
+                      <LogIn className="w-3.5 h-3.5 text-primary" /> Thông tin cá nhân
                     </label>
+                    {room?.requireStudentList && (
+                      <input 
+                        type="text"
+                        placeholder="Mã số học sinh (MSSV)..."
+                        value={studentId}
+                        onChange={(e) => setStudentId(e.target.value)}
+                        className="w-full h-12 bg-muted/50 border-2 border-border rounded-xl px-5 font-bold text-base focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-center mb-2"
+                      />
+                    )}
                     <input 
                       type="text"
-                      placeholder="MSSV của bạn..."
-                      value={studentId}
-                      onChange={(e) => setStudentId(e.target.value)}
+                      placeholder="Họ và tên của bạn..."
+                      value={studentName}
+                      onChange={(e) => setStudentName(e.target.value)}
                       className="w-full h-12 bg-muted/50 border-2 border-border rounded-xl px-5 font-bold text-base focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-center"
                     />
-                    {!room?.requireStudentList && (
-                      <p className="text-[10px] text-muted-foreground px-2 italic text-center">
-                        (Phòng thi này không bắt buộc MSSV, bạn có thể để trống)
-                      </p>
-                    )}
                   </div>
                 </motion.div>
               )}
@@ -304,40 +362,23 @@ export default function RoomQuiz() {
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-4"
                 >
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 flex items-center gap-2">
-                      <User className="w-3.5 h-3.5 text-primary" /> 2. Nhập Họ và tên của bạn
-                    </label>
-                    <input 
-                      type="text"
-                      placeholder="Ví dụ: Nguyễn Văn A"
-                      value={studentName}
-                      onChange={(e) => setStudentName(e.target.value)}
-                      className="w-full h-12 bg-muted/50 border-2 border-border rounded-xl px-5 font-bold text-base focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-center"
-                    />
-                  </div>
-                </motion.div>
-              )}
-
-              {welcomeStep === 3 && (
-                <motion.div
-                  key="step3"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-4"
-                >
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 flex items-center gap-2">
-                      <Lock className="w-3.5 h-3.5 text-primary" /> 3. Nhập Mã phòng thi
-                    </label>
-                    <input 
-                      type="text"
-                      placeholder="Nhập 6 ký tự mã phòng..."
-                      value={roomCode}
-                      onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                      className="w-full h-12 bg-muted/50 border-2 border-border rounded-xl px-5 font-bold text-base focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-center tracking-[0.2em] uppercase"
-                    />
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center justify-center gap-2 mb-2">
+                        <QrCode className="w-3.5 h-3.5 text-primary" /> Xác nhận mã phòng
+                      </label>
+                      <p className="text-[11px] text-muted-foreground mb-4 italic">Vui lòng nhập mã phòng được giáo viên cung cấp để bắt đầu làm bài</p>
+                    </div>
+                    
+                    <div className="max-w-[280px] mx-auto">
+                      <input 
+                        type="text"
+                        placeholder="MÃ PHÒNG"
+                        value={roomCode}
+                        onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                        className="w-full h-14 bg-muted/50 border-2 border-border rounded-2xl px-5 font-black text-2xl focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-center tracking-[0.2em] placeholder:tracking-normal placeholder:font-bold placeholder:text-muted-foreground/30 shadow-inner"
+                      />
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -375,11 +416,19 @@ export default function RoomQuiz() {
 
   // --- QUIZ PLAYER --- (Same as PublicQuiz)
   if (step === "quiz") {
-    const currentQ = questions[currentQuestionIndex];
-    const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+    const currentQ = questions?.[currentQuestionIndex];
+    const progress = questions?.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
+
+    if (!currentQ) return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
+        <AlertCircle className="w-12 h-12 text-destructive" />
+        <p className="text-muted-foreground font-bold">Không tìm thấy nội dung câu hỏi</p>
+        <button onClick={() => window.location.reload()} className="bg-primary text-white px-4 py-2 rounded-xl">Thử lại</button>
+      </div>
+    );
 
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen bg-background flex flex-col select-none">
         {/* Header bar */}
         <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-md border-b border-border p-3">
           <div className="max-w-6xl mx-auto flex items-center justify-between gap-6">
@@ -398,11 +447,11 @@ export default function RoomQuiz() {
               </div>
               <button 
                 onClick={handleSubmitClick}
-                disabled={isSubmitting}
-                className="hidden md:flex items-center gap-2 bg-primary text-white px-6 py-2 rounded-full font-black hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
+                disabled={isSubmitting || timeLeft <= 0}
+                className="hidden md:flex items-center gap-2 bg-primary text-white px-6 py-2 rounded-full font-black hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:hover:scale-100"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                Nộp bài
+                {timeLeft <= 0 ? "Đang nộp..." : "Nộp bài"}
               </button>
             </div>
           </div>
@@ -420,9 +469,16 @@ export default function RoomQuiz() {
                 className="space-y-6"
               >
                 <div className="space-y-3">
-                  <span className="inline-block px-2.5 py-0.5 bg-muted rounded-md text-[9px] font-black uppercase tracking-widest text-muted-foreground">
-                    Câu hỏi {currentQuestionIndex + 1} / {questions.length}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block px-2.5 py-0.5 bg-muted rounded-md text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+                      Câu hỏi {currentQuestionIndex + 1} / {questions.length}
+                    </span>
+                    {currentQ.type === "multiple_answer" && (
+                      <span className="inline-block px-2.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-md text-[9px] font-black uppercase tracking-widest animate-pulse">
+                        Chọn nhiều đáp án
+                      </span>
+                    )}
+                  </div>
                   <h3 className="text-lg md:text-xl font-bold leading-snug text-foreground">
                     {currentQ.content}
                   </h3>
@@ -433,9 +489,10 @@ export default function RoomQuiz() {
                     <div className="space-y-4">
                       <textarea
                         value={answers[currentQ.id]?.[0] || ""}
-                        onChange={(e) => setAnswers(prev => ({ ...prev, [currentQ.id]: [e.target.value] }))}
-                        placeholder="Nhập câu trả lời của bạn tại đây..."
-                        className="w-full h-64 p-6 bg-card border-2 border-border rounded-[2rem] font-medium text-lg focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-sm"
+                        onChange={(e) => handleAnswerChange(currentQ.id, e.target.value, "essay")}
+                        disabled={timeLeft <= 0 || isSubmitting}
+                        placeholder={timeLeft <= 0 ? "Thời gian đã hết, đang tự động nộp bài..." : "Nhập câu trả lời của bạn tại đây..."}
+                        className="w-full h-64 p-6 bg-card border-2 border-border rounded-[2rem] font-medium text-lg focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-sm disabled:opacity-70 disabled:bg-muted/50"
                       />
                       <div className="flex items-center gap-2 px-4 py-2 bg-primary/5 rounded-xl border border-primary/10">
                         <Sparkles className="w-4 h-4 text-primary" />
@@ -450,11 +507,13 @@ export default function RoomQuiz() {
                         <button
                           key={choice.key}
                           onClick={() => handleAnswerChange(currentQ.id, choice.key, currentQ.type)}
+                          disabled={timeLeft <= 0 || isSubmitting}
                           className={cn(
                             "group relative flex items-center gap-4 p-3.5 rounded-xl border-2 text-left transition-all duration-200",
                             isSelected 
                               ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
-                              : "bg-card border-border hover:border-primary/40"
+                              : "bg-card border-border hover:border-primary/40",
+                            (timeLeft <= 0 || isSubmitting) && "opacity-60 cursor-not-allowed"
                           )}
                         >
                           <div className={cn(
@@ -534,11 +593,11 @@ export default function RoomQuiz() {
 
             <button 
               onClick={handleSubmitClick}
-              disabled={isSubmitting}
-              className="w-full h-12 bg-primary text-white rounded-xl font-black flex items-center justify-center gap-3 shadow-xl shadow-primary/20 md:hidden"
+              disabled={isSubmitting || timeLeft <= 0}
+              className="w-full h-12 bg-primary text-white rounded-xl font-black flex items-center justify-center gap-3 shadow-xl shadow-primary/20 md:hidden disabled:opacity-50"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              Nộp bài
+              {timeLeft <= 0 ? "Đang nộp..." : "Nộp bài"}
             </button>
           </aside>
         </main>
@@ -694,7 +753,7 @@ export default function RoomQuiz() {
                   // Safe sort without mutating original array
                   const isCorrect = isEssay 
                     ? false // Essay cannot be 'correct' by exact match
-                    : JSON.stringify([...studentAns].sort()) === JSON.stringify([...(q.correctAnswers || [])].sort());
+                    : JSON.stringify([...studentAns].sort()) === JSON.stringify([...(q?.correctAnswers || [])].sort());
                   
                   let badgeText = isCorrect ? "Đúng" : "Sai";
                   let badgeColor = isCorrect ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500";
