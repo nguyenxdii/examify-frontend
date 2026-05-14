@@ -14,6 +14,11 @@ import UserDashboard from "./pages/dashboard/UserDashboard";
 import DashboardRedirect from "./pages/dashboard/DashboardRedirect";
 import PublicQuiz from "./pages/PublicQuiz";
 import RoomQuiz from "./pages/RoomQuiz";
+import ResultLookup from "./pages/ResultLookup";
+import SubmissionReview from "./pages/SubmissionReview";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Intro from "./pages/Intro";
 
 // Admin Pages
 import UserManagement from "./pages/dashboard/admin/UserManagement";
@@ -38,6 +43,16 @@ import { Toaster } from "react-hot-toast";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
+import ScrollToTop from "./components/ScrollToTop";
+
+function LayoutWrapper({ children }) {
+  return (
+    <>
+      <ScrollToTop />
+      {children}
+    </>
+  );
+}
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -80,15 +95,35 @@ const getCurrentUser = () => {
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Home />,
+    element: <LayoutWrapper><Home /></LayoutWrapper>,
   },
   {
     path: "/login",
-    element: <Login />,
+    element: <LayoutWrapper><Login /></LayoutWrapper>,
   },
   {
     path: "/register",
-    element: <Register />,
+    element: <LayoutWrapper><Register /></LayoutWrapper>,
+  },
+  {
+    path: "/lookup",
+    element: <LayoutWrapper><ResultLookup /></LayoutWrapper>,
+  },
+  {
+    path: "/lookup/submission/:submissionId",
+    element: <LayoutWrapper><SubmissionReview /></LayoutWrapper>,
+  },
+  {
+    path: "/about",
+    element: <LayoutWrapper><About /></LayoutWrapper>,
+  },
+  {
+    path: "/contact",
+    element: <Contact />,
+  },
+  {
+    path: "/intro",
+    element: <Intro />,
   },
   {
     path: "/quiz/:roomId",

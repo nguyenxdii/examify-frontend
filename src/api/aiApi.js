@@ -13,3 +13,11 @@ export const analyzeFile = (file) => {
 };
 
 export const generateQuestions = (data) => axiosInstance.post("/ai/generate", data);
+ 
+export const parseExamFile = (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return axiosInstance.post("/ai/parse-exam", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};

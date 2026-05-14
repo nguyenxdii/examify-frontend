@@ -111,6 +111,12 @@
     scroll-behavior: smooth;
   }
   
+  button, 
+  [role="button"],
+  a {
+    cursor: pointer;
+  }
+  
   /* Scrollbar Styles */
   ::-webkit-scrollbar {
     width: 10px;

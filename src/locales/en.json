@@ -1,217 +1,39 @@
 {
-  "common": {
-    "save": "Save",
-    "edit": "Edit",
-    "delete": "Delete",
-    "cancel": "Cancel",
-    "confirm": "Confirm",
-    "actions": "Actions",
-    "editConfirm": "Do you want to save these changes?",
-    "regenerateOne": "Regenerate this question",
-    "step": "Step",
-    "ok": "Confirm",
-    "loading": "Processing...",
-    "preview": "Preview Draft"
-  },
-  "nav": {
-    "quizzes": "Quiz",
-    "weekly": "Weekly Quiz",
-    "rewards": "Rewards",
-    "about": "About",
-    "home": "Home",
-    "aboutUs": "About Us",
-    "features": "Features",
-    "pricing": "Pricing",
-    "signIn": "Sign In",
-    "register": "Register"
-  },
-  "hero": {
-    "badge": "The ultimate quiz experience",
-    "title": "Learn, Quiz, ",
-    "earn": "Earn Rewards",
-    "desc": "Join thousands of students and teachers on the ultimate quiz platform. Test your knowledge, compete with peers, and win exciting rewards",
-    "getStarted": "Get Started",
-    "tryDemo": "Try AI Demo",
-    "stats": "students joined this week"
-  },
-  "categories": {
-    "badge": "Categories",
-    "titlePrefix": "Explore ",
-    "titleSuffix": "Quiz Categories",
-    "desc": "Discover quizzes across various subjects to test and expand your knowledge",
-    "names": {
-      "science": "Science & Tech",
-      "math": "Mathematics",
-      "chemistry": "Chemistry",
-      "biology": "Biology",
-      "general": "General Knowledge",
-      "current": "Current Affairs"
-    },
-    "cardDesc": "Test your knowledge in {{name}} with our curated quizzes",
-    "explore": "Explore Quizzes"
-  },
-  "features": {
-    "badge": "Features",
-    "titlePrefix": "Why ",
-    "desc": "Discover quizzes across various subjects to test and expand your knowledge",
-    "items": {
-      "personalized": {
-        "title": "Personalized Learning",
-        "desc": "Adaptive quizzes that adjust to your knowledge level and learning pace"
-      },
-      "rewards": {
-        "title": "Start your journey with SynDe",
-        "subtitle": "Smart online multiple-choice quiz management and participation system",
-        "desc": "Earn points, badges, and rewards for your achievements"
-      },
-      "teacher": {
-        "title": "Teacher Dashboard",
-        "desc": "Comprehensive tools for educators to create and manage quizzes"
-      },
-      "tracking": {
-        "title": "Progress Tracking",
-        "desc": "Adaptive quizzes that adjust to your knowledge level and learning pace"
-      },
-      "leaders": {
-        "title": "Competitive Leaderboards",
-        "desc": "Compete with peers and climb the ranks in various categories"
-      },
-      "mobile": {
-        "title": "Mobile Friendly",
-        "desc": "Access quizzes anytime, anywhere on any device"
-      }
-    }
-  },
-  "cta": {
-    "title": "Ready to Start Your Quiz Journey?",
-    "desc": "Join thousands of students and teachers. Sign up today and get access to all features",
-    "createAccount": "Create Account",
-    "browseLibrary": "Browse Library"
-  },
-  "footer": {
-    "desc": "The ultimate quiz platform for students and teachers. Learn, compete, and earn rewards",
-    "quickLinks": "Quick Links",
-    "forTeachers": "For Teachers",
-    "contact": "Contact us",
-    "links": {
-      "about": "About",
-      "contact": "Contact us",
-      "careers": "Careers",
-      "culture": "Culture"
-    },
-    "copyright": "",
-    "terms": "Terms and Conditions",
-    "privacy": "Privacy Policy"
-  },
-  "login": {
-    "welcome": "Welcome back",
-    "desc": "Enter your credentials to access your account",
-    "username": "Username",
-    "email": "Email",
-    "password": "Password",
-    "signIn": "Sign In",
-    "or": "OR",
-    "noAccount": "Don't have an account?",
-    "signUp": "Sign Up",
-    "forgotPassword": "Forgot password?",
-    "placeholders": {
-      "email": "name@example.com",
-      "password": "••••••••••"
-    },
-    "modal": {
-      "successTitle": "Login Successful!",
-      "successDesc": "Great! You are being redirected to your dashboard.",
-      "errorTitle": "Login Failed",
-      "errorDesc": "Invalid credentials. Please check and try again.",
-      "emptyError": "Please enter both email and password",
-      "btnClose": "Close"
-    }
-  },
-  "register": {
-    "title": "Create Account",
-    "desc": "Join our community and start your journey",
-    "fullName": "Full Name",
-    "email": "Email",
-    "institution": "Institution",
-    "teachingField": "Teaching Field",
-    "gender": "Gender",
-    "male": "Male",
-    "female": "Female",
-    "confirmPassword": "Confirm Password",
-    "btn": "Register",
-    "haveAccount": "Already have an account?",
-    "signIn": "Sign In",
-    "fields": {
-      "math": "Mathematics",
-      "vietnamese": "Vietnamese",
-      "english": "English",
-      "ethics": "Ethics",
-      "nature_society": "Nature & Society",
-      "music": "Music",
-      "arts": "Arts",
-      "physical_ed": "Physical Education",
-      "literature": "Literature",
-      "physics": "Physics",
-      "chemistry": "Chemistry",
-      "biology": "Biology",
-      "history": "History",
-      "geography": "Geography",
-      "civics": "Civics",
-      "informatics": "Informatics",
-      "technology": "Technology",
-      "national_defense": "National Defense",
-      "lecturer_general": "Lecturer (General)",
-      "engineering": "Engineering",
-      "economics": "Economics",
-      "medicine": "Medicine",
-      "law": "Law",
-      "pedagogy": "Pedagogy",
-      "it": "IT",
-      "languages": "Languages",
-      "other": "Other Fields"
-    },
-    "placeholders": {
-      "fullName": "John Doe",
-      "institution": "University of Technology",
-      "teachingField": "Select your field"
-    },
-    "modal": {
-      "successTitle": "Registration Success!",
-      "successDesc": "Welcome to SynDe. You will be redirected shortly.",
-      "errorTitle": "Registration Failed",
-      "errorDesc": "An error occurred. Please try again later.",
-      "existsTitle": "Email Already Registered",
-      "existsDesc": "This email is already in our system. Would you like to sign in instead?",
-      "btnOk": "Yes, Sign In Now",
-      "btnNo": "No, stay here",
-      "emptyError": "Please fill in all required fields!",
-      "passwordMismatch": "Confirm password does not match!",
-      "passwordTooShort": "Password must be at least 6 characters",
-      "btnRetry": "Retry",
-      "btnClose": "Close"
-    }
-  },
-  "notFound": {
-    "title": "Oops!",
-    "sub": "Page Not Found",
-    "desc": "It seems you've wandered into an unexplored space.",
-    "backHome": "Back to Home"
-  },
-  "profile": {
-    "subtitle": "Manage your personal information and identity",
-    "basic_info": "Basic Information",
-    "verification_status": "Account Verified",
-    "save": "Save",
-    "edit": "Edit Profile",
-    "confirm_save_title": "Save changes?",
-    "confirm_save_desc": "Your information will be updated across the system.",
-    "exit_warning_title": "Unsaved changes?",
-    "exit_warning_desc": "Your changes will be lost if you leave this page now.",
-    "stay": "Stay",
-    "leave": "Leave",
-    "security_note": "Your profile is secure and only used to personalize your experience on the SynDe system."
-  },
   "dashboard": {
+    "user": {
+      "title": "Welcome back!",
+      "desc": "Here is an overview of your teaching activities."
+    },
+    "stats": {
+      "totalQuizzes": "Total Quizzes",
+      "totalStudents": "Total Students",
+      "bankQuestions": "Bank Questions",
+      "avgScore": "Average Score",
+      "completionRate": "Completion Rate",
+      "totalUsers": "Total Users",
+      "activeSessions": "Active Sessions",
+      "systemHealth": "System Health",
+      "newToday": "{{count}} new today",
+      "newThisWeek": "{{count}} new this week",
+      "fromLastMonth": "+{{count}} from last month",
+      "realTime": "Real-time traffic",
+      "allSystemsGo": "All systems Go"
+    },
+    "recentQuizzes": {
+      "title": "Recent Quizzes",
+      "globalTitle": "Global Quizzes",
+      "viewAll": "View all",
+      "table": {
+        "title": "Quiz Title",
+        "category": "Category",
+        "attempts": "Attempts",
+        "date": "Created At",
+        "status": "Status"
+      }
+    },
+    "recentTakers": {
+      "title": "Recent Submissions"
+    },
     "sidebar": {
       "overview": "Overview",
       "users": "User Management",
@@ -239,32 +61,6 @@
       "profile": "PERSONAL PROFILE",
       "signOut": "Sign Out"
     },
-    "stats": {
-      "totalQuizzes": "Total Quizzes",
-      "totalStudents": "Total Students",
-      "avgScore": "Avg. Score",
-      "completionRate": "Completion Rate",
-      "totalUsers": "Total Users",
-      "activeSessions": "Active Sessions",
-      "systemHealth": "System Health",
-      "newToday": "{{count}} new today",
-      "newThisWeek": "{{count}} new this week",
-      "fromLastMonth": "+{{count}} from last month",
-      "realTime": "Real-time traffic",
-      "allSystemsGo": "All systems Go"
-    },
-    "recentQuizzes": {
-      "title": "Recent Quizzes",
-      "globalTitle": "Global Quizzes",
-      "viewAll": "View all",
-      "table": {
-        "title": "Quiz Title",
-        "category": "Category",
-        "attempts": "Attempts",
-        "date": "Created At",
-        "status": "Status"
-      }
-    },
     "topStudents": {
       "title": "Top Performing Students",
       "completed": "{{count}} Quizzes completed",
@@ -275,14 +71,141 @@
       "desc": "Overview of system-wide activity and user management.",
       "maintenance": "System Maintenance",
       "maintenanceDesc": "Next scheduled maintenance is on Sunday, March 23rd at 02:00 AM UTC.",
-      "viewLogs": "View Logs"
-    },
-    "user": {
-      "title": "Teacher Dashboard",
-      "desc": "Monitor your students' performance and manage your quizzes."
+      "viewLogs": "View Logs",
+      "users": {
+        "subtitle": "View performance and manage teacher accounts.",
+        "search_placeholder": "Search teachers by name, email...",
+        "fetch_error": "Failed to fetch teacher list.",
+        "detail_error": "Failed to fetch user details.",
+        "lock_success": "Account locked successfully.",
+        "unlock_success": "Account unlocked successfully.",
+        "no_users": "No teachers found",
+        "table": {
+          "teacher": "Teacher",
+          "join_date": "Join Date",
+          "status": "Status"
+        },
+        "role": {
+          "admin": "Administrator",
+          "teacher": "Teacher"
+        },
+        "status": {
+          "active": "Active",
+          "locked": "Locked"
+        },
+        "lock": "Lock",
+        "unlock": "Unlock",
+        "lock_btn": "LOCK ACCOUNT",
+        "unlock_btn": "UNLOCK ACCOUNT",
+        "lock_confirm_msg": "Are you sure you want to lock this account? The user will not be able to log in until unlocked.",
+        "lock_reason_placeholder": "e.g., Terms violation, fraud detected...",
+        "personal_info": "Personal Info",
+        "system_metrics": "System Metrics",
+        "metrics": {
+          "api_requests": "API Requests",
+          "storage_used": "Storage used",
+          "ai_tokens": "AI Tokens",
+          "day_suffix": "D"
+        },
+        "joined": "Joined",
+        "delete_reason_required": "Please enter a deletion reason"
+      },
+      "stats": {
+        "total_users": "Total Users",
+        "total_exams": "Total Exams",
+        "new_submissions": "New Submissions",
+        "active_rooms": "Active Rooms",
+        "vs_last_month": "Vs last month",
+        "system_exams": "System-wide Exams",
+        "online_status": "Online Status",
+        "currently_online": "Currently Online",
+        "running_rooms": "Running Rooms",
+        "submissions_24h": "Submissions (24h)",
+        "response_time": "Response Time",
+        "view_session_details": "View Session Details",
+        "system_stable": "System Stable",
+        "all_services_good": "All services are running good",
+        "update_available": "Update Available",
+        "ready_to_deploy": "Ready to deploy"
+      },
+      "recent_exams": "Recent Exams",
+      "exams": {
+        "subtitle": "Manage all exams in the system.",
+        "search_placeholder": "Search exam title, teacher...",
+        "no_exams": "No exams found",
+        "delete_violation": "Delete violation exam",
+        "delete_reason_required": "Please enter delete reason",
+        "delete_success": "Exam deleted and teacher notified",
+        "table": {
+          "created_at": "Created Date"
+        },
+        "status": {
+          "all": "All Statuses"
+        },
+        "delete_modal": {
+          "title": "Delete Violation Exam",
+          "warning": "You are about to delete the exam",
+          "impact": "This action will permanently delete the exam and notify the teacher.",
+          "reason_label": "Delete Reason:",
+          "reason_placeholder": "e.g., Copyright violation, sensitive content..."
+        }
+      }
     }
   },
+  "share": {
+    "copy_success": "Link copied to clipboard!",
+    "title": "Share & QR Code",
+    "url_label": "Join Link",
+    "preview": "Preview Mode",
+    "qr_desc": "Scan to join the exam",
+    "preview_btn": "Preview Mode (Student View)"
+  },
   "wizard": {
+    "addToBank": "Add to Question Bank",
+    "bankModalDesc": "Save this question to reuse it in other exams.",
+    "digitize": {
+      "error": "Failed to extract exam from this file.",
+      "heroTitle": "Digitize Exam",
+      "heroDesc": "Turn paper documents into digital exams in seconds",
+      "mainDesc": "Upload your exam file (PDF/Word/Image) and let AI automatically extract questions, answers, and detailed explanations.",
+      "placeholder": "Select file to digitize",
+      "uploadNote": "Note: Answers and explanations automatically recognized by AI may contain errors. Please check the content carefully after conversion.",
+      "analyzing": "Analyzing document..."
+    },
+    "create": {
+      "durationError": "Please set the exam duration to be greater than 0",
+      "desc": "Create a new exam manually or use artificial intelligence (AI).",
+      "manual": "Manual Creation",
+      "manualDesc": "Manually compose each question and answer for your exam.",
+      "ai": "AI Creation",
+      "aiDesc": "Upload documents or enter a topic to generate questions automatically.",
+      "recommended": "Recommended"
+    },
+    "validation": {
+      "totalMismatch": "Total question types ({{types}}) and difficulty distribution ({{diff}}) must be equal.",
+      "uploadFile": "Please upload an exam file."
+    },
+    "step6": {
+      "saveDraft": "Save Draft",
+      "saveFinish": "Finish & Save",
+      "examName": "Exam Title",
+      "examNamePlaceholder": "e.g., Math 12 Midterm Exam",
+      "subject": "Subject",
+      "subjectPlaceholder": "e.g., Mathematics",
+      "description": "Description",
+      "descriptionPlaceholder": "e.g., Chapter 1 test...",
+      "duration": "Duration",
+      "durationPlaceholder": "Enter minutes...",
+      "passScore": "Pass Score",
+      "passScorePlaceholder": "e.g., 5.0",
+      "title": "Final Information",
+      "saving": {
+        "exam": "Saving exam info...",
+        "questions": "Saving questions...",
+        "success": "Success! Redirecting...",
+        "error": "An error occurred while saving."
+      }
+    },
     "common": {
       "step": "Step"
     },
@@ -408,31 +331,6 @@
         "confirm": "Delete Now"
       }
     },
-    "step6": {
-      "title": "Final Information",
-      "examName": "Exam Name",
-      "examNamePlaceholder": "e.g., Biology Genetics Quiz - Grade 12",
-      "subject": "Subject",
-      "subjectPlaceholder": "Math, Physics, Chemistry...",
-      "description": "Short Description",
-      "descriptionPlaceholder": "For class 12A1, trial exam...",
-      "saveDraft": "Save as Draft",
-      "saveFinish": "Save & Finish",
-      "saving": {
-        "exam": "Saving exam info...",
-        "questions": "Saving questions...",
-        "success": "Success! Redirecting...",
-        "error": "An error occurred while saving."
-      }
-    },
-    "create": {
-      "desc": "Create a new exam manually or use artificial intelligence (AI).",
-      "manual": "Manual Creation",
-      "manualDesc": "Manually compose each question and answer for your exam.",
-      "ai": "AI Creation",
-      "aiDesc": "Upload documents or enter a topic to generate questions automatically.",
-      "recommended": "Recommended"
-    },
     "questionModal": {
       "editTitle": "Edit Question",
       "addTitle": "Add New Question",
@@ -476,6 +374,8 @@
       "emptyDesc": "Start by creating your first exam for students to join.",
       "tryAi": "Try AI Creation",
       "deleteConfirm": "Are you sure you want to delete this exam?",
+      "deleteTitle": "Delete Exam",
+      "deleteSuccess": "Exam deleted successfully!",
       "deleteError": "Error deleting exam.",
       "noDescription": "No description for this exam.",
       "unclassified": "Unclassified",
@@ -501,6 +401,14 @@
       "listHeader": "Question List",
       "addQuestion": "Add Question",
       "noQuestions": "No questions in this exam yet.",
+      "subject": "Subject",
+      "duration": "Duration",
+      "question_num": "Question {{num}}",
+      "type": {
+        "multiple_choice": "Multiple Choice",
+        "essay": "Essay"
+      },
+      "explanation": "Explanation",
       "config": "Exam Configuration",
       "time": "Duration",
       "passScore": "Passing Score",
@@ -513,6 +421,359 @@
       "noteDesc": "You can only edit questions when the exam is in **Draft** status. Once it is ready or shared, editing is locked to ensure data integrity."
     }
   },
+  "titles": {
+    "home": "Examify - Ultimate Quiz Experience",
+    "login": "Login | Examify",
+    "register": "Register | Examify",
+    "lookup": "Result Lookup | Examify",
+    "quiz": "Public Quiz | Examify",
+    "dashboard": "Dashboard | Examify",
+    "room_detail": "{{name}} | Examify Dashboard",
+    "submission_detail": "{{name}} - {{id}} | Examify Dashboard",
+    "review": "Review - {{exam}} | Examify",
+    "not_found": "Page Not Found | Examify",
+    "about": "About Us | Examify",
+    "contact": "Contact | Examify",
+    "intro": "Introduction | Examify",
+    "profile": "Profile | Examify",
+    "settings": "Settings | Examify",
+    "admin_dashboard": "Admin Control Center | Examify",
+    "admin_users": "User Management | Examify Admin",
+    "admin_exams": "System Exams | Examify Admin",
+    "admin_stats": "System Statistics | Examify Admin",
+    "teacher_dashboard": "Teacher Dashboard | Examify",
+    "my_exams": "My Quizzes | Examify",
+    "exam_rooms": "Exam Rooms | Examify",
+    "exam_detail": "{{name}} | Examify",
+    "ai_create_exam": "AI Exam Generator | Examify",
+    "ai_assistant": "AI Assistant | Examify",
+    "question_bank": "Question Bank | Examify",
+    "create_exam": "Create New Exam | Examify",
+    "room_quiz": "Taking Quiz: {{name}} | Examify",
+    "user_dashboard": "User Dashboard | Examify",
+    "results": "Results | Examify"
+  },
+  "exam": {
+    "detail": {
+      "examName": "Exam Name",
+      "subject": "Subject",
+      "duration": "Duration",
+      "question_num": "Question {{num}}",
+      "type": {
+        "multiple_choice": "Multiple Choice",
+        "essay": "Essay"
+      },
+      "explanation": "Explanation",
+      "status": {
+        "draft": "Draft",
+        "ready": "Ready",
+        "shared": "Shared",
+        "loading": "Processing..."
+      }
+    }
+  },
+  "common": {
+    "save": "Save",
+    "back": "Back",
+    "previous": "Previous",
+    "next": "Next",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "discard": "Discard",
+    "confirm_discard": "Discard changes?",
+    "confirm_discard_msg": "You have unsaved changes. Are you sure you want to exit?",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "save_config": "Save Config",
+    "confirm": "Confirm",
+    "required": "is required",
+    "showing": "Showing",
+    "of": "of",
+    "actions": "Actions",
+    "refresh": "Refresh",
+    "view_all": "View All",
+    "not_updated": "Not updated",
+    "editConfirm": "Do you want to save these changes?",
+    "regenerateOne": "Regenerate this question",
+    "step": "Step",
+    "ok": "Confirm",
+    "loading": "Processing...",
+    "preview": "Preview Draft",
+    "updated_at": "Updated at",
+    "clone": "Clone",
+    "success": "Success",
+    "processing": "Processing...",
+    "error": "An error occurred",
+    "all": "All",
+    "attempts": "Attempts",
+    "graded": "Graded",
+    "fully_graded": "Fully Graded",
+    "pending_confirmation": "Pending Confirmation",
+    "pending_announcement": "Pending Announcement",
+    "waiting_for_announcement": "Results are waiting for teacher to publish. Please check back later.",
+    "unlimited": "Unlimited",
+    "completed": "Completed",
+    "correct": "Correct",
+    "incorrect": "Incorrect",
+    "correctCount": "Correct / Total",
+    "ai_graded": "AI Graded",
+    "pending": "Pending",
+    "empty": "Empty",
+    "pagination_summary": "Showing {{start}} - {{end}} of {{total}} {{label}}",
+    "first_page": "First",
+    "last_page": "Last",
+    "no_data": "No data available",
+    "notifications": "Notifications",
+    "no_notifications": "No notifications",
+    "account": "Account",
+    "on": "On",
+    "off": "Off",
+    "avg": "Avg",
+    "loading_submission": "Loading submission details...",
+    "publish_success": "Scores published for all room!",
+    "unpublish_success": "Scores hidden for all room!",
+    "publish_individual_success": "Score published for this student!",
+    "unpublish_individual_success": "Individual score unpublished!",
+    "confirm_graded_success": "Grading confirmed!",
+    "unconfirm_graded_success": "Grading unconfirmed!",
+    "error_update_publish": "Error updating publication status",
+    "error_update_graded": "Error updating grading status",
+    "error_copy": "Failed to copy",
+    "fill_all": "Please fill in all information",
+    "created_at": "Created Date",
+    "structure": "Structure",
+    "duration": "Duration",
+    "questions": "Questions",
+    "questions_list": "Questions List",
+    "minutes": "minutes",
+    "uncategorized": "Uncategorized",
+    "confirm_ready_msg": "Once set to Ready, you will no longer be able to edit question content. Are you sure?",
+    "ai_review_note": "You can edit any content before officially saving.",
+    "export_exam": "Export Exam (PDF/Word)",
+    "print": "Print Exam",
+    "download": "Download",
+    "num_versions": "Number of Versions",
+    "shuffle_questions": "Shuffle Questions",
+    "shuffle_answers": "Shuffle Answers",
+    "show_explanations": "Include Explanations",
+    "share": "Share",
+    "more": "More",
+    "not_updated": "Not updated",
+    "email": "Email",
+    "close": "Close",
+    "minutes_short": "mins",
+    "previous": "Previous",
+    "next": "Next",
+    "back": "Back",
+    "essay": "Essay",
+    "multiple_choice": "Multiple Choice",
+    "error_fetch_stats": "Failed to fetch statistics"
+  },
+  "nav": {
+    "quizzes": "Quiz",
+    "weekly": "Weekly Quiz",
+    "rewards": "Rewards",
+    "about": "About",
+    "home": "Home",
+    "aboutUs": "About Us",
+    "features": "Features",
+    "pricing": "Pricing",
+    "signIn": "Sign In",
+    "register": "Register"
+  },
+  "hero": {
+    "badge": "The ultimate quiz experience",
+    "title": "Learn, Quiz, ",
+    "earn": "Earn Rewards",
+    "desc": "Join thousands of students and teachers on the ultimate quiz platform. Test your knowledge, compete with peers, and win exciting rewards",
+    "getStarted": "Get Started",
+    "tryDemo": "Try AI Demo",
+    "stats": "students joined this week"
+  },
+  "categories": {
+    "badge": "Categories",
+    "titlePrefix": "Explore ",
+    "titleSuffix": "Quiz Categories",
+    "desc": "Discover quizzes across various subjects to test and expand your knowledge",
+    "names": {
+      "science": "Science & Tech",
+      "math": "Mathematics",
+      "chemistry": "Chemistry",
+      "biology": "Biology",
+      "general": "General Knowledge",
+      "current": "Current Affairs"
+    },
+    "cardDesc": "Test your knowledge in {{name}} with our curated quizzes",
+    "explore": "Explore Quizzes"
+  },
+  "features": {
+    "badge": "Features",
+    "titlePrefix": "Why ",
+    "desc": "Discover quizzes across various subjects to test and expand your knowledge",
+    "items": {
+      "personalized": {
+        "title": "Personalized Learning",
+        "desc": "Adaptive quizzes that adjust to your knowledge level and learning pace"
+      },
+      "rewards": {
+        "title": "Start your journey with SynDe",
+        "subtitle": "Smart online multiple-choice quiz management and participation system",
+        "desc": "Earn points, badges, and rewards for your achievements"
+      },
+      "teacher": {
+        "title": "Teacher Dashboard",
+        "desc": "Comprehensive tools for educators to create and manage quizzes"
+      },
+      "tracking": {
+        "title": "Progress Tracking",
+        "desc": "Adaptive quizzes that adjust to your knowledge level and learning pace"
+      },
+      "leaders": {
+        "title": "Competitive Leaderboards",
+        "desc": "Compete with peers and climb the ranks in various categories"
+      },
+      "mobile": {
+        "title": "Mobile Friendly",
+        "desc": "Access quizzes anytime, anywhere on any device"
+      }
+    }
+  },
+  "cta": {
+    "title": "Ready to Start Your Quiz Journey?",
+    "desc": "Join thousands of students and teachers. Sign up today and get access to all features",
+    "createAccount": "Create Account",
+    "browseLibrary": "Browse Library"
+  },
+  "footer": {
+    "desc": "The ultimate quiz platform for students and teachers. Learn, compete, and earn rewards",
+    "quickLinks": "Quick Links",
+    "forTeachers": "For Teachers",
+    "contact": "Contact us",
+    "links": {
+      "about": "About",
+      "contact": "Contact us",
+      "careers": "Careers",
+      "culture": "Culture"
+    },
+    "copyright": "",
+    "terms": "Terms and Conditions",
+    "privacy": "Privacy Policy"
+  },
+  "login": {
+    "welcome": "Welcome back",
+    "desc": "Enter your credentials to access your account",
+    "username": "Username",
+    "email": "Email",
+    "password": "Password",
+    "branding": {
+      "ultimate_experience": "Ultimate Quiz Experience",
+      "secure_access": "SECURE_ACCESS_v2.0",
+      "system_ready": "SYSTEM_READY"
+    },
+    "signIn": "Sign In",
+    "or": "OR",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign Up",
+    "forgotPassword": "Forgot password?",
+    "placeholders": {
+      "email": "name@example.com",
+      "password": "••••••••••"
+    },
+    "modal": {
+      "successTitle": "Login Successful!",
+      "successDesc": "Great! You are being redirected to your dashboard.",
+      "errorTitle": "Login Failed",
+      "errorDesc": "Invalid credentials. Please check and try again.",
+      "emptyError": "Please enter both email and password",
+      "btnClose": "Close"
+    }
+  },
+  "register": {
+    "title": "Create Account",
+    "desc": "Join our community and start your journey",
+    "fullName": "Full Name",
+    "email": "Email",
+    "institution": "Institution",
+    "teachingField": "Teaching Field",
+    "gender": "Gender (Salutation)",
+    "male": "Male",
+    "female": "Female",
+    "confirmPassword": "Confirm Password",
+    "btn": "Register",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign In",
+    "fields": {
+      "math": "Mathematics",
+      "vietnamese": "Vietnamese",
+      "english": "English",
+      "ethics": "Ethics",
+      "nature_society": "Nature & Society",
+      "music": "Music",
+      "arts": "Arts",
+      "physical_ed": "Physical Education",
+      "literature": "Literature",
+      "physics": "Physics",
+      "chemistry": "Chemistry",
+      "biology": "Biology",
+      "history": "History",
+      "geography": "Geography",
+      "civics": "Civics",
+      "informatics": "Informatics",
+      "technology": "Technology",
+      "national_defense": "National Defense",
+      "lecturer_general": "Lecturer (General)",
+      "engineering": "Engineering",
+      "economics": "Economics",
+      "medicine": "Medicine",
+      "law": "Law",
+      "pedagogy": "Pedagogy",
+      "it": "IT",
+      "languages": "Languages",
+      "other": "Other Fields"
+    },
+    "placeholders": {
+      "fullName": "John Doe",
+      "institution": "University of Technology",
+      "teachingField": "Select your field"
+    },
+    "modal": {
+      "successTitle": "Registration Success!",
+      "successDesc": "Welcome to SynDe. You will be redirected shortly.",
+      "errorTitle": "Registration Failed",
+      "errorDesc": "An error occurred. Please try again later.",
+      "existsTitle": "Email Already Registered",
+      "existsDesc": "This email is already in our system. Would you like to sign in instead?",
+      "btnOk": "Yes, Sign In Now",
+      "btnNo": "No, stay here",
+      "emptyError": "Please fill in all required fields!",
+      "passwordMismatch": "Confirm password does not match!",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "btnRetry": "Retry",
+      "btnClose": "Close"
+    }
+  },
+  "notFound": {
+    "title": "Oops!",
+    "sub": "Page Not Found",
+    "desc": "It seems you've wandered into an unexplored space.",
+    "backHome": "Back to Home"
+  },
+  "profile": {
+    "subtitle": "Manage your personal information and identity",
+    "basic_info": "Basic Information",
+    "verification_status": "Account Verified",
+    "save": "Save",
+    "edit": "Edit Profile",
+    "confirm_save_title": "Save changes?",
+    "confirm_save_desc": "Your information will be updated across the system.",
+    "exit_warning_title": "Unsaved changes?",
+    "exit_warning_desc": "Your changes will be lost if you leave this page now.",
+    "stay": "Stay",
+    "leave": "Leave",
+    "security_note": "Your profile is secure and only used to personalize your experience on the SynDe system."
+  },
+
   "header": {
     "search": "Search students, submissions..."
   },
@@ -554,12 +815,50 @@
       "code": "Room Code",
       "submissions": "Submissions"
     },
+    "form": {
+      "name": "Room Name",
+      "exam": "Exam",
+      "duration": "Duration",
+      "mode": "Mode",
+      "require_list": "Require Student List",
+      "max_attempts": "Max Attempts",
+      "show_score": "Show score after submission",
+      "show_answer": "Show answers & explanations",
+      "show_submission": "Allow viewing own submission"
+    },
     "mode": {
       "exam": "Official Exam",
       "practice": "Practice"
     },
+    "quiz_result": {
+      "title": "Submission Successful!",
+      "subtitle": "Congratulations on completing the quiz.",
+      "score": "Estimated Score",
+      "back_to_rooms": "Back to List",
+      "lookup_results": "Result Lookup",
+      "student_name": "Full Name",
+      "student_id": "Student ID",
+      "total_score": "Total Score",
+      "score_scale": "Out of 10",
+      "pending_announcement": "Pending",
+      "correct_total": "Correct / Total",
+      "status": "Status",
+      "review_quiz": "Review Quiz",
+      "back_to_home": "Back to Home",
+      "detail_questions": "Detailed Questions",
+      "close_review": "Close Review",
+      "notes": {
+        "label": "Note:",
+        "score_only_mc": "This is only the multiple-choice score and does not include essay question scores (if any). The final score will be published by the teacher later. Please visit the Result Lookup page to check.",
+        "score_mc_no_answers": "This is only the multiple-choice score and does not include essay question scores (if any). You can only review your work without detailed answers. The final score will be published by the teacher later. Please visit the Result Lookup page to check.",
+        "submission_success": "Your work has been submitted successfully! Please visit the Result Lookup page to check the results when published by the teacher."
+      },
+      "student_answer": "Your Answer",
+      "no_answer": "(No answer provided)"
+    },
     "detail": {
       "back": "Back",
+      "question_num": "Questions",
       "card": {
         "exam": "Exam",
         "code": "Room Code",
@@ -577,8 +876,13 @@
       "require_list": "Require student list",
       "status_open": "Open",
       "status_closed": "Closed",
-      "yes": "yes",
-      "no": "no",
+      "yes": "Yes",
+      "no": "No",
+      "ai_verify_title": "AI VERIFICATION",
+      "duplicate_warning": "DUPLICATES DETECTED",
+      "no_students_found": "No matching students found",
+      "close_room": "Close Room",
+      "open_room": "Open Room",
       "minutes": "mins",
       "preview": "Preview",
       "no_submissions": "No submissions yet",
@@ -599,6 +903,24 @@
       "edit_student": "Edit Student Info",
       "update_success": "Student information updated successfully",
       "list_details": "View Submission Details",
+      "grading_status": "Grading Status",
+      "publish_score": "Publish Score",
+      "master_publish": "Master Publish",
+      "status_published": "Published",
+      "status_unpublished": "Unpublished",
+      "publish_all": "Publish All Scores",
+      "unpublish_all": "Unpublish All Scores",
+      "submission_details": "Submission Details",
+      "score": "Score",
+      "correct_answer": "Correct Answer",
+      "you_chose_correct": "You chose correctly",
+      "you_chose_incorrect": "You chose incorrectly",
+      "you_chose": "You chose",
+      "answers_hidden_title": "Question details hidden",
+      "answers_hidden_desc": "The teacher has disabled question and answer review for this room.",
+      "no_data": "No question data",
+      "essay": "Essay",
+      "multiple_choice": "Multiple Choice",
       "grading": {
         "title": "Grading: {{name}}",
         "essay_confirm_title": "Confirm Result?",
@@ -612,9 +934,15 @@
         "correct_answer": "Correct/Sample Answer",
         "explanation": "Explanation",
         "status_graded": "Graded",
-        "status_pending": "Pending Review",
-        "final_score": "Final Score"
-      }
+        "status_pending": "Pending",
+        "final_score": "Final Score",
+        "correct_answer_label": "Correct Answer",
+        "regrade": "Regrade",
+        "incorrect": "Incorrect",
+        "correct": "Correct",
+        "score": "Score"
+      },
+      "grading_status_pending": "Pending"
     },
     "form": {
       "exam": "Select Exam",
@@ -626,35 +954,15 @@
       "open_at": "Open time",
       "close_at": "Close time",
       "max_attempts": "Max attempts",
-      "show_answer": "Show answer after submission",
+      "show_score": "Show score after submission",
+      "show_answer": "Show answers after submission",
       "require_list": "Require students list",
       "no_ready_exams": "Only ready exams are shown. Please check your exams list.",
       "submit": "Create Room"
     }
   },
-  "bank": {
-    "title": "Question Bank",
-    "subtitle": "Manage and reuse your intellectual question bank",
-    "search_placeholder": "Search question content...",
-    "all_topics": "All Topics",
-    "all": "All",
-    "create_single": "Create Single Question",
-    "fetch_error": "Cannot load question bank",
-    "modal_title": "Select from Bank",
-    "add_success": "Question added to exam",
-    "already_exists": "This question already exists in the exam",
-    "empty_title": "Your bank is empty",
-    "empty_desc": "Save questions here to reuse them across different exams.",
-    "clear_filters": "Clear all filters"
-  },
-  "share": {
-    "title": "Share",
-    "url_label": "Join Link",
-    "preview": "Preview Mode",
-    "qr_desc": "Scan to join the exam",
-    "copy_success": "Link copied to clipboard",
-    "preview_btn": "Preview Mode (Student View)"
-  },
+
+
   "settings": {
     "subtitle": "Manage your experience and security preferences",
     "interface_title": "Interface & Experience",
@@ -670,5 +978,199 @@
     "account_managed": "Account information is managed through your profile.",
     "language": "System Language",
     "language_desc": "Select the primary display language for your interface."
+  },
+  "lookup": {
+    "title": "Result Lookup",
+    "desc": "Enter your information to find your exam results",
+    "studentId": "Student ID",
+    "roomCode": "Room Code",
+    "btn": "Lookup Now",
+    "searching": "Searching...",
+    "noResult": "No results found",
+    "noResultDesc": "Please check your Student ID and Room Code again.",
+    "backHome": "Back to Home",
+    "resultFound": "Found {{count}} results",
+    "viewDetail": "View Detail",
+    "examName": "Exam",
+    "score": "Score",
+    "date": "Date",
+    "placeholderStudentId": "Ex: 21110123",
+    "placeholderRoomCode": "Ex: ABCXYZ",
+    "examinee": "Student",
+    "score_label": "Score",
+    "readyDesc": "Ready to see your amazing results?"
+  },
+  "ai_wizard": {
+    "analyzing": "Extracting content...",
+    "doc_ready": "Document is ready",
+    "doc_summary_fallback": "We have summarized your content. Click 'Start Generation' to continue.",
+    "ai_understood": "AI Understood the document",
+    "suggested_questions": "Suggested questions",
+    "config_title": "Set number of questions (Max: 50)",
+    "multiple_choice": "Multiple Choice",
+    "multiple_answer": "Multiple Answer",
+    "essay": "Essay",
+    "difficulty_title": "Difficulty distribution (Must match total questions)",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "start_btn": "Start Generation",
+    "loading_analyze": "Analyzing topic...",
+    "loading_drafting": "Drafting questions...",
+    "loading_finishing": "Finishing draft...",
+    "wait_moment": "Please wait a moment..."
+  },
+
+  "bank": {
+    "title": "Question Bank",
+    "subtitle": "Manage and reuse your intellectual question bank",
+    "search_placeholder": "Search question content...",
+    "all_topics": "All Topics",
+    "all": "All",
+    "create_single": "Create Single Question",
+    "fetch_error": "Cannot load question bank",
+    "modal_title": "Select from Bank",
+    "modal_subtitle": "Select questions to add to your current exam",
+    "selected_count": "{{count}} selected",
+    "all_subjects": "All Subjects",
+    "all_difficulies": "All Difficulties",
+    "add_to_exam": "Add to Exam",
+    "add_success": "Question added to exam",
+    "already_exists": "This question already exists in the exam",
+    "empty_title": "Bank is empty",
+    "empty_desc": "Start adding questions to your bank to build your knowledge base.",
+    "clear_filters": "Clear filters",
+    "create": "Create New Question",
+    "search": "Search questions..."
+  },
+
+  "about": {
+    "hero": {
+      "badge": "Our Story",
+      "title": "Shaping the Future of",
+      "titleAccent": "Smart Education",
+      "desc": "SynDe was born from a desire to simplify the testing experience, turning pressure into motivation and providing ultimate convenience for both teachers and learners through the power of AI."
+    },
+    "story": {
+      "title": "Why choose SynDe?",
+      "desc": "We don't just build an exam creation platform. We build a learning ecosystem where every question holds value, every submission is fairly evaluated, and every student has the opportunity to shine.",
+      "feat1": { "title": "Breakthrough AI", "desc": "Automated exam drafting and grading technology with high accuracy." },
+      "feat2": { "title": "Trusted Community", "desc": "Thousands of teachers trust SynDe to manage their classrooms every day." }
+    },
+    "values": {
+      "title": "Core Values",
+      "subtitle": "The golden principles that help SynDe constantly grow and improve.",
+      "v1": { "title": "Mission", "desc": "Revolutionizing the testing experience with AI technology, making knowledge assessment fair, accurate, and inspiring." },
+      "v2": { "title": "Security", "desc": "We prioritize privacy and transparency, ensuring all teacher and student data is strictly protected." },
+      "v3": { "title": "Innovation", "desc": "Constantly innovating, applying the latest advances in artificial intelligence to deliver outstanding value to users." },
+      "v4": { "title": "Passion", "desc": "Our team works with passion for education, wishing to contribute the best products to the community." }
+    }
+  },
+  "contact": {
+    "badge": "Contact Us",
+    "title": "Please let us know",
+    "titleAccent": "your thoughts",
+    "desc": "We are always ready to listen and support you 24/7. Any questions, send them to the SynDe team right away.",
+    "info": {
+      "title": "Contact Information",
+      "email": "Email",
+      "phone": "Phone",
+      "office": "Office",
+      "hours": "Working Hours",
+      "hoursDetail": "Mon - Sat: 08:00 - 20:00",
+      "closed": "Sunday: Closed"
+    },
+    "form": {
+      "name": "Your Name",
+      "email": "Email Address",
+      "subject": "Subject",
+      "message": "Message Content",
+      "submit": "Send Message",
+      "placeholders": {
+        "name": "Ex: John Doe",
+        "email": "example@gmail.com",
+        "subject": "What do you want to ask about?",
+        "message": "Leave a message for us..."
+      }
+    }
+  },
+  "intro": {
+    "badge": "Welcome to SynDe",
+    "title": "Next-Generation",
+    "titleAccent": "Quiz Platform",
+    "desc": "We provide a comprehensive solution for exam creation, room management, and automated grading. Simple, Effective, and Breakthrough with the power of AI.",
+    "getStarted": "Get Started Now",
+    "learnMore": "Learn More",
+    "whyTitle": "Why is SynDe the #1 Choice?",
+    "whyDesc": "Every feature is optimized to provide the ultimate convenience for users.",
+    "features": {
+      "ai": { "title": "Smart AI Drafting", "desc": "Simply upload documents or enter a topic; AI automatically analyzes and drafts diverse question sets in seconds." },
+      "grading": { "title": "Automated Grading", "desc": "Automatically grade multiple-choice and use AI for feedback/score suggestions on essays." },
+      "analytics": { "title": "Performance Analytics", "desc": "Detailed reports on scores, accuracy rates, and progress charts to track student ability." },
+      "rooms": { "title": "Online Exam Rooms", "desc": "Create rooms easily, manage participants, and monitor in real-time." }
+    },
+    "trust": {
+      "title": "Ready to Elevate Your Teaching & Learning?",
+      "stats": {
+        "users": "Users",
+        "exams": "Exams Created",
+        "partners": "School Partners"
+      },
+      "cta": "Register for Free Now"
+    }
+  },
+  "room_quiz": {
+    "welcome": {
+      "step_info": "Personal Information",
+      "step_code": "Room Code Confirmation",
+      "practice_badge": "Practice",
+      "official_badge": "Official Exam",
+      "exam_label": "Exam",
+      "time_label": "Time",
+      "questions_label": "Questions",
+      "student_id_placeholder": "Student ID (SID)...",
+      "name_placeholder": "Your full name...",
+      "room_code_placeholder": "ROOM CODE",
+      "room_code_title": "Confirm Room Code",
+      "room_code_desc": "Please enter the room code provided by your teacher to start",
+      "next_btn": "Next",
+      "back_btn": "Back",
+      "start_btn": "Start Exam"
+    },
+    "quiz": {
+      "progress": "Question {{current}} / {{total}}",
+      "multiple_answer_badge": "Multiple Answers",
+      "essay_placeholder": "Enter your answer here...",
+      "essay_placeholder_timeout": "Time is up, auto-submitting...",
+      "essay_ai_note": "This question will be auto-graded by AI",
+      "question_list": "Question List",
+      "auto_advance": "Auto Advance",
+      "submit_btn": "Submit",
+      "submitting_btn": "Submitting..."
+    },
+    "confirm": {
+      "title": "Confirm Submission",
+      "unanswered": "You still have {{count}} unanswered questions.",
+      "all_answered": "You have completed all questions!",
+      "desc": "Are you sure you want to submit now? You cannot edit after submission.",
+      "continue_btn": "Continue Working",
+      "submit_now": "Submit Now",
+      "grading_ai": "AI Grading..."
+    },
+    "closed": {
+      "title": "Exam Room Closed",
+      "desc": "Sorry, this room is no longer accepting submissions or is not yet open.",
+      "redirect": "Redirecting to home in {{count}}s...",
+      "home_btn": "Go to Home Now"
+    },
+    "toast": {
+      "copy_blocked": "Copying is blocked to ensure fairness!",
+      "fetch_error": "Failed to load exam room",
+      "invalid_student": "Invalid student information",
+      "auth_failed": "Authentication failed",
+      "submit_success": "Submission successful!",
+      "submit_error": "Error during submission",
+      "no_questions": "Question content not found"
+    }
   }
 }

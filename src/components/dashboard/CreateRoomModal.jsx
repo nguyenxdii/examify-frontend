@@ -37,7 +37,9 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess, initialExa
     openAt: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16),
     closeAt: "",
     maxAttempts: 1,
-    showAnswerAfter: false,
+    showAnswersAfterSubmission: false,
+    showScoreAfterSubmission: true,
+    showSubmissionAfterSubmission: true,
     requireStudentList: false
   });
 
@@ -301,19 +303,67 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess, initialExa
                     <div className="grid grid-cols-1 gap-3">
                       <div className="flex items-center justify-between p-3.5 bg-muted/30 rounded-2xl border border-border/10">
                         <div className="flex items-center gap-3">
+                          <Zap className="w-4 h-4 text-emerald-500/70" />
+                          <span className="text-[13px] font-bold text-foreground/80">{t("rooms.form.show_score")}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(p => ({ ...p, showScoreAfterSubmission: !p.showScoreAfterSubmission }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                            formData.showScoreAfterSubmission ? "bg-primary" : "bg-muted-foreground/30"
+                          }`}
+                        >
+                          <span
+                            className={`${
+                              formData.showScoreAfterSubmission ? "translate-x-6" : "translate-x-1"
+                            } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                          />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3.5 bg-muted/30 rounded-2xl border border-border/10">
+                        <div className="flex items-center gap-3">
+                          <BookOpen className="w-4 h-4 text-blue-500/70" />
+                          <span className="text-[13px] font-bold text-foreground/80">{t("rooms.form.show_submission")}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(p => ({ 
+                            ...p, 
+                            showSubmissionAfterSubmission: !p.showSubmissionAfterSubmission,
+                            showAnswersAfterSubmission: !p.showSubmissionAfterSubmission ? p.showAnswersAfterSubmission : false
+                          }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                            formData.showSubmissionAfterSubmission ? "bg-primary" : "bg-muted-foreground/30"
+                          }`}
+                        >
+                          <span
+                            className={`${
+                              formData.showSubmissionAfterSubmission ? "translate-x-6" : "translate-x-1"
+                            } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                          />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3.5 bg-muted/30 rounded-2xl border border-border/10">
+                        <div className="flex items-center gap-3">
                           <Eye className="w-4 h-4 text-primary/70" />
                           <span className="text-[13px] font-bold text-foreground/80">{t("rooms.form.show_answer")}</span>
                         </div>
                         <button
                           type="button"
-                          onClick={() => setFormData(p => ({ ...p, showAnswerAfter: !p.showAnswerAfter }))}
+                          onClick={() => setFormData(p => ({ 
+                            ...p, 
+                            showAnswersAfterSubmission: !p.showAnswersAfterSubmission,
+                            showSubmissionAfterSubmission: !p.showAnswersAfterSubmission ? true : p.showSubmissionAfterSubmission
+                          }))}
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                            formData.showAnswerAfter ? "bg-primary" : "bg-muted-foreground/30"
+                            formData.showAnswersAfterSubmission ? "bg-primary" : "bg-muted-foreground/30"
                           }`}
                         >
                           <span
                             className={`${
-                              formData.showAnswerAfter ? "translate-x-6" : "translate-x-1"
+                              formData.showAnswersAfterSubmission ? "translate-x-6" : "translate-x-1"
                             } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                           />
                         </button>

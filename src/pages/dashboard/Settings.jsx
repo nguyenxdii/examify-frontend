@@ -16,6 +16,11 @@ import { toast } from "react-hot-toast";
 
 export default function Settings() {
   const { t, i18n } = useTranslation();
+
+  useEffect(() => {
+    document.title = t("titles.settings");
+  }, [t, i18n.language]);
+
   const currentLang = i18n.language?.startsWith("vi") ? "vi" : "en";
   
   // Settings state

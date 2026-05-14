@@ -21,10 +21,15 @@ import { register } from "../api/authApi";
 import CustomSelect from "../components/CustomSelect";
 import logo from "../assets/synde_logo.svg";
 import { toast } from "react-hot-toast";
+import { cn } from "../lib/utils";
 
 export default function Register() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = t("titles.register");
+  }, [t]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -81,17 +86,17 @@ export default function Register() {
       !formData.institution ||
       !formData.teachingField
     ) {
-      toast.error(t("register.modal.emptyError") || "Vui lòng nhập đầy đủ tất cả thông tin!");
+      toast.error(t("register.modal.emptyError"));
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error(t("register.modal.passwordMismatch") || "Mật khẩu xác nhận không khớp!");
+      toast.error(t("register.modal.passwordMismatch"));
       return;
     }
 
     if (formData.password.length < 6) {
-      toast.error(t("register.modal.passwordTooShort") || "Mật khẩu phải có ít nhất 6 ký tự");
+      toast.error(t("register.modal.passwordTooShort"));
       return;
     }
 
@@ -108,7 +113,6 @@ export default function Register() {
 
       setModalType("success");
 
-      // Auto redirect after 3s
       setTimeout(() => {
         navigate("/login");
       }, 3000);
@@ -162,9 +166,7 @@ export default function Register() {
 
   return (
     <div className="h-screen flex bg-background text-foreground selection:bg-primary/30 overflow-hidden">
-      {/* Left Side - Animated Grid & Branding (Fixed) */}
       <div className="hidden lg:flex lg:w-1/2 bg-black relative overflow-hidden items-center justify-center h-full">
-        {/* Background Image with Blur */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-110"
           style={{
@@ -172,7 +174,6 @@ export default function Register() {
             filter: "blur(4px) brightness(0.4)",
           }}
         />
-
         <div className="absolute inset-0 opacity-20">
           <div
             className="w-full h-full"
@@ -185,7 +186,6 @@ export default function Register() {
             }}
           />
         </div>
-
         <div className="relative z-10 text-center">
           <motion.div
             initial={
@@ -206,7 +206,6 @@ export default function Register() {
               <img src={logo} alt="SynDe Logo" className="h-24 w-auto drop-shadow-2xl" />
             </div>
           </motion.div>
-
           <motion.p
             initial={
               shouldAnimate ? { y: 30, opacity: 0 } : { y: 0, opacity: 1 }
@@ -219,10 +218,7 @@ export default function Register() {
           </motion.p>
         </div>
       </div>
-
-      {/* Right Side - Form (Scrollable) */}
       <div className="w-full lg:w-1/2 flex flex-col relative overflow-y-auto h-full">
-        {/* Navigation/Tools Header */}
         <div className="p-6 flex items-center justify-between z-20 sticky top-0 bg-background/80 backdrop-blur-md">
           <motion.button
             whileHover={{ x: -5 }}
@@ -232,7 +228,6 @@ export default function Register() {
             <ArrowLeft className="w-4 h-4" />
             {t("nav.home")}
           </motion.button>
-
           <div className="flex bg-border/30 p-1 rounded-full relative border border-border/50 backdrop-blur-sm">
             <motion.div
               className="absolute inset-y-1 bg-primary rounded-full shadow-lg z-0"
@@ -254,7 +249,6 @@ export default function Register() {
             </button>
           </div>
         </div>
-
         <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
           <AnimatePresence mode="wait">
             <motion.div
@@ -293,9 +287,7 @@ export default function Register() {
                   {t("register.desc")}
                 </motion.p>
               </div>
-
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Full Name */}
                 <div>
                   <label
                     htmlFor="fullName"
@@ -318,44 +310,37 @@ export default function Register() {
                 </div>
 
                 {/* Gender Selection */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-foreground ml-1">
-                    {t("register.gender") || "Giới tính (Xưng hô)"}
+                <div className="space-y-2.5">
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 flex items-center gap-2 px-1">
+                    <User className="w-3 h-3 text-primary" /> {t("register.gender")}
                   </label>
-                  <div className="flex bg-border/20 p-1 rounded-xl border border-border gap-1 relative overflow-hidden group">
+                  <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       disabled={isLoading}
-                      onClick={() => setFormData(prev => ({ ...prev, gender: "male" }))}
-                      className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all relative z-10 ${
+                      onClick={() => setFormData({ ...formData, gender: "male" })}
+                      className={cn(
+                        "flex items-center justify-center gap-2 h-11 rounded-xl border-2 font-bold transition-all",
                         formData.gender === "male" 
-                          ? "text-white" 
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
+                          ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
+                          : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
+                      )}
                     >
-                      {t("register.male") || "Nam"}
+                      {t("register.male")}
                     </button>
                     <button
                       type="button"
                       disabled={isLoading}
-                      onClick={() => setFormData(prev => ({ ...prev, gender: "female" }))}
-                      className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all relative z-10 ${
+                      onClick={() => setFormData({ ...formData, gender: "female" })}
+                      className={cn(
+                        "flex items-center justify-center gap-2 h-11 rounded-xl border-2 font-bold transition-all",
                         formData.gender === "female" 
-                          ? "text-white" 
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
+                          ? "bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-500/20" 
+                          : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
+                      )}
                     >
-                      {t("register.female") || "Nữ"}
+                      {t("register.female")}
                     </button>
-                    <motion.div
-                      className="absolute inset-y-1 bg-primary rounded-lg shadow-lg"
-                      initial={false}
-                      animate={{
-                        x: formData.gender === "male" ? 0 : "100%",
-                        width: "50%",
-                      }}
-                      transition={{ type: "spring", stiffness: 300, damping: 28 }}
-                    />
                   </div>
                 </div>
 

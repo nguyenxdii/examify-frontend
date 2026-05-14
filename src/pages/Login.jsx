@@ -22,6 +22,10 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = t("titles.login");
+  }, [t]);
+
+  useEffect(() => {
     const token = localStorage.getItem("token");
     const user = localStorage.getItem("user");
     if (token && user) {
@@ -33,6 +37,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [modalType, setModalType] = useState(null); // 'success', 'error'
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [shouldAnimate] = useState(
     () => !sessionStorage.getItem("auth_animated"),
   );
@@ -79,6 +84,7 @@ export default function Login() {
         navigate("/dashboard");
       }, 2000);
     } catch (error) {
+      setErrorMessage(error.response?.data?.message || "");
       setModalType("error");
     } finally {
       setIsLoading(false);
@@ -244,42 +250,6 @@ export default function Login() {
                 </motion.p>
               </div>
 
-              {/* Social Login */}
-              <div className="flex gap-4 mb-8">
-                <motion.button
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex-1 flex items-center justify-center gap-2 border border-border rounded-xl py-3 hover:bg-border/50 transition-colors shadow-sm"
-                >
-                  <img
-                    src="https://www.svgrepo.com/show/475656/google-color.svg"
-                    className="w-5 h-5"
-                    alt="Google"
-                  />
-                  <span className="text-foreground font-medium">Google</span>
-                </motion.button>
-                <motion.button
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex-1 flex items-center justify-center gap-2 border border-border rounded-xl py-3 hover:bg-border/50 transition-colors shadow-sm"
-                >
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg"
-                    className="w-5 h-5"
-                    alt="Facebook"
-                  />
-                  <span className="text-foreground font-medium">Facebook</span>
-                </motion.button>
-              </div>
-
-              {/* Divider */}
-              <div className="flex items-center gap-3 mb-8">
-                <div className="flex-1 border-t border-border" />
-                <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">
-                  {t("login.or")}
-                </span>
-                <div className="flex-1 border-t border-border" />
-              </div>
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -382,14 +352,18 @@ export default function Login() {
       </div>
       <AnimatePresence>
         {modalType && (
-          <FeedbackModal type={modalType} onClose={() => setModalType(null)} />
+          <FeedbackModal 
+            type={modalType} 
+            onClose={() => setModalType(null)} 
+            message={errorMessage}
+          />
         )}
       </AnimatePresence>
     </div>
   );
 }
 
-const FeedbackModal = ({ type, onClose }) => {
+const FeedbackModal = ({ type, onClose, message }) => {
   const { t } = useTranslation();
 
   const config = {
@@ -402,7 +376,7 @@ const FeedbackModal = ({ type, onClose }) => {
     error: {
       icon: <X className="w-12 h-12 text-red-500" />,
       title: t("login.modal.errorTitle"),
-      desc: t("login.modal.errorDesc"),
+      desc: message || t("login.modal.errorDesc"),
       btnText: t("login.modal.btnClose"),
     },
   };

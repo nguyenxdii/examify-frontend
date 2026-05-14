@@ -18,6 +18,11 @@ import CustomSelect from "../../components/CustomSelect";
 
 export default function Profile() {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    document.title = t("titles.profile");
+  }, [t]);
+
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

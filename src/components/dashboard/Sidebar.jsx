@@ -13,19 +13,22 @@ import {
   Database,
   Award,
   MessageSquare,
-  Zap
+  Zap,
+  Globe
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../../assets/synde_logo.svg";
+import ConfirmationModal from "./ConfirmationModal";
 
 export function Sidebar({ role }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeMenu, setActiveMenu] = useState(location.pathname);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const getIsAdmin = (r) => {
     if (!r) return false;
@@ -52,11 +55,6 @@ export function Sidebar({ role }) {
           id: "/dashboard/admin/all-quizzes",
           label: t("dashboard.sidebar.allQuizzes"),
           icon: BookOpen,
-        },
-        {
-          id: "/dashboard/admin/analytics",
-          label: t("dashboard.sidebar.analytics"),
-          icon: BarChart3,
         },
       ]
     : [
@@ -86,16 +84,6 @@ export function Sidebar({ role }) {
           label: t("dashboard.sidebar.questions"),
           icon: Database,
         },
-        {
-          id: "/dashboard/teacher/results",
-          label: t("dashboard.sidebar.results"),
-          icon: Award,
-        },
-        {
-          id: "/dashboard/teacher/ai-assistant",
-          label: t("dashboard.sidebar.aiAssistant"),
-          icon: MessageSquare,
-        },
       ];
 
   const settingsItems = [
@@ -112,17 +100,20 @@ export function Sidebar({ role }) {
   ];
 
   const handleLogout = () => {
-    if (window.confirm(t("dashboard.sidebar.logoutConfirm") || "Bạn có chắc chắn muốn đăng xuất?")) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.dispatchEvent(new Event("authChanged"));
-      navigate("/login");
-    }
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("authChanged"));
+    navigate("/login");
   };
 
   try {
     return (
-      <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-screen sticky top-0">
+      <>
+        <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-screen sticky top-0">
         {/* Logo */}
         <div className="p-6 border-b border-sidebar-border">
           <div
@@ -132,13 +123,10 @@ export function Sidebar({ role }) {
             <img src={logo} alt="SynDe Logo" className="h-10 w-auto" />
           </div>
         </div>
-
-        {/* Search removed */}
-
-        <nav className="flex-1 px-3 py-2 space-y-1 overflow-hidden">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
           <AnimatePresence mode="wait">
             <motion.div
-              key={i18n?.language || "vi"}
+              key={isAdmin ? "admin" : "user"}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }}
@@ -230,7 +218,20 @@ export function Sidebar({ role }) {
             </motion.div>
           </AnimatePresence>
         </div>
+
+        {/* Bottom Section - Language removed */}
       </aside>
+      
+      <ConfirmationModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={confirmLogout}
+        title={t("dashboard.sidebar.logout")}
+        message={t("dashboard.sidebar.logoutConfirm")}
+        confirmText={t("dashboard.sidebar.logout")}
+        type="danger"
+      />
+    </>
     );
   } catch (err) {
     console.error("Sidebar crash:", err);

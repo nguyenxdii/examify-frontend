@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { cn } from "../lib/utils";
 import { toast } from "react-hot-toast";
+import MarkdownRenderer from "../components/MarkdownRenderer";
 
 export default function PublicQuiz() {
   const { t } = useTranslation();
@@ -31,6 +32,14 @@ export default function PublicQuiz() {
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(false);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
+
+  useEffect(() => {
+    if (exam) {
+      document.title = t("titles.exam_detail", { name: exam.title });
+    } else {
+      document.title = t("titles.quiz");
+    }
+  }, [exam, t]);
 
   // Load data
   useEffect(() => {
@@ -286,11 +295,9 @@ export default function PublicQuiz() {
               >
                 <div className="space-y-3">
                   <span className="inline-block px-2.5 py-0.5 bg-muted rounded-md text-[9px] font-black uppercase tracking-widest text-muted-foreground">
-                    Câu hỏi {currentQuestionIndex + 1} / {questions.length}
+                    {t("rooms.detail.question_num", { num: currentQuestionIndex + 1 })} / {questions.length}
                   </span>
-                  <h3 className="text-lg md:text-xl font-bold leading-snug text-foreground">
-                    {currentQ.content}
-                  </h3>
+                  <MarkdownRenderer content={currentQ.content} className="text-lg md:text-xl font-bold leading-snug text-foreground" />
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
@@ -328,7 +335,7 @@ export default function PublicQuiz() {
                           )}>
                             {label}
                           </div>
-                          <span className="flex-1 font-bold text-base leading-tight">{choice.content}</span>
+                          <MarkdownRenderer content={choice.content} className="flex-1 font-bold text-base leading-tight" />
                           {isSelected && (
                             <div className="flex-shrink-0 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
                               <CheckCircle2 className="w-4 h-4 text-white" />
@@ -595,7 +602,7 @@ export default function PublicQuiz() {
                           {badgeText}
                         </span>
                       </div>
-                      <h4 className="text-lg font-bold leading-tight">{q.content}</h4>
+                      <MarkdownRenderer content={q.content} className="text-lg font-bold leading-tight" />
                       
                       {q.type === "essay" ? (
                         <div className="space-y-4">
@@ -635,7 +642,7 @@ export default function PublicQuiz() {
                                 )}>
                                   {choice.key}
                                 </div>
-                                <span className="font-bold">{choice.content}</span>
+                                <MarkdownRenderer content={choice.content} className="font-bold" />
                                 {isRightChoice && <CheckCircle2 className="w-3.5 h-3.5 ml-auto text-emerald-500" />}
                               </div>
                             );
@@ -648,7 +655,7 @@ export default function PublicQuiz() {
                           <p className="text-[9px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
                             <Sparkles className="w-3 h-3" /> Giải thích từ Examify AI
                           </p>
-                          <p className="text-xs text-muted-foreground italic leading-relaxed">{q.explanation}</p>
+                          <MarkdownRenderer content={q.explanation} className="text-xs text-muted-foreground italic leading-relaxed" />
                         </div>
                       )}
                     </div>

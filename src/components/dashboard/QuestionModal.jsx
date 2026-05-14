@@ -1,17 +1,22 @@
 import { useState, useEffect } from "react";
 import { X, Layout, Type, HelpCircle, BarChart3, ListChecks, Plus, Loader2, Database, Sparkles, ChevronDown } from "lucide-react";
+import axiosInstance from "../../api/axiosInstance";
 import { addQuestion, updateQuestion, getQuestionBank, suggestTopic } from "../../api/examApi";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
 import { cn } from "../../lib/utils";
+import ConfirmationModal from "./ConfirmationModal";
 
-export default function QuestionModal({ isOpen, onClose, examId, question = null, onSuccess, isAiPreview = false }) {
+export default function QuestionModal({ isOpen, onClose, examId, question = null, onSuccess, isAiPreview = false, isBankOnly = false }) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [suggestingTopic, setSuggestingTopic] = useState(false);
   const [bankTopics, setBankTopics] = useState([]);
-  const [saveToBank, setSaveToBank] = useState(false);
+  const [saveToBankState, setSaveToBankState] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [showTopicDropdown, setShowTopicDropdown] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [formData, setFormData] = useState({
     content: "",
     type: "multiple_choice",
@@ -72,13 +77,13 @@ export default function QuestionModal({ isOpen, onClose, examId, question = null
         orderIndex: 0
       });
     }
+    setIsDirty(false);
     
     // Fetch bank topics
     const fetchTopics = async () => {
       try {
-        const res = await getQuestionBank();
-        const topics = [...new Set(res.data.map(q => q.topic).filter(Boolean))];
-        setBankTopics(topics);
+        const res = await axiosInstance.get("/exams/questions/topics");
+        setBankTopics(res.data || []);
       } catch (err) {
         console.error("Failed to fetch topics", err);
       }
@@ -114,6 +119,21 @@ export default function QuestionModal({ isOpen, onClose, examId, question = null
         setFormData({ ...formData, correctAnswers: [...current, key] });
       }
     }
+    setIsDirty(true);
+  };
+
+  const handleClose = () => {
+    if (isDirty) {
+      setShowDiscardConfirm(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const confirmDiscard = () => {
+    setShowDiscardConfirm(false);
+    setIsDirty(false);
+    onClose();
   };
 
   const handleSubmit = async (e) => {
@@ -139,10 +159,21 @@ export default function QuestionModal({ isOpen, onClose, examId, question = null
     setLoading(true);
     try {
       const { id, ...payload } = formData;
-      if (question?.id) {
-        await updateQuestion(examId, question.id, { ...payload, saveToBank });
+      if (isBankOnly) {
+        const { updateBankQuestion, saveToBank } = await import("../../api/examApi");
+        if (question?.id) {
+          await updateBankQuestion(question.id, payload);
+          toast.success(t("common.update_success") || "Đã cập nhật câu hỏi trong ngân hàng");
+        } else {
+          await saveToBank(payload);
+          toast.success(t("common.add_success") || "Đã thêm câu hỏi vào ngân hàng");
+        }
       } else {
-        await addQuestion(examId, { ...payload, saveToBank });
+        if (question?.id) {
+          await updateQuestion(examId, question.id, { ...payload, saveToBank: saveToBankState });
+        } else {
+          await addQuestion(examId, { ...payload, saveToBank: saveToBankState });
+        }
       }
       onSuccess();
       onClose();
@@ -165,7 +196,7 @@ export default function QuestionModal({ isOpen, onClose, examId, question = null
                   {question ? t("wizard.questionModal.editTitle") : t("wizard.questionModal.addTitle")}
                 </h3>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors"><X className="w-5 h-5 text-muted-foreground" /></button>
+              <button onClick={handleClose} type="button" className="p-2 hover:bg-muted rounded-full transition-colors"><X className="w-5 h-5 text-muted-foreground" /></button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 flex-1">
@@ -218,7 +249,10 @@ export default function QuestionModal({ isOpen, onClose, examId, question = null
                   required 
                   rows="3" 
                   value={formData.content} 
-                  onChange={(e) => setFormData({...formData, content: e.target.value})}
+                  onChange={(e) => {
+                    setFormData({...formData, content: e.target.value});
+                    setIsDirty(true);
+                  }}
                   placeholder={t("wizard.questionModal.placeholderQuestion")}
                   className="w-full bg-muted/50 border border-border rounded-xl p-3 focus:ring-2 focus:ring-primary/50 outline-none resize-none font-sans"
                 />
@@ -252,6 +286,7 @@ export default function QuestionModal({ isOpen, onClose, examId, question = null
                             const newChoices = [...formData.choices];
                             newChoices[i].content = e.target.value;
                             setFormData({...formData, choices: newChoices});
+                            setIsDirty(true);
                           }}
                           placeholder={`${t("wizard.questionModal.placeholderChoice")} ${c.key}...`}
                           className="flex-1 bg-muted/30 border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 outline-none font-sans"
@@ -319,19 +354,20 @@ export default function QuestionModal({ isOpen, onClose, examId, question = null
                 />
               </div>
 
-              {/* Save to Bank Logic */}
-              <div className="pt-4 border-t border-border/50 space-y-4">
+              {/* Hide Save to Bank if already in bank */}
+              {!isBankOnly && (
+                <div className="pt-4 border-t border-border/50 space-y-4">
                 <div 
-                  onClick={() => setSaveToBank(!saveToBank)}
+                  onClick={() => setSaveToBankState(!saveToBankState)}
                   className={cn(
                     "flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer",
-                    saveToBank ? "bg-primary/5 border-primary shadow-sm" : "bg-muted/30 border-transparent hover:border-border"
+                    saveToBankState ? "bg-primary/5 border-primary shadow-sm" : "bg-muted/30 border-transparent hover:border-border"
                   )}
                 >
                   <div className="flex items-center gap-3">
                     <div className={cn(
                       "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
-                      saveToBank ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                      saveToBankState ? "bg-primary text-white" : "bg-muted text-muted-foreground"
                     )}>
                       <Database className="w-5 h-5" />
                     </div>
@@ -342,14 +378,14 @@ export default function QuestionModal({ isOpen, onClose, examId, question = null
                   </div>
                   <div className={cn(
                     "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                    saveToBank ? "bg-primary border-primary text-white" : "border-muted-foreground/30"
+                    saveToBankState ? "bg-primary border-primary text-white" : "border-muted-foreground/30"
                   )}>
-                    {saveToBank && <Plus className="w-4 h-4" />}
+                    {saveToBankState && <Plus className="w-4 h-4" />}
                   </div>
                 </div>
 
                 <AnimatePresence>
-                  {saveToBank && (
+                  {saveToBankState && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
@@ -368,23 +404,42 @@ export default function QuestionModal({ isOpen, onClose, examId, question = null
                               className="w-full bg-muted/50 border border-border rounded-xl p-3 focus:ring-2 focus:ring-primary/50 outline-none font-bold text-sm"
                             />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                              {bankTopics.length > 0 && (
-                                <div className="relative group/dropdown">
-                                  <ChevronDown className="w-4 h-4 text-muted-foreground cursor-pointer hover:text-primary" />
-                                  <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-xl hidden group-hover/dropdown:block z-50 p-2 max-h-48 overflow-y-auto">
-                                    {bankTopics.map(t => (
-                                      <button
-                                        key={t}
-                                        type="button"
-                                        onClick={() => setFormData({...formData, topic: t})}
-                                        className="w-full text-left px-3 py-2 text-xs font-bold hover:bg-primary/10 rounded-lg transition-colors"
-                                      >
-                                        {t}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
+                          <div className="relative">
+                            <div 
+                              onClick={() => setShowTopicDropdown(!showTopicDropdown)}
+                              className="p-1.5 hover:bg-primary/10 rounded-lg transition-colors cursor-pointer text-muted-foreground hover:text-primary"
+                            >
+                              <ChevronDown className={cn("w-4 h-4 transition-transform", showTopicDropdown && "rotate-180")} />
+                            </div>
+                            <AnimatePresence>
+                              {showTopicDropdown && (
+                                <motion.div 
+                                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-xl z-50 p-2 max-h-48 overflow-y-auto"
+                                >
+                                  {bankTopics.length > 0 ? bankTopics.map(t => (
+                                    <button
+                                      key={t}
+                                      type="button"
+                                      onClick={() => {
+                                        setFormData({...formData, topic: t});
+                                        setShowTopicDropdown(false);
+                                      }}
+                                      className="w-full text-left px-3 py-2 text-xs font-bold hover:bg-primary/10 rounded-lg transition-colors"
+                                    >
+                                      {t}
+                                    </button>
+                                  )) : (
+                                    <div className="px-3 py-2 text-[10px] text-muted-foreground italic font-medium">
+                                      {t("bank.no_topics") || "Chưa có chủ đề"}
+                                    </div>
+                                  )}
+                                </motion.div>
                               )}
+                            </AnimatePresence>
+                          </div>
                             </div>
                           </div>
                         </div>
@@ -402,10 +457,11 @@ export default function QuestionModal({ isOpen, onClose, examId, question = null
                   )}
                 </AnimatePresence>
               </div>
+              )}
             </form>
 
             <div className="p-6 border-t border-border flex gap-3 bg-muted/20">
-              <button onClick={onClose} type="button" className="flex-1 py-3 bg-muted hover:bg-muted/80 rounded-xl font-bold transition-all">
+              <button onClick={handleClose} type="button" className="flex-1 py-3 bg-muted hover:bg-muted/80 rounded-xl font-bold transition-all">
                 {t("wizard.questionModal.cancel")}
               </button>
               <button onClick={handleSubmit} disabled={loading} className="flex-[2] py-3 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-bold shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
@@ -414,6 +470,16 @@ export default function QuestionModal({ isOpen, onClose, examId, question = null
               </button>
             </div>
           </motion.div>
+
+          <ConfirmationModal 
+            isOpen={showDiscardConfirm}
+            onClose={() => setShowDiscardConfirm(false)}
+            onConfirm={confirmDiscard}
+            title={t("common.confirm_discard") || "Hủy thay đổi?"}
+            message={t("common.confirm_discard_msg") || "Bạn có những thay đổi chưa lưu. Bạn có chắc chắn muốn thoát không?"}
+            confirmText={t("common.discard") || "Hủy thay đổi"}
+            type="danger"
+          />
         </div>
       )}
     </AnimatePresence>

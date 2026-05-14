@@ -1,8 +1,13 @@
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { MessageSquare } from "lucide-react";
 
 export default function AIAssistant() {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    document.title = t("titles.ai_assistant");
+  }, [t]);
 
   return (
     <div className="space-y-8">

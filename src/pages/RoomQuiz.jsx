@@ -4,13 +4,15 @@ import {
   Loader2, AlertCircle, CheckCircle2, Clock, 
   ChevronRight, ChevronLeft, Send, User, 
   Info, Award, BarChart3, RotateCcw,
-  Home, Share2, Eye, Sparkles, LogIn, Lock, QrCode
+  Home, Share2, Eye, Sparkles, LogIn, Lock, QrCode, ArrowRight,
+  Search, ArrowUpRight
 } from "lucide-react";
 import { getRoomPublic, submitRoomQuiz, validateRoom } from "../api/examApi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { cn } from "../lib/utils";
 import { toast } from "react-hot-toast";
+import MarkdownRenderer from "../components/MarkdownRenderer";
 
 export default function RoomQuiz() {
   const { t } = useTranslation();
@@ -30,18 +32,36 @@ export default function RoomQuiz() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({}); // questionId -> list of keys
   const [timeLeft, setTimeLeft] = useState(0);
+  const [endTime, setEndTime] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(false);
+  const [isAdvancing, setIsAdvancing] = useState(false);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
+
+  useEffect(() => {
+    if (room) {
+      document.title = t("titles.room_quiz", { name: room.examTitle || room.title || "..." });
+    } else {
+      document.title = t("titles.quiz");
+    }
+  }, [room, t]);
+  const [roomClosed, setRoomClosed] = useState(false);
+  const [redirectCountdown, setRedirectCountdown] = useState(5);
+
+  // Refs for stale closure protection
+  const stateRef = React.useRef({ studentName, studentId, answers, isSubmitting, questions });
+  useEffect(() => {
+    stateRef.current = { studentName, studentId, answers, isSubmitting, questions };
+  }, [studentName, studentId, answers, isSubmitting, questions]);
 
   // Anti-copy logic
   useEffect(() => {
     if (step === "quiz") {
       const handleCopy = (e) => {
         e.preventDefault();
-        toast.error("Hành động sao chép bị chặn để đảm bảo tính công bằng!");
+        toast.error(t("room_quiz.toast.copy_blocked") || "Hành động sao chép bị chặn để đảm bảo tính công bằng!");
       };
       const handleContextMenu = (e) => e.preventDefault();
 
@@ -75,13 +95,51 @@ export default function RoomQuiz() {
             }
             return newArr;
           };
-          
-          questionsData = shuffleArray(questionsData).map(q => {
-            if (q.choices && q.choices.length > 0) {
-              return { ...q, choices: shuffleArray(q.choices) };
+
+          // Try to recover saved order for this room to persist across refreshes
+          const savedOrderStr = localStorage.getItem(`examify_shuffle_${roomId}`);
+          if (savedOrderStr) {
+            try {
+              const { qOrder, cOrders } = JSON.parse(savedOrderStr);
+              const qMap = new Map(questionsData.map(q => [q.id, q]));
+              const reordered = [];
+              
+              qOrder.forEach(id => {
+                if (qMap.has(id)) {
+                  const q = { ...qMap.get(id) };
+                  if (cOrders[id] && q.choices) {
+                    const cMap = new Map(q.choices.map(c => [c.key, c]));
+                    q.choices = cOrders[id].map(key => cMap.get(key)).filter(Boolean);
+                  }
+                  reordered.push(q);
+                }
+              });
+              
+              // Fallback for missing questions
+              if (reordered.length === questionsData.length) {
+                questionsData = reordered;
+              } else {
+                localStorage.removeItem(`examify_shuffle_${roomId}`);
+                // Perform new shuffle below
+              }
+            } catch (e) {
+               localStorage.removeItem(`examify_shuffle_${roomId}`);
             }
-            return q;
-          });
+          }
+
+          if (!localStorage.getItem(`examify_shuffle_${roomId}`)) {
+            questionsData = shuffleArray(questionsData).map(q => {
+              if (q.choices && q.choices.length > 0) {
+                return { ...q, choices: shuffleArray(q.choices) };
+              }
+              return q;
+            });
+            // Save the order
+            const qOrder = questionsData.map(q => q.id);
+            const cOrders = {};
+            questionsData.forEach(q => { if (q.choices) cOrders[q.id] = q.choices.map(c => c.key); });
+            localStorage.setItem(`examify_shuffle_${roomId}`, JSON.stringify({ qOrder, cOrders }));
+          }
         }
         
         setRoom(roomData);
@@ -97,6 +155,7 @@ export default function RoomQuiz() {
             if (remaining > 0) {
               setStudentId(savedStudentId);
               setStudentName(savedStudentName);
+              setEndTime(endTime);
               setTimeLeft(remaining);
               
               // Load saved answers
@@ -109,6 +168,7 @@ export default function RoomQuiz() {
             } else {
               localStorage.removeItem(`examify_timer_${roomId}`);
               setTimeLeft((roomData.durationMinutes || 10) * 60);
+              setEndTime(Date.now() + (roomData.durationMinutes || 10) * 60000);
             }
           } catch (e) {
             setTimeLeft((roomData.durationMinutes || 10) * 60);
@@ -117,8 +177,12 @@ export default function RoomQuiz() {
           setTimeLeft((roomData.durationMinutes || 10) * 60);
         }
       } catch (err) {
-        toast.error(err.response?.data?.message || "Không thể tải phòng thi");
-        navigate("/");
+        if (err.response?.data?.message?.includes("đã đóng") || err.response?.data?.message?.includes("chưa mở") || err.response?.data?.message?.includes("closed") || err.response?.data?.message?.includes("not open")) {
+          setRoomClosed(true);
+        } else {
+          toast.error(t("room_quiz.toast.fetch_error") || "Không thể tải phòng thi");
+          navigate("/");
+        }
       } finally {
         setLoading(false);
       }
@@ -126,33 +190,44 @@ export default function RoomQuiz() {
     fetchData();
   }, [roomId, navigate]);
 
-  // Timer logic
+  // Handle redirect countdown
+  useEffect(() => {
+    if (roomClosed && redirectCountdown > 0) {
+      const timer = setInterval(() => {
+        setRedirectCountdown(prev => prev - 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    } else if (roomClosed && redirectCountdown === 0) {
+      navigate("/");
+    }
+  }, [roomClosed, redirectCountdown, navigate]);
+
+  // Timer logic - Precise timing using Date.now()
   useEffect(() => {
     let timer;
-    if (step === "quiz" && timeLeft > 0 && !isSubmitting) {
+    if (step === "quiz" && timeLeft > 0 && !isSubmitting && endTime) {
       timer = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            // Time out: submit directly
-            handleSubmit(true);
-            return 0;
-          }
-          return prev - 1;
-        });
+        const now = Date.now();
+        const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
+        setTimeLeft(remaining);
+        
+        if (remaining <= 0) {
+          clearInterval(timer);
+          handleSubmit(true);
+        }
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [step, timeLeft, isSubmitting]);
+  }, [step, isSubmitting, endTime]);
 
   const handleNextStep = async () => {
     if (welcomeStep === 1) {
       if (room?.requireStudentList && !studentId.trim()) {
-        toast.error("Vui lòng nhập Mã số học sinh");
+        toast.error(t("rooms.quiz_result.student_id") + " " + t("common.required"));
         return;
       }
       if (!studentName.trim()) {
-        toast.error("Vui lòng nhập Họ và tên");
+        toast.error(t("rooms.quiz_result.student_name") + " " + t("common.required"));
         return;
       }
       
@@ -162,13 +237,13 @@ export default function RoomQuiz() {
         await validateRoom(roomId, { studentId, studentName, roomCode: "" });
         setWelcomeStep(2);
       } catch (error) {
-        toast.error(error.response?.data?.message || "Thông tin sinh viên không hợp lệ");
+        toast.error(t("room_quiz.toast.invalid_student") || "Thông tin sinh viên không hợp lệ");
       } finally {
         setIsValidating(false);
       }
     } else if (welcomeStep === 2) {
       if (!roomCode.trim()) {
-        toast.error("Vui lòng nhập Mã phòng thi");
+        toast.error(t("rooms.card.code") + " " + t("common.required"));
         return;
       }
       
@@ -185,6 +260,7 @@ export default function RoomQuiz() {
         const now = Date.now();
         const remaining = Math.max(0, Math.floor((serverEndTime - now) / 1000));
         
+        setEndTime(serverEndTime);
         setTimeLeft(remaining);
         
         // Start Quiz
@@ -196,7 +272,8 @@ export default function RoomQuiz() {
         
         setStep("quiz");
       } catch (err) {
-        toast.error(err.response?.data?.message || "Xác thực không thành công");
+        const errorMsg = err.response?.data?.message || err.message;
+        toast.error(errorMsg || t("room_quiz.toast.auth_failed"));
       } finally {
         setIsValidating(false);
       }
@@ -233,9 +310,12 @@ export default function RoomQuiz() {
 
     // Only auto-advance for single choice types
     if (autoAdvance && (type === "multiple_choice" || type === "boolean")) {
+      if (isAdvancing) return;
+      setIsAdvancing(true);
       setTimeout(() => {
         setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1));
-      }, 400);
+        setIsAdvancing(false);
+      }, 600);
     }
   };
 
@@ -245,28 +325,40 @@ export default function RoomQuiz() {
     setShowConfirmSubmit(true);
   };
 
-  const handleSubmit = async (force = false) => {
-    if (isSubmitting) return;
+  const handleSubmit = useCallback(async (force = false) => {
+    const { isSubmitting: currentIsSubmitting, studentName: sName, studentId: sId, answers: curAnswers, questions: qs } = stateRef.current;
+    
+    if (currentIsSubmitting) return;
     if (!force && showConfirmSubmit) setShowConfirmSubmit(false);
     
     setIsSubmitting(true);
     try {
+      // Create orders for snapshotting
+      const questionOrder = qs.map(q => q.id);
+      const choiceOrder = {};
+      qs.forEach(q => {
+        if (q.choices) {
+          choiceOrder[q.id] = q.choices.map(c => c.key);
+        }
+      });
+
       const res = await submitRoomQuiz(roomId, {
-        studentName,
-        studentId,
-        answers
+        studentName: sName,
+        studentId: sId,
+        answers: curAnswers,
+        questionOrder,
+        choiceOrder
       });
       setResult(res.data);
       setStep("result");
       localStorage.removeItem(`examify_timer_${roomId}`);
       localStorage.removeItem(`examify_answers_${roomId}`);
-      toast.success("Nộp bài thành công!");
+      toast.success(t("room_quiz.toast.submit_success") || "Nộp bài thành công!");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Lỗi khi nộp bài");
-    } finally {
-      setIsSubmitting(false);
+      toast.error(t("room_quiz.toast.submit_error") || "Lỗi khi nộp bài");
+      setIsSubmitting(false); // Only reset if failed so they can try again
     }
-  };
+  }, [roomId]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -274,10 +366,53 @@ export default function RoomQuiz() {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
+  if (roomClosed) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-card border-2 border-border p-12 rounded-[3rem] shadow-2xl text-center max-w-lg w-full relative overflow-hidden"
+        >
+          <div className="absolute -top-24 -left-24 w-48 h-48 bg-rose-500/5 rounded-full blur-3xl" />
+          <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl" />
+          
+          <div className="relative z-10 space-y-8">
+            <div className="w-24 h-24 bg-rose-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+              <Lock className="w-12 h-12 text-rose-500" />
+            </div>
+            
+            <div className="space-y-4">
+              <h1 className="text-4xl font-black tracking-tight font-heading">{t("room_quiz.closed.title")}</h1>
+              <p className="text-muted-foreground font-medium leading-relaxed">
+                {t("room_quiz.closed.desc")}
+              </p>
+            </div>
+
+            <div className="p-6 bg-muted/50 rounded-2xl border border-border/50">
+              <div className="flex items-center justify-center gap-3 text-lg font-bold text-primary">
+                <RotateCcw className="w-5 h-5 animate-spin" />
+                {t("room_quiz.closed.redirect", { count: redirectCountdown })}
+              </div>
+            </div>
+
+            <button 
+              onClick={() => navigate("/")}
+              className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-black uppercase tracking-widest hover:bg-primary/90 transition-all flex items-center justify-center gap-3 shadow-lg shadow-primary/25"
+            >
+              <Home className="w-5 h-5" />
+              {t("room_quiz.closed.home_btn")}
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
       <Loader2 className="w-12 h-12 text-primary animate-spin" />
-      <p className="text-muted-foreground font-bold animate-pulse">Đang chuẩn bị phòng thi...</p>
+      <p className="text-muted-foreground font-bold animate-pulse">{t("common.loading")}</p>
     </div>
   );
 
@@ -295,13 +430,13 @@ export default function RoomQuiz() {
               "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border",
               room?.mode === "practice" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-primary/10 text-primary border-primary/20"
             )}>
-              {room?.mode === "practice" ? "Luyện tập" : "Kiểm tra chính thức"}
+              {room?.mode === "practice" ? t("room_quiz.welcome.practice_badge") : t("room_quiz.welcome.official_badge")}
             </span>
             <h1 className="text-3xl font-black tracking-tight text-foreground leading-tight">
               {room?.name}
             </h1>
             <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest">
-              Đề thi: {room?.examTitle}
+              {t("room_quiz.welcome.exam_label")}: {room?.examTitle}
             </p>
           </div>
         </div>
@@ -309,13 +444,13 @@ export default function RoomQuiz() {
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-muted/30 p-5 rounded-2xl border border-border/50 text-center space-y-1">
             <Clock className="w-4 h-4 text-primary mx-auto mb-1" />
-            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Thời gian</p>
-            <p className="text-lg font-black">{room?.durationMinutes} phút</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{t("room_quiz.welcome.time_label")}</p>
+            <p className="text-lg font-black">{room?.durationMinutes} {t("common.minutes")}</p>
           </div>
           <div className="bg-muted/30 p-5 rounded-2xl border border-border/50 text-center space-y-1">
             <Info className="w-4 h-4 text-primary mx-auto mb-1" />
-            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Số câu hỏi</p>
-            <p className="text-lg font-black">{questions.length} câu</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{t("room_quiz.welcome.questions_label")}</p>
+            <p className="text-lg font-black">{questions.length} {t("common.questions")}</p>
           </div>
         </div>
 
@@ -332,12 +467,12 @@ export default function RoomQuiz() {
                 >
                   <div className="space-y-3">
                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 flex items-center gap-2">
-                      <LogIn className="w-3.5 h-3.5 text-primary" /> Thông tin cá nhân
+                      <LogIn className="w-3.5 h-3.5 text-primary" /> {t("room_quiz.welcome.step_info")}
                     </label>
                     {room?.requireStudentList && (
                       <input 
                         type="text"
-                        placeholder="Mã số học sinh (MSSV)..."
+                        placeholder={t("room_quiz.welcome.student_id_placeholder")}
                         value={studentId}
                         onChange={(e) => setStudentId(e.target.value)}
                         className="w-full h-12 bg-muted/50 border-2 border-border rounded-xl px-5 font-bold text-base focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-center mb-2"
@@ -345,7 +480,7 @@ export default function RoomQuiz() {
                     )}
                     <input 
                       type="text"
-                      placeholder="Họ và tên của bạn..."
+                      placeholder={t("room_quiz.welcome.name_placeholder")}
                       value={studentName}
                       onChange={(e) => setStudentName(e.target.value)}
                       className="w-full h-12 bg-muted/50 border-2 border-border rounded-xl px-5 font-bold text-base focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-center"
@@ -365,15 +500,15 @@ export default function RoomQuiz() {
                   <div className="space-y-4">
                     <div className="text-center">
                       <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center justify-center gap-2 mb-2">
-                        <QrCode className="w-3.5 h-3.5 text-primary" /> Xác nhận mã phòng
+                        <QrCode className="w-3.5 h-3.5 text-primary" /> {t("room_quiz.welcome.room_code_title")}
                       </label>
-                      <p className="text-[11px] text-muted-foreground mb-4 italic">Vui lòng nhập mã phòng được giáo viên cung cấp để bắt đầu làm bài</p>
+                      <p className="text-[11px] text-muted-foreground mb-4 italic">{t("room_quiz.welcome.room_code_desc")}</p>
                     </div>
                     
                     <div className="max-w-[280px] mx-auto">
                       <input 
                         type="text"
-                        placeholder="MÃ PHÒNG"
+                        placeholder={t("room_quiz.welcome.room_code_placeholder")}
                         value={roomCode}
                         onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                         className="w-full h-14 bg-muted/50 border-2 border-border rounded-2xl px-5 font-black text-2xl focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-center tracking-[0.2em] placeholder:tracking-normal placeholder:font-bold placeholder:text-muted-foreground/30 shadow-inner"
@@ -391,7 +526,7 @@ export default function RoomQuiz() {
                 onClick={() => setWelcomeStep(prev => prev - 1)}
                 className="flex-1 h-12 bg-muted text-foreground font-black rounded-xl hover:bg-muted/80 transition-all text-base uppercase tracking-wider"
               >
-                Quay lại
+                {t("room_quiz.welcome.back_btn")}
               </button>
             )}
             <button 
@@ -403,7 +538,7 @@ export default function RoomQuiz() {
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
-                  {welcomeStep === 3 ? "Bắt đầu làm bài" : "Tiếp theo"}
+                  {welcomeStep === 2 ? t("room_quiz.welcome.start_btn") : t("room_quiz.welcome.next_btn")}
                   <ChevronRight className="w-5 h-5" />
                 </>
               )}
@@ -422,8 +557,8 @@ export default function RoomQuiz() {
     if (!currentQ) return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
         <AlertCircle className="w-12 h-12 text-destructive" />
-        <p className="text-muted-foreground font-bold">Không tìm thấy nội dung câu hỏi</p>
-        <button onClick={() => window.location.reload()} className="bg-primary text-white px-4 py-2 rounded-xl">Thử lại</button>
+        <p className="text-muted-foreground font-bold">{t("room_quiz.toast.no_questions")}</p>
+        <button onClick={() => window.location.reload()} className="bg-primary text-white px-4 py-2 rounded-xl">{t("wizard.step2.retry")}</button>
       </div>
     );
 
@@ -451,7 +586,7 @@ export default function RoomQuiz() {
                 className="hidden md:flex items-center gap-2 bg-primary text-white px-6 py-2 rounded-full font-black hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:hover:scale-100"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                {timeLeft <= 0 ? "Đang nộp..." : "Nộp bài"}
+                {timeLeft <= 0 ? t("room_quiz.quiz.submitting_btn") : t("room_quiz.quiz.submit_btn")}
               </button>
             </div>
           </div>
@@ -471,17 +606,15 @@ export default function RoomQuiz() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <span className="inline-block px-2.5 py-0.5 bg-muted rounded-md text-[9px] font-black uppercase tracking-widest text-muted-foreground">
-                      Câu hỏi {currentQuestionIndex + 1} / {questions.length}
+                      {t("room_quiz.quiz.progress", { current: currentQuestionIndex + 1, total: questions.length })}
                     </span>
                     {currentQ.type === "multiple_answer" && (
                       <span className="inline-block px-2.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-md text-[9px] font-black uppercase tracking-widest animate-pulse">
-                        Chọn nhiều đáp án
+                        {t("room_quiz.quiz.multiple_answer_badge")}
                       </span>
                     )}
                   </div>
-                  <h3 className="text-lg md:text-xl font-bold leading-snug text-foreground">
-                    {currentQ.content}
-                  </h3>
+                  <MarkdownRenderer content={currentQ.content} className="text-lg md:text-xl font-bold leading-snug text-foreground" />
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
@@ -491,12 +624,12 @@ export default function RoomQuiz() {
                         value={answers[currentQ.id]?.[0] || ""}
                         onChange={(e) => handleAnswerChange(currentQ.id, e.target.value, "essay")}
                         disabled={timeLeft <= 0 || isSubmitting}
-                        placeholder={timeLeft <= 0 ? "Thời gian đã hết, đang tự động nộp bài..." : "Nhập câu trả lời của bạn tại đây..."}
+                        placeholder={timeLeft <= 0 ? t("room_quiz.quiz.essay_placeholder_timeout") : t("room_quiz.quiz.essay_placeholder")}
                         className="w-full h-64 p-6 bg-card border-2 border-border rounded-[2rem] font-medium text-lg focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-sm disabled:opacity-70 disabled:bg-muted/50"
                       />
                       <div className="flex items-center gap-2 px-4 py-2 bg-primary/5 rounded-xl border border-primary/10">
                         <Sparkles className="w-4 h-4 text-primary" />
-                        <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Câu hỏi này sẽ được AI chấm điểm tự động</span>
+                        <span className="text-[10px] font-bold text-primary uppercase tracking-wider">{t("room_quiz.quiz.essay_ai_note")}</span>
                       </div>
                     </div>
                   ) : (
@@ -522,7 +655,7 @@ export default function RoomQuiz() {
                           )}>
                             {label}
                           </div>
-                          <span className="flex-1 font-bold text-base leading-tight">{choice.content}</span>
+                          <MarkdownRenderer content={choice.content} className="flex-1 font-bold text-base leading-tight" />
                           {isSelected && (
                             <div className="flex-shrink-0 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
                               <CheckCircle2 className="w-4 h-4 text-white" />
@@ -539,7 +672,7 @@ export default function RoomQuiz() {
 
           <aside className="w-full md:w-72 flex flex-col gap-5">
             <div className="bg-card border border-border rounded-[2rem] p-5 shadow-xl space-y-5">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-1">Danh sách câu hỏi</h4>
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-1">{t("room_quiz.quiz.question_list")}</h4>
               <div className="grid grid-cols-5 gap-2">
                 {questions.map((q, idx) => {
                   const answered = answers[q.id]?.length > 0;
@@ -586,7 +719,7 @@ export default function RoomQuiz() {
                   className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                 />
                 <label htmlFor="autoAdvance" className="text-[11px] font-bold text-muted-foreground select-none cursor-pointer">
-                  Tự động chuyển câu
+                  {t("room_quiz.quiz.auto_advance")}
                 </label>
               </div>
             </div>
@@ -597,7 +730,7 @@ export default function RoomQuiz() {
               className="w-full h-12 bg-primary text-white rounded-xl font-black flex items-center justify-center gap-3 shadow-xl shadow-primary/20 md:hidden disabled:opacity-50"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              {timeLeft <= 0 ? "Đang nộp..." : "Nộp bài"}
+              {timeLeft <= 0 ? t("room_quiz.quiz.submitting_btn") : t("room_quiz.quiz.submit_btn")}
             </button>
           </aside>
         </main>
@@ -616,18 +749,18 @@ export default function RoomQuiz() {
                   <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Send className="w-8 h-8 text-primary" />
                   </div>
-                  <h3 className="text-xl font-black text-foreground">Xác nhận nộp bài</h3>
+                  <h3 className="text-xl font-black text-foreground">{t("room_quiz.confirm.title")}</h3>
                   {unansweredCount > 0 ? (
                     <p className="text-sm font-bold text-rose-500">
-                      Bạn vẫn còn <span className="text-lg">{unansweredCount}</span> câu hỏi chưa hoàn thành.
+                      {t("room_quiz.confirm.unanswered", { count: unansweredCount })}
                     </p>
                   ) : (
                     <p className="text-sm font-bold text-emerald-500">
-                      Bạn đã hoàn thành tất cả câu hỏi!
+                      {t("room_quiz.confirm.all_answered")}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-2">
-                    Bạn có chắc chắn muốn nộp bài lúc này? Sau khi nộp sẽ không thể sửa lại.
+                    {t("room_quiz.confirm.desc")}
                   </p>
                 </div>
                 
@@ -636,7 +769,7 @@ export default function RoomQuiz() {
                     onClick={() => setShowConfirmSubmit(false)}
                     className="flex-1 h-12 bg-muted hover:bg-muted/80 text-foreground font-black rounded-xl transition-all"
                   >
-                    Làm tiếp
+                    {t("room_quiz.confirm.continue_btn")}
                   </button>
                   <button
                     onClick={() => handleSubmit(true)}
@@ -645,10 +778,10 @@ export default function RoomQuiz() {
                   >
                     {isSubmitting ? (
                       <span className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-5 h-5 animate-spin" /> Đang chấm...
+                        <Loader2 className="w-5 h-5 animate-spin" /> {t("room_quiz.confirm.grading_ai")}
                       </span>
                     ) : (
-                      "Nộp bài ngay"
+                      t("room_quiz.confirm.submit_now")
                     )}
                   </button>
                 </div>
@@ -674,60 +807,129 @@ export default function RoomQuiz() {
           <div className="bg-card border border-border rounded-[2.5rem] shadow-2xl p-6 md:p-10 text-center space-y-8 relative overflow-hidden">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1.5 bg-primary/20" />
             
-            <div className="space-y-3 relative">
-              <h2 className="text-2xl font-black">Kết quả phòng thi</h2>
-              <p className="text-primary font-bold uppercase tracking-widest text-[10px]">{room?.name}</p>
-              <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px]">{studentName} {studentId && `• ${studentId}`}</p>
+            <div className="space-y-4 relative text-center flex flex-col items-center">
+              <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-2">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-black">{t("rooms.quiz_result.title")}</h2>
+                <p className="text-muted-foreground font-bold text-xs uppercase tracking-widest">{t("rooms.quiz_result.subtitle")}</p>
+              </div>
+              
+              {/* Thêm thông báo chi tiết */}
+              <div className="max-w-md w-full bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6 mt-4">
+                <p className="text-sm font-medium text-amber-700 leading-relaxed text-justify">
+                  <span className="font-black uppercase tracking-widest text-[10px] block mb-1 opacity-60">{t("rooms.quiz_result.notes.label")} </span>
+                  {room?.showScoreAfterSubmission ? (
+                    room?.showAnswersAfterSubmission 
+                      ? t("rooms.quiz_result.notes.score_only_mc")
+                      : t("rooms.quiz_result.notes.score_mc_no_answers")
+                  ) : t("rooms.quiz_result.notes.submission_success")}
+                </p>
+              </div>
+
+              <div className="h-px w-12 bg-border my-2" />
+              <div className="space-y-1.5">
+                <p className="text-primary font-black uppercase tracking-widest text-[10px]">{room?.name}</p>
+                <div className="flex flex-col items-center gap-1">
+                  <p className="text-foreground font-black text-sm uppercase tracking-tight">{t("rooms.quiz_result.student_name")}: {studentName}</p>
+                  {studentId && <p className="text-muted-foreground font-black text-[10px] uppercase tracking-widest opacity-60">{t("rooms.quiz_result.student_id")}: {studentId}</p>}
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-1">
-                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Tổng điểm</p>
-                <p className={cn("text-5xl font-black tabular-nums", scoreColor)}>{result.score.toFixed(1)}</p>
-                <p className="text-[10px] font-bold text-muted-foreground">Thang điểm 10</p>
+                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{t("rooms.quiz_result.total_score")}</p>
+                {room?.showScoreAfterSubmission ? (
+                   <>
+                    <p className={cn("text-5xl font-black tabular-nums", scoreColor)}>{result.score.toFixed(1)}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground">{t("rooms.quiz_result.score_scale")}</p>
+                  </>
+                ) : (
+                  <p className="text-xl font-bold text-muted-foreground pt-4 italic">{t("rooms.quiz_result.pending_announcement")}</p>
+                )}
               </div>
               <div className="space-y-1">
-                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Đúng / Tổng</p>
-                <p className="text-3xl font-black mt-2">{result.correctCount} / {result.totalQuestions}</p>
-                <div className="w-full bg-muted h-1.5 rounded-full mt-3 overflow-hidden">
-                  <div className="bg-emerald-500 h-full" style={{ width: `${(result.correctCount/result.totalQuestions)*100}%` }} />
-                </div>
+                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{t("rooms.quiz_result.correct_total")}</p>
+                {room?.showScoreAfterSubmission ? (
+                  <>
+                    <p className="text-3xl font-black mt-2">{result.correctCount} / {result.totalQuestions}</p>
+                    <div className="w-full bg-muted h-1.5 rounded-full mt-3 overflow-hidden">
+                      <div className="bg-emerald-500 h-full" style={{ width: `${(result.correctCount/result.totalQuestions)*100}%` }} />
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xl font-bold text-muted-foreground pt-4 italic">{t("rooms.quiz_result.pending_announcement")}</p>
+                )}
               </div>
               <div className="space-y-1">
-                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Trạng thái</p>
-                <div className="mt-3 inline-flex items-center gap-2 px-5 py-2 bg-primary/10 text-primary rounded-xl border border-primary/20 font-black text-xs">
-                  <CheckCircle2 className="w-4 h-4" /> HOÀN THÀNH
+                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{t("rooms.quiz_result.status")}</p>
+                <div className={cn(
+                  "mt-3 inline-flex items-center gap-2 px-5 py-2 rounded-xl border font-black text-xs uppercase tracking-widest",
+                  (!room?.showScoreAfterSubmission || result.gradingStatus !== "fully_graded")
+                    ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                    : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
+                )}>
+                  {(!room?.showScoreAfterSubmission || result.gradingStatus !== "fully_graded") ? (
+                    <><Clock className="w-4 h-4" /> {t("rooms.detail.grading.status_pending")}</>
+                  ) : (
+                    <><CheckCircle2 className="w-4 h-4" /> {t("rooms.detail.grading.status_graded")}</>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              <button 
-                onClick={() => setIsReviewMode(true)}
-                className="px-6 py-3.5 bg-primary text-white font-black rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] uppercase tracking-wide text-[10px]"
-              >
-                <Eye className="w-3.5 h-3.5" /> Xem lại bài
-              </button>
-              <button 
-                onClick={() => navigate('/')}
-                className="px-6 py-3.5 bg-primary/10 text-primary font-black rounded-xl flex items-center gap-2 transition-all hover:bg-primary/20 uppercase tracking-wide text-[10px]"
-              >
-                <Home className="w-3.5 h-3.5" /> Về trang chủ
-              </button>
+            {/* Nút chuyển đến trang tra cứu */}
+            <div className="pt-6 border-t border-border mt-8">
+            <div className="grid grid-cols-2 gap-3 max-w-[320px] mx-auto">
+                <button 
+                  onClick={() => navigate(`/lookup?roomCode=${room.roomCode}&studentId=${studentId}`)}
+                  className="group relative flex flex-col items-center justify-center gap-1.5 p-2.5 bg-white dark:bg-card border border-primary/20 rounded-2xl hover:border-primary hover:bg-primary/5 transition-all duration-300 shadow-md hover:scale-[1.02] active:scale-95"
+                >
+                  <div className="w-8 h-8 bg-primary/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Search className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <div className="space-y-0">
+                    <span className="block text-[7px] font-black uppercase tracking-widest text-primary/60">{t("lookup.btn")}</span>
+                    <span className="block text-[10px] font-bold leading-tight">{t("rooms.quiz_result.history")}</span>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={() => navigate("/")}
+                  className="group relative flex flex-col items-center justify-center gap-1.5 p-2.5 bg-card border border-border rounded-2xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-300 shadow-md hover:scale-[1.02] active:scale-95"
+                >
+                  <div className="w-8 h-8 bg-background/80 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Home className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <div className="space-y-0">
+                    <span className="block text-[7px] font-black uppercase tracking-widest text-primary/60">{t("nav.home")}</span>
+                    <span className="block text-[10px] font-bold leading-tight">{t("lookup.backHome")}</span>
+                  </div>
+                </button>
+              </div>
+
+              {(room?.showAnswersAfterSubmission || room?.showSubmissionAfterSubmission) && (
+                <div className="pt-6">
+                  <button 
+                    onClick={() => setIsReviewMode(!isReviewMode)}
+                    className={cn(
+                      "w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-3 border-2",
+                      isReviewMode 
+                        ? "bg-muted text-foreground border-border hover:bg-muted/80" 
+                        : "bg-primary text-white border-primary shadow-xl shadow-primary/20 hover:scale-[1.01] active:scale-[0.98] hover:bg-primary/90"
+                    )}
+                  >
+                    <BarChart3 className="w-5 h-5" />
+                    {isReviewMode ? (t("rooms.quiz_result.close_review")) : (t("rooms.quiz_result.review_btn"))}
+                    {!isReviewMode && <ChevronRight className="w-5 h-5 animate-pulse" />}
+                  </button>
+                </div>
+              )}
             </div>
             
-            {result.gradingStatus === "ai_graded_essay" && (
-              <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-left">
-                <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="text-xs font-black text-amber-900 uppercase tracking-tight">Lưu ý về chấm điểm AI</p>
-                  <p className="text-[11px] text-amber-700 leading-relaxed font-medium">
-                    Bài thi của bạn có câu hỏi tự luận được chấm điểm tự động bởi AI. 
-                    Kết quả này mang tính chất tham khảo và có thể có sai sót so với ý đồ của giáo viên.
-                  </p>
-                </div>
-              </div>
-            )}
+
           </div>
 
           {/* Review Section */}
@@ -738,91 +940,117 @@ export default function RoomQuiz() {
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-4 pt-6 border-t border-border"
               >
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-black flex items-center gap-2">
-                    <BarChart3 className="w-6 h-6 text-primary" /> Chi tiết từng câu hỏi
-                  </h3>
-                  <button onClick={() => setIsReviewMode(false)} className="text-[10px] font-bold text-muted-foreground hover:text-foreground uppercase tracking-widest">Đóng xem lại</button>
-                </div>
+                  <div className="flex items-center justify-between mb-8 pb-4 border-b border-primary/10">
+                    <h3 className="text-xl font-black flex items-center gap-3 text-primary">
+                      <div className="p-2 bg-primary/10 rounded-xl">
+                        <BarChart3 className="w-6 h-6" />
+                      </div>
+                      {t("rooms.quiz_result.detail_questions")}
+                    </h3>
+                    <button 
+                      onClick={() => setIsReviewMode(false)} 
+                      className="px-4 py-2 text-[10px] font-black text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl border-2 border-transparent hover:border-primary/20 transition-all uppercase tracking-widest"
+                    >
+                      {t("rooms.quiz_result.close_review")}
+                    </button>
+                  </div>
 
-                {questions.map((q, idx) => {
-                  const studentAns = answers[q.id] || [];
-                  const isEssay = q.type === "essay";
-                  const isEssayEmpty = isEssay && (!studentAns[0] || !studentAns[0].trim());
+                {result.answers?.map((ans, idx) => {
+                  const isEssay = ans.questionType === "essay";
+                  const studentAns = ans.selectedAnswer || (ans.essayAnswer ? [ans.essayAnswer] : []);
+                  const isEssayEmpty = isEssay && !ans.essayAnswer?.trim();
                   
-                  // Safe sort without mutating original array
-                  const isCorrect = isEssay 
-                    ? false // Essay cannot be 'correct' by exact match
-                    : JSON.stringify([...studentAns].sort()) === JSON.stringify([...(q?.correctAnswers || [])].sort());
-                  
-                  let badgeText = isCorrect ? "Đúng" : "Sai";
-                  let badgeColor = isCorrect ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500";
+                  let badgeText = ans.correct ? t("common.correct") || "Đúng" : t("common.wrong") || "Sai";
+                  let badgeColor = ans.correct ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500";
                   
                   if (isEssay) {
                     if (isEssayEmpty) {
-                      badgeText = "Sai (Bỏ trống)";
+                      badgeText = t("common.wrong_empty") || "Sai (Bỏ trống)";
+                    } else if (result.gradingStatus === "fully_graded") {
+                      badgeText = ans.finalScore > 0 ? t("common.correct") || "Đúng" : t("common.wrong") || "Sai";
                     } else {
-                      badgeText = "Chờ chấm";
+                      badgeText = t("rooms.detail.grading.status_pending") || "Chờ chấm";
                       badgeColor = "bg-amber-500/10 text-amber-500";
                     }
                   }
 
+                  // If submission visibility is on but answers are off, we might not have 'correct' flag or 'correctAnswers'
+                  // The backend now handles filtering these fields.
+                  const showResultStatus = result.showAnswers;
+
                   return (
-                    <div key={q.id} className="bg-card border border-border rounded-[1.5rem] p-6 space-y-4 shadow-sm">
+                    <div key={ans.questionId} className="bg-card border border-border rounded-[1.5rem] p-6 space-y-4 shadow-sm">
                       <div className="flex items-center justify-between">
-                        <span className="px-2 py-0.5 bg-muted rounded-md text-[9px] font-black uppercase tracking-widest text-muted-foreground">Câu {idx + 1}</span>
-                        <span className={cn(
-                          "px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest",
-                          badgeColor
-                        )}>
-                          {badgeText}
+                        <span className="px-3 py-1 bg-violet-500/10 text-violet-600 dark:text-violet-400 rounded-lg text-[10px] font-black uppercase tracking-widest border border-violet-500/20">
+                          {t("rooms.detail.question_num", { num: idx + 1 })}
                         </span>
+                        {showResultStatus && (
+                          <span className={cn(
+                            "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border",
+                            badgeColor.replace("bg-", "border-").replace("/10", "/20"),
+                            badgeColor
+                          )}>
+                            {badgeText}
+                          </span>
+                        )}
                       </div>
-                      <h4 className="text-lg font-bold leading-tight">{q.content}</h4>
+                      <MarkdownRenderer content={ans.questionContent} className="text-lg font-bold leading-tight" />
                       
-                      {q.type === "essay" ? (
+                      {isEssay ? (
                         <div className="space-y-4">
                           <div className="p-4 bg-muted/30 border-2 border-border rounded-2xl">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Câu trả lời của bạn:</p>
-                            <p className="text-sm font-medium whitespace-pre-wrap">{studentAns[0] || "(Không có câu trả lời)"}</p>
+                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">{t("rooms.quiz_result.student_answer") || "Câu trả lời của bạn:"}</p>
+                            <p className="text-sm font-medium whitespace-pre-wrap">{ans.essayAnswer || t("rooms.quiz_result.no_answer") || "(Không có câu trả lời)"}</p>
                           </div>
-                          <div className="p-4 bg-primary/5 border border-primary/10 rounded-2xl">
-                            <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2 flex items-center gap-2">
-                              <Sparkles className="w-3 h-3" /> Đánh giá từ AI:
-                            </p>
-                            <p className="text-sm text-muted-foreground italic leading-relaxed">
-                              Kết quả tự luận đã được tích hợp vào tổng điểm. 
-                              Bạn có thể xem nhận xét chi tiết sau khi giáo viên công bố kết quả chính thức.
-                            </p>
-                          </div>
+                          {ans.aiComment && (
+                             <div className="p-4 bg-primary/5 border border-primary/10 rounded-2xl">
+                              <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2 flex items-center gap-2">
+                                <Sparkles className="w-3 h-3" /> {t("rooms.detail.grading.ai_comment") || "Nhận xét từ AI:"}
+                              </p>
+                              <p className="text-sm text-muted-foreground italic leading-relaxed">
+                                {ans.aiComment}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {q.choices?.map(choice => {
-                            const isStudentChoice = studentAns.includes(choice.key);
-                            const isRightChoice = q.correctAnswers?.includes(choice.key);
+                          {ans.choices?.map(choice => {
+                            const isStudentChoice = ans.selectedAnswer?.includes(choice.key);
+                            const isRightChoice = ans.correctAnswers?.includes(choice.key);
                             
                             return (
                               <div 
                                 key={choice.key}
                                 className={cn(
-                                  "p-3 rounded-xl border-2 flex items-center gap-3 text-sm",
+                                  "p-3 rounded-xl border-2 flex items-center gap-3 text-sm transition-all",
                                   isRightChoice ? "bg-emerald-50 border-emerald-500 text-emerald-900" :
-                                  isStudentChoice ? "bg-rose-50 border-rose-500 text-rose-900" : "bg-muted/30 border-transparent text-muted-foreground"
+                                  (isStudentChoice && showResultStatus) ? "bg-rose-50 border-rose-500 text-rose-900" : 
+                                  isStudentChoice ? "bg-primary/5 border-primary/30 text-primary" :
+                                  "bg-muted/30 border-transparent text-muted-foreground"
                                 )}
                               >
                                 <div className={cn(
                                   "w-7 h-7 rounded-lg flex items-center justify-center font-black text-[10px]",
                                   isRightChoice ? "bg-emerald-500 text-white" :
-                                  isStudentChoice ? "bg-rose-500 text-white" : "bg-muted text-muted-foreground"
+                                  (isStudentChoice && showResultStatus) ? "bg-rose-500 text-white" : 
+                                  isStudentChoice ? "bg-primary text-white" :
+                                  "bg-muted text-muted-foreground"
                                 )}>
                                   {choice.key}
                                 </div>
-                                <span className="font-bold">{choice.content}</span>
+                                <MarkdownRenderer content={choice.content} className="font-bold" />
                                 {isRightChoice && <CheckCircle2 className="w-3.5 h-3.5 ml-auto text-emerald-500" />}
                               </div>
                             );
                           })}
+                        </div>
+                      )}
+
+                      {ans.explanation && (
+                        <div className="mt-4 p-4 bg-amber-50/50 border border-amber-200 rounded-2xl">
+                           <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1">{t("rooms.form.explanation") || "Giải thích"}</p>
+                           <MarkdownRenderer content={ans.explanation} className="text-sm text-amber-900 leading-relaxed" />
                         </div>
                       )}
                     </div>

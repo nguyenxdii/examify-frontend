@@ -15,12 +15,17 @@ import {
   Clock,
   ChevronLeft,
   ArrowRight,
-  MoreVertical
+  MoreVertical,
+  Copy,
+  Printer,
+  Download, ArrowUp
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getMyExams, deleteExam } from "../../../api/examApi";
+import { getMyExams, deleteExam, cloneExam } from "../../../api/examApi";
 import CreateExamModal from "../../../components/dashboard/CreateExamModal";
 import ConfirmationModal from "../../../components/dashboard/ConfirmationModal";
+import ExportModal from "../../../components/dashboard/ExportModal";
+import Pagination from "../../../components/dashboard/Pagination";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
 
@@ -38,7 +43,9 @@ export default function MyExams() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [activeMenuId, setActiveMenuId] = useState(null);
-  const itemsPerPage = 10;
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [selectedExamForExport, setSelectedExamForExport] = useState(null);
+  const itemsPerPage = 20;
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -46,6 +53,10 @@ export default function MyExams() {
     title: "",
     message: ""
   });
+
+  useEffect(() => {
+    document.title = t("titles.my_exams");
+  }, [t]);
 
   const fetchExams = async () => {
     try {
@@ -58,6 +69,10 @@ export default function MyExams() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    document.title = t("titles.my_exams");
+  }, [t]);
 
   useEffect(() => {
     fetchExams();
@@ -107,6 +122,19 @@ export default function MyExams() {
     setIsModalOpen(true);
   };
 
+  const handleClone = async (e, examId) => {
+    e.stopPropagation();
+    setActiveMenuId(null);
+    const loadingToast = toast.loading(t("common.processing") || "Đang sao chép...");
+    try {
+      await cloneExam(examId);
+      toast.success(t("common.success") || "Sao chép đề thi thành công", { id: loadingToast });
+      fetchExams();
+    } catch (error) {
+      toast.error(error.response?.data?.message || t("common.error") || "Lỗi khi sao chép", { id: loadingToast });
+    }
+  };
+
   // Filter Logic
   const filteredExams = exams.filter((exam) => {
     const matchesTab = 
@@ -130,11 +158,13 @@ export default function MyExams() {
 
   useEffect(() => {
     setCurrentPage(1);
-    document.querySelector('main')?.scrollTo({ top: 0, behavior: "smooth" });
+    const scrollContainer = document.querySelector('main');
+    if (scrollContainer) scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
   }, [activeTab, searchQuery]);
 
   useEffect(() => {
-    document.querySelector('main')?.scrollTo({ top: 0, behavior: "smooth" });
+    const scrollContainer = document.querySelector('main');
+    if (scrollContainer) scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentPage]);
 
   const getStatusBadge = (status) => {
@@ -163,7 +193,12 @@ export default function MyExams() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 min-h-screen pb-20">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className="space-y-8 min-h-screen pb-20"
+    >
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -254,152 +289,157 @@ export default function MyExams() {
 
           {/* Quiz List */}
           <div className="space-y-4">
-            <AnimatePresence mode="popLayout">
-              {paginatedExams.length > 0 ? (
-                paginatedExams.map((exam, idx) => (
-                  <motion.div
-                    key={exam.id}
-                    layout
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2, delay: idx * 0.03 }}
-                    onClick={() => navigate(`/dashboard/teacher/my-quizzes/${exam.id}`)}
-                    className="group bg-card border border-border rounded-[2rem] p-6 hover:bg-muted/30 hover:border-primary/30 transition-all cursor-pointer shadow-sm flex flex-col md:flex-row md:items-center justify-between"
-                  >
-                    <div className="flex items-start gap-5 flex-1 min-w-0">
-                      <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        <FileQuestion className="w-7 h-7 text-primary" />
+            <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+                variants={{
+                  hidden: { opacity: 0 },
+                  show: {
+                    opacity: 1,
+                    transition: {
+                      staggerChildren: 0.1
+                    }
+                  }
+                }}
+                initial="hidden"
+                animate="show"
+                className="space-y-4"
+              >
+                {paginatedExams.length > 0 ? (
+                  paginatedExams.map((exam, idx) => (
+                    <motion.div
+                      key={exam.id}
+                      layout
+                      variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        show: { opacity: 1, y: 0 }
+                      }}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      onClick={() => navigate(`/dashboard/teacher/my-quizzes/${exam.id}`)}
+                      className="group bg-card border border-border rounded-[2rem] p-5 hover:bg-muted/30 hover:border-primary/30 transition-all cursor-pointer shadow-sm flex flex-col md:flex-row md:items-center gap-6"
+                    >
+                      <div className="hidden md:flex w-14 h-14 bg-primary/5 rounded-2xl items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors">
+                        <BookOpen className="w-7 h-7 text-primary/40 group-hover:text-primary/60 transition-colors" />
                       </div>
-                      
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-1 min-w-0">
-                          <h3 className="text-xl font-bold text-foreground truncate group-hover:text-primary transition-colors flex-1 min-w-0">
-                            {exam.title}
-                          </h3>
-                          <div className="flex-shrink-0">
+                          <div className="flex flex-wrap items-center gap-3 mb-2">
+                            <h3 className="text-xl font-bold text-foreground truncate group-hover:text-primary transition-colors max-w-[70%]">
+                              {exam.title}
+                            </h3>
                             {getStatusBadge(exam.status)}
                           </div>
+                          
+                          <p className="text-muted-foreground text-sm line-clamp-1 mb-4">
+                            {exam.description || t("wizard.list.noDescription")}
+                          </p>
+  
+                          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <BookOpen className="w-4 h-4 text-primary/60" />
+                              <span>{exam.subject || t("wizard.list.unclassified")}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-primary/60" />
+                              <span>
+                                {t("wizard.detail.questionsCount", { count: exam.questionCount || 0 })}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-primary/60" />
+                              <span>{new Date(exam.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-muted-foreground text-sm line-clamp-1 mb-4">
-                          {exam.description || t("wizard.list.noDescription")}
-                        </p>
-
-                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <BookOpen className="w-4 h-4 text-primary/60" />
-                            <span>{exam.subject || t("wizard.list.unclassified")}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-primary/60" />
-                            <span>
-                              {t("wizard.detail.questionsCount", { count: exam.questionCount || 0 })}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-primary/60" />
-                            <span>{new Date(exam.createdAt).toLocaleDateString()}</span>
-                          </div>
+  
+                      <div className="flex items-center gap-3 ml-0 md:ml-6 mt-6 md:mt-0 pt-6 md:pt-0 border-t md:border-t-0 border-border md:w-auto w-full justify-between">
+                        <div className="flex items-center gap-1 text-primary font-bold text-sm group-hover:translate-x-1 transition-transform">
+                          {t("wizard.list.details")}
+                          <ArrowRight className="w-4 h-4" />
+                        </div>
+                        <div className="flex items-center gap-2 relative">
+                          <button
+                            onClick={(e) => toggleMenu(e, exam.id)}
+                            className={`p-2.5 rounded-xl transition-all border border-transparent shadow-sm hover:shadow-md ${
+                              activeMenuId === exam.id 
+                                ? 'bg-primary text-white shadow-primary/20' 
+                                : 'bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20'
+                            }`}
+                            title={t("common.actions") || "Thao tác"}
+                          >
+                            <MoreVertical className="w-5 h-5" />
+                          </button>
+                          
+                          <AnimatePresence>
+                            {activeMenuId === exam.id && (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden"
+                              >
+                                <div className="p-1.5 flex flex-col">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); handleEditClick(e, exam); }}
+                                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted rounded-xl transition-all text-sm font-bold text-muted-foreground hover:text-primary group border border-transparent hover:border-border"
+                                  >
+                                    <Pencil className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                    {t("common.edit")}
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleClone(e, exam.id)}
+                                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted rounded-xl transition-all text-sm font-bold text-muted-foreground hover:text-primary group border border-transparent hover:border-border"
+                                  >
+                                    <Copy className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                    {t("common.clone")}
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setSelectedExamForExport(exam); setIsExportModalOpen(true); setActiveMenuId(null); }}
+                                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50 rounded-xl transition-all text-sm font-bold text-muted-foreground hover:text-emerald-600 group border border-transparent hover:border-emerald-100"
+                                  >
+                                    <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                    {t("common.export_exam") || "Tải đề/In"}
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); handleDeleteClick(e, exam); }}
+                                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 rounded-xl transition-all text-sm font-bold text-red-400 hover:text-red-600 group border border-transparent hover:border-red-100"
+                                  >
+                                    <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                    {t("common.delete")}
+                                  </button>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
                       </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <motion.div 
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="bg-card border border-border rounded-[2rem] py-20 text-center shadow-sm"
+                  >
+                    <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <BookOpen className="w-10 h-10 text-muted-foreground/30" />
                     </div>
-
-                    <div className="flex items-center gap-3 ml-0 md:ml-6 mt-6 md:mt-0 pt-6 md:pt-0 border-t md:border-t-0 border-border md:w-auto w-full justify-between">
-                      <div className="flex items-center gap-1 text-primary font-bold text-sm group-hover:translate-x-1 transition-transform">
-                        {t("wizard.list.details")}
-                        <ArrowRight className="w-4 h-4" />
-                      </div>
-                      <div className="flex items-center gap-2 relative">
-                        <button
-                          onClick={(e) => toggleMenu(e, exam.id)}
-                          className={`p-2.5 rounded-xl transition-all border border-transparent shadow-sm hover:shadow-md ${
-                            activeMenuId === exam.id 
-                              ? 'bg-primary text-white shadow-primary/20' 
-                              : 'bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20'
-                          }`}
-                          title={t("common.actions") || "Thao tác"}
-                        >
-                          <MoreVertical className="w-5 h-5" />
-                        </button>
-                        
-                        <AnimatePresence>
-                          {activeMenuId === exam.id && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                              className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden"
-                            >
-                              <div className="p-1.5 flex flex-col">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); handleEditClick(e, exam); }}
-                                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted rounded-xl transition-all text-sm font-bold text-muted-foreground hover:text-primary group"
-                                >
-                                  <Pencil className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                                  {t("common.edit") || "Chỉnh sửa"}
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); handleDeleteClick(e, exam); }}
-                                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/10 rounded-xl transition-all text-sm font-bold text-red-500 group"
-                                >
-                                  <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                                  {t("common.delete") || "Xóa đề thi"}
-                                </button>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </div>
+                    <p className="text-muted-foreground font-bold">{t("wizard.list.empty") || "Chưa có đề thi nào!"}</p>
+                    <p className="text-muted-foreground/60 text-sm mt-1">{t("wizard.list.emptyDesc") || "Hãy bắt đầu bằng cách tạo đề thi đầu tiên."}</p>
                   </motion.div>
-                ))
-              ) : (
-                <div className="bg-card border border-border rounded-[2rem] py-20 text-center shadow-sm">
-                  <p className="text-muted-foreground font-medium">Không tìm thấy đề thi nào phù hợp.</p>
-                </div>
-              )}
+                )}
+              </motion.div>
             </AnimatePresence>
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="p-6 border-t border-border bg-card/50 flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Đang hiển thị <span className="font-bold text-foreground">{(currentPage - 1) * itemsPerPage + 1}</span> đến <span className="font-bold text-foreground">{Math.min(currentPage * itemsPerPage, filteredExams.length)}</span> trong <span className="font-bold text-foreground">{filteredExams.length}</span> đề thi
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(prev => prev - 1)}
-                  className="p-2 rounded-xl border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <div className="flex items-center gap-1">
-                  {[...Array(totalPages)].map((_, i) => (
-                    <button
-                      key={i + 1}
-                      onClick={() => setCurrentPage(i + 1)}
-                      className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
-                        currentPage === i + 1
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(prev => prev + 1)}
-                  className="p-2 rounded-xl border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredExams.length}
+            itemsPerPage={itemsPerPage}
+            label={t("nav.quizzes") || "đề thi"}
+          />
         </div>
       )}
 
@@ -419,6 +459,24 @@ export default function MyExams() {
         type="danger"
         loading={deleteLoading}
       />
-    </div>
+
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        examId={selectedExamForExport?.id}
+        examTitle={selectedExamForExport?.title}
+      />
+
+      {/* Scroll to Top Button */}
+      <button
+        onClick={() => {
+          const scrollContainer = document.querySelector('main');
+          if (scrollContainer) scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+        className="fixed bottom-8 right-8 p-4 rounded-full bg-primary text-white shadow-xl shadow-primary/20 hover:scale-110 active:scale-95 transition-all z-50 group"
+      >
+        <ArrowUp className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
+      </button>
+    </motion.div>
   );
 }

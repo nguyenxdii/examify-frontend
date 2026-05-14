@@ -23,33 +23,20 @@ import {
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import logo from "../assets/synde_logo.svg";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 export default function Home() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   useEffect(() => {
+    document.title = t("titles.home");
     // Clear animation flag when returning to home,
     // so it triggers again when navigating back to auth pages
     sessionStorage.removeItem("auth_animated");
-  }, []);
+  }, [t]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setIsUserMenuOpen(false);
-    navigate("/");
-  };
-
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-
-  const toggleLanguage = (lang) => {
-    i18n.changeLanguage(lang);
-  };
-
-  const currentLang = i18n.language.startsWith("vi") ? "vi" : "en";
   const categories = [
     {
       id: 1,
@@ -159,188 +146,8 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <a
-            href="#"
-            className="flex items-center gap-2 opacity-90 hover:opacity-100 transition-opacity"
-          >
-            <img src={logo} alt="SynDe Logo" className="h-10 w-auto" />
-          </a>
-
-          <div className="hidden md:flex items-center gap-8">
-            <a
-              href="#"
-              className="text-muted-foreground hover:text-foreground transition"
-            >
-              {t("nav.quizzes")}
-            </a>
-            <a
-              href="#"
-              className="text-muted-foreground hover:text-foreground transition"
-            >
-              {t("nav.weekly")}
-            </a>
-            <a
-              href="#"
-              className="text-muted-foreground hover:text-foreground transition"
-            >
-              {t("nav.rewards")}
-            </a>
-            <a
-              href="#"
-              className="text-muted-foreground hover:text-foreground transition"
-            >
-              {t("nav.about")}
-            </a>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {/* Language Toggle Pill */}
-            <div className="flex bg-border/30 p-1 rounded-full relative border border-border/50">
-              <motion.div
-                className="absolute inset-y-1 bg-primary rounded-full shadow-lg z-0"
-                initial={false}
-                animate={{
-                  x: currentLang === "vi" ? 0 : 36,
-                  width: 36,
-                }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              />
-              <button
-                onClick={() => toggleLanguage("vi")}
-                className={`relative z-10 w-9 h-7 flex items-center justify-center text-xs font-bold transition-colors duration-200 ${
-                  currentLang === "vi"
-                    ? "text-white"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                VI
-              </button>
-              <button
-                onClick={() => toggleLanguage("en")}
-                className={`relative z-10 w-9 h-7 flex items-center justify-center text-xs font-bold transition-colors duration-200 ${
-                  currentLang === "en"
-                    ? "text-white"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                EN
-              </button>
-            </div>
-            {/* User Profile or Auth Buttons */}
-            {localStorage.getItem("token") && localStorage.getItem("user") ? (
-              <div className="relative">
-                <button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary border border-primary/20 rounded-xl font-bold hover:bg-primary/20 transition-all group"
-                >
-                  <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <User className="w-5 h-5" />
-                  </div>
-                  <span className="max-w-[100px] truncate">{user.fullName || t("dashboard.header.account")}</span>
-                </button>
-
-                <AnimatePresence>
-                  {isUserMenuOpen && (
-                    <>
-                      {/* Backdrop for click outside */}
-                      <div 
-                        className="fixed inset-0 z-0" 
-                        onClick={() => setIsUserMenuOpen(false)}
-                      />
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute right-0 mt-2 w-56 bg-white dark:bg-card border border-border rounded-2xl shadow-2xl p-2 z-50 overflow-hidden"
-                      >
-                        <div className="px-4 py-3 border-b border-border/50 mb-1">
-                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">
-                            {t("dashboard.header.account")}
-                          </p>
-                          <p className="text-sm font-bold truncate text-foreground">
-                            {user.email}
-                          </p>
-                        </div>
-
-                        <button
-                          onClick={() => {
-                            navigate("/dashboard");
-                            setIsUserMenuOpen(false);
-                          }}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-all group"
-                        >
-                          <div className="p-2 rounded-lg bg-border/50 group-hover:bg-primary/20 transition-colors">
-                            <LayoutDashboard className="w-4 h-4" />
-                          </div>
-                          {t("dashboard.sidebar.overview")}
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            navigate("/dashboard/profile");
-                            setIsUserMenuOpen(false);
-                          }}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-all group"
-                        >
-                          <div className="p-2 rounded-lg bg-border/50 group-hover:bg-primary/20 transition-colors">
-                            <User className="w-4 h-4" />
-                          </div>
-                          {t("dashboard.sidebar.profile")}
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            navigate("/dashboard/settings");
-                            setIsUserMenuOpen(false);
-                          }}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-all group"
-                        >
-                          <div className="p-2 rounded-lg bg-border/50 group-hover:bg-primary/20 transition-colors">
-                            <Settings className="w-4 h-4" />
-                          </div>
-                          {t("dashboard.sidebar.settings")}
-                        </button>
-
-                        <div className="h-px bg-border/50 my-1" />
-
-                        <button
-                          onClick={handleLogout}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/5 rounded-xl transition-all"
-                        >
-                          <div className="p-2 rounded-lg bg-destructive/10">
-                            <LogOut className="w-4 h-4" />
-                          </div>
-                          {t("dashboard.sidebar.logout")}
-                        </button>
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-            ) : (
-      <>
-        <button
-          onClick={() => navigate("/login")}
-          className="px-6 py-2 text-foreground hover:text-primary transition border border-primary rounded-lg"
-        >
-          {t("nav.signIn")}
-        </button>
-        <button
-          onClick={() => navigate("/register")}
-          className="px-6 py-2 bg-primary text-white border-2 border-primary rounded-lg font-medium hover:opacity-90 transition"
-        >
-          {t("nav.register")}
-        </button>
-      </>
-    )}
-  </div>
-</div>
-</nav>
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <Navbar />
 
       <AnimatePresence mode="wait">
         <motion.section
@@ -351,6 +158,7 @@ export default function Home() {
           transition={{ duration: 0.3 }}
           className="relative overflow-hidden bg-gradient-to-b from-background via-background to-background"
         >
+          {/* ... Hero Content ... */}
           <div className="absolute inset-0 opacity-30">
             <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(147,51,234,0.1)_25%,rgba(147,51,234,0.1)_50%,transparent_50%,transparent_75%,rgba(147,51,234,0.1)_75%,rgba(147,51,234,0.1))] bg-[length:40px_40px]"></div>
           </div>
@@ -401,7 +209,9 @@ export default function Home() {
         </motion.section>
       </AnimatePresence>
 
+      {/* Rest of the sections... */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        {/* ... Categories ... */}
         <motion.div
           key={i18n.language}
           initial={{ opacity: 0, y: 20 }}
@@ -428,7 +238,6 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Categories Grid */}
           <motion.div
             initial="hidden"
             whileInView="show"
@@ -455,18 +264,9 @@ export default function Home() {
                 style={{ 
                   borderColor: `rgba(${cat.rgb}, 0.2)` 
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = `rgba(${cat.rgb}, 0.6)`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = `rgba(${cat.rgb}, 0.2)`;
-                }}
               >
-
                 <div className="flex gap-5 items-start">
-                  <div
-                    className={`shrink-0 w-14 h-14 rounded-full ${cat.color} flex items-center justify-center transition-transform group-hover:scale-110 duration-300`}
-                  >
+                  <div className={`shrink-0 w-14 h-14 rounded-full ${cat.color} flex items-center justify-center transition-transform group-hover:scale-110 duration-300`}>
                     {cat.icon}
                   </div>
                   <div className="flex-1">
@@ -489,6 +289,7 @@ export default function Home() {
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        {/* ... Features ... */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -538,16 +339,12 @@ export default function Home() {
               whileHover={{ y: -5 }}
               className="p-8 rounded-3xl bg-primary/5 dark:bg-primary/[0.03] border-2 border-primary/10 hover:border-primary/30 transition-all duration-300 group shadow-lg"
             >
-              <div
-                className={`w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-8 group-hover:bg-primary/20 transition-colors`}
-              >
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-8 group-hover:bg-primary/20 transition-colors">
                 <div className="scale-110">{feature.icon}</div>
               </div>
-
               <h3 className="text-xl font-bold text-foreground mb-3 tracking-tight group-hover:text-primary transition-colors">
                 {feature.title}
               </h3>
-
               <p className="text-muted-foreground text-sm leading-relaxed font-medium">
                 {feature.desc}
               </p>
@@ -557,6 +354,7 @@ export default function Home() {
       </section>
 
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 mb-20">
+        {/* ... CTA ... */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -566,12 +364,8 @@ export default function Home() {
         >
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
           <div className="relative z-10">
-            <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-              {t("cta.title")}
-            </h2>
-            <p className="text-white/90 max-w-2xl mx-auto mb-8">
-              {t("cta.desc")}
-            </p>
+            <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">{t("cta.title")}</h2>
+            <p className="text-white/90 max-w-2xl mx-auto mb-8">{t("cta.desc")}</p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
                 onClick={() => navigate("/register")}
@@ -587,149 +381,7 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-background border-t border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4 opacity-90 hover:opacity-100 transition-opacity cursor-pointer">
-                <img src={logo} alt="SynDe Logo" className="h-10 w-auto" />
-              </div>
-              <p className="text-muted-foreground text-sm">
-                {t("footer.desc")}
-              </p>
-            </div>
-
-            <div>
-              <h4 className="font-bold text-foreground mb-4">
-                {t("footer.quickLinks")}
-              </h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <a
-                    href="#"
-                    className="text-muted-foreground hover:text-foreground transition"
-                  >
-                    {t("nav.home")}
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-muted-foreground hover:text-foreground transition"
-                  >
-                    {t("nav.aboutUs")}
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-muted-foreground hover:text-foreground transition"
-                  >
-                    {t("nav.features")}
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-muted-foreground hover:text-foreground transition"
-                  >
-                    {t("nav.pricing")}
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-bold text-foreground mb-4">
-                {t("footer.forTeachers")}
-              </h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <a
-                    href="#"
-                    className="text-muted-foreground hover:text-foreground transition"
-                  >
-                    {t("footer.links.about")}
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-muted-foreground hover:text-foreground transition"
-                  >
-                    {t("footer.links.contact")}
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-muted-foreground hover:text-foreground transition"
-                  >
-                    {t("footer.links.careers")}
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-muted-foreground hover:text-foreground transition"
-                  >
-                    {t("footer.links.culture")}
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-bold text-foreground mb-4">
-                {t("footer.contact")}
-              </h4>
-              <ul className="space-y-2 text-sm">
-                <li className="text-muted-foreground">
-                  <a
-                    href="mailto:nguyexndii.2003@gmail.com"
-                    className="hover:text-foreground transition"
-                  >
-                    nguyexndii.2003@gmail.com
-                  </a>
-                </li>
-                {/* <li className="text-muted-foreground">
-                  <a
-                    href="tel:+1234567890"
-                    className="hover:text-foreground transition"
-                  >
-                    +1 (234) 567-890
-                  </a>
-                </li> */}
-                <li className="text-muted-foreground">+84 348 345 248</li>
-                <li className="text-muted-foreground">
-                  Quận 6, Thành phố Hồ Chí Minh
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between">
-            <p className="text-muted-foreground text-sm">
-              {t("footer.copyright")}
-            </p>
-            <div className="flex gap-4 mt-4 sm:mt-0">
-              <a
-                href="#"
-                className="text-muted-foreground hover:text-foreground transition"
-              >
-                {t("footer.terms")}
-              </a>
-              <a
-                href="#"
-                className="text-muted-foreground hover:text-foreground transition"
-              >
-                {t("footer.privacy")}
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

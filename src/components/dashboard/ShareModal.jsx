@@ -39,17 +39,15 @@ export default function ShareModal({ isOpen, onClose, roomId, roomCode, roomName
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="relative w-full max-w-md bg-card border border-border rounded-[2.5rem] shadow-2xl overflow-hidden"
+          className="relative w-[calc(100%-2rem)] max-w-sm bg-card border border-border rounded-[2rem] shadow-2xl overflow-hidden"
         >
           {/* Header */}
           <div className="p-6 border-b border-border flex items-center justify-between bg-muted/30">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
-                <Share2 className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-xl font-black tracking-tight">{t("share.title") || "Chia sẻ phòng thi"}</h3>
-                <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">{roomName}</p>
+            <div className="flex flex-col">
+              <h3 className="text-xl font-black tracking-tight text-foreground leading-tight">{t("share.title") || "Chia sẻ phòng thi"}</h3>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em]">{roomName}</p>
               </div>
             </div>
             <button
@@ -61,14 +59,14 @@ export default function ShareModal({ isOpen, onClose, roomId, roomCode, roomName
           </div>
 
           {/* Content */}
-          <div className="p-8 space-y-8">
+          <div className="p-6 space-y-6">
             {/* QR Code Section */}
             <div className="flex flex-col items-center justify-center space-y-4">
               <div className="p-6 bg-white rounded-3xl shadow-inner border-2 border-primary/5">
                 <QRCodeSVG
                   id="room-qr-code"
                   value={shareUrl}
-                  size={200}
+                  size={160}
                   level="H"
                   includeMargin={false}
                   fgColor="#000000"

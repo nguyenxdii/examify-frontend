@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Users, Plus, Play, Square, Calendar, Clock, Copy, ArrowRight, Trash2, Search, MoreVertical } from "lucide-react";
+import { Users, Plus, Play, Square, Calendar, Clock, Copy, ArrowRight, Trash2, Search, MoreVertical, QrCode, Power, Share2, ChevronRight, ArrowUp, ChevronLeft } from "lucide-react";
 import { getMyRooms, openRoom, closeRoom, deleteRoom } from "../../../api/roomApi";
 import { useNavigate } from "react-router-dom";
 import CreateRoomModal from "../../../components/dashboard/CreateRoomModal";
+import ShareModal from "../../../components/dashboard/ShareModal";
 import ConfirmationModal from "../../../components/dashboard/ConfirmationModal";
+import Pagination from "../../../components/dashboard/Pagination";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "../../../lib/utils";
 
 export default function ExamRooms() {
   const { t } = useTranslation();
@@ -19,7 +22,9 @@ export default function ExamRooms() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [activeMenuId, setActiveMenuId] = useState(null);
-  const itemsPerPage = 10;
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const itemsPerPage = 20;
   
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -42,8 +47,17 @@ export default function ExamRooms() {
   };
 
   useEffect(() => {
+    document.title = t("titles.exam_rooms");
+  }, [t]);
+
+  useEffect(() => {
     fetchRooms();
   }, []);
+
+  useEffect(() => {
+    const scrollContainer = document.querySelector('main');
+    if (scrollContainer) scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage, activeTab]);
 
   // Close menu on click outside
   useEffect(() => {
@@ -78,10 +92,6 @@ export default function ExamRooms() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, searchQuery]);
 
   const handleToggleStatusRequest = (room, e) => {
     e.stopPropagation();
@@ -198,7 +208,12 @@ export default function ExamRooms() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-20">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className="max-w-7xl mx-auto space-y-8 pb-20"
+    >
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -268,159 +283,122 @@ export default function ExamRooms() {
 
           {/* Room List */}
           <div className="space-y-4">
-            <AnimatePresence mode="popLayout">
-              {paginatedRooms.length > 0 ? (
-                paginatedRooms.map((room, idx) => (
-                  <motion.div
-                    key={room.id}
-                    layout
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2, delay: idx * 0.03 }}
-                    onClick={() => navigate(`/dashboard/teacher/rooms/${room.id}`)}
-                    className="group bg-card border border-border rounded-[2rem] p-6 hover:bg-muted/30 hover:border-primary/30 transition-all cursor-pointer shadow-sm flex flex-col md:flex-row md:items-center justify-between"
-                  >
-                    <div className="flex items-start gap-5 flex-1 min-w-0">
-                      <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        <Users className="w-7 h-7 text-primary" />
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-1">
-                          <h3 className="text-xl font-bold text-foreground truncate group-hover:text-primary transition-colors">
+            <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="space-y-4"
+              >
+                {paginatedRooms.length > 0 ? (
+                  paginatedRooms.map((room, idx) => (
+                    <motion.div
+                      key={room.id}
+                      layout
+                      variants={itemVariants}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      onClick={() => navigate(`/dashboard/teacher/rooms/${room.id}`)}
+                      className="group bg-card border border-border rounded-[2rem] p-6 hover:bg-muted/20 hover:border-primary/20 transition-all cursor-pointer shadow-sm flex flex-col md:flex-row md:items-center gap-4 relative overflow-hidden"
+                    >
+                      <div className="flex-1 min-w-0 z-10">
+                        <div className="flex flex-wrap items-center gap-3 mb-2">
+                          <h3 className="text-2xl font-black text-foreground truncate group-hover:text-primary transition-colors max-w-[80%]">
                             {room.name}
                           </h3>
                           {getStatusBadge(room.status)}
                         </div>
-                        <p className="text-muted-foreground text-sm line-clamp-1 mb-4 flex items-center gap-2">
-                          <ArrowRight className="w-3 h-3" /> {room.examTitle}
+                        
+                        <p className="text-muted-foreground text-sm font-medium mb-5 flex items-center gap-2">
+                          <ArrowRight className="w-4 h-4 text-primary/40" /> {room.examTitle}
                         </p>
-
-                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium text-muted-foreground">
+  
+                        <div className="flex flex-wrap items-center gap-6 text-sm font-bold text-muted-foreground/70">
                           <div 
                             onClick={(e) => copyRoomCode(room.roomCode, e)}
-                            className="flex items-center gap-2 bg-muted/50 hover:bg-primary/10 hover:text-primary px-3 py-1.5 rounded-xl transition-all cursor-pointer group/code border border-transparent hover:border-primary/20"
-                            title="Click to copy code"
+                            className="flex items-center gap-2 bg-primary/5 hover:bg-primary/10 text-primary px-4 py-2 rounded-xl transition-all cursor-pointer border border-primary/10"
                           >
-                            <span className="font-mono text-primary font-bold text-xs tracking-wider">{room.roomCode}</span>
-                            <Copy className="w-3.5 h-3.5 opacity-40 group-hover/code:opacity-100 transition-opacity" />
+                            <span className="font-mono text-sm tracking-widest">{room.roomCode}</span>
+                            <Copy className="w-4 h-4 opacity-60" />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-primary/60" />
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                              <Clock className="w-4 h-4 text-primary/60" />
+                            </div>
                             <span>{room.submissionCount} {t("rooms.detail.tab_submissions")}</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-primary/60" />
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                              <Calendar className="w-4 h-4 text-primary/60" />
+                            </div>
                             <span>{formatCardDate(room.createdAt)}</span>
                           </div>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 ml-0 md:ml-6 mt-6 md:mt-0 pt-6 md:pt-0 border-t md:border-t-0 border-border md:w-auto w-full justify-between">
-                      <div className="flex items-center gap-1 text-primary font-bold text-sm group-hover:translate-x-1 transition-transform">
-                        {t("wizard.list.details")}
-                        <ArrowRight className="w-4 h-4" />
-                      </div>
-                      <div className="flex items-center gap-2 relative">
+  
+                      <div className="flex flex-wrap items-center gap-3 ml-0 md:ml-auto mt-6 md:mt-0 pt-6 md:pt-0 border-t md:border-t-0 border-border md:w-auto w-full z-10">
                         <button
-                          onClick={(e) => toggleMenu(e, room.id)}
-                          className={`p-2.5 rounded-xl transition-all border border-transparent shadow-sm hover:shadow-md ${
-                            activeMenuId === room.id 
-                              ? 'bg-primary text-white shadow-primary/20' 
-                              : 'bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20'
-                          }`}
-                          title={t("common.actions") || "Thao tác"}
-                        >
-                          <MoreVertical className="w-5 h-5" />
-                        </button>
-
-                        <AnimatePresence>
-                          {activeMenuId === room.id && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                              className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden"
-                            >
-                              <div className="p-1.5 flex flex-col">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); handleToggleStatusRequest(room, e); }}
-                                  className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-sm font-bold group ${
-                                    room.status === "open"
-                                      ? "text-amber-500 hover:bg-amber-500/10"
-                                      : "text-green-600 hover:bg-green-500/10"
-                                  }`}
-                                >
-                                  {room.status === "open" ? (
-                                    <>
-                                      <Square className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />
-                                      {t("rooms.detail.close_btn") || "Đóng phòng thi"}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Play className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />
-                                      {t("rooms.detail.open_btn") || "Mở phòng thi"}
-                                    </>
-                                  )}
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); handleDeleteRequest(room, e); }}
-                                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/10 rounded-xl transition-all text-sm font-bold text-red-500 group"
-                                >
-                                  <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                                  {t("common.delete") || "Xóa phòng thi"}
-                                </button>
-                              </div>
-                            </motion.div>
+                          onClick={(e) => { e.stopPropagation(); handleToggleStatusRequest(room, e); }}
+                          className={cn(
+                            "flex items-center gap-2 px-5 py-2.5 rounded-[1.25rem] text-sm font-black transition-all shadow-sm active:scale-95",
+                            room.status === "open" 
+                              ? "bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white" 
+                              : "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white"
                           )}
-                        </AnimatePresence>
+                        >
+                          {room.status === "open" ? <Power className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                          {room.status === "open" ? t("rooms.detail.close_room") : t("rooms.detail.open_room")}
+                        </button>
+                        
+                        <button
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setSelectedRoom(room);
+                            setIsShareModalOpen(true);
+                          }}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-[1.25rem] bg-primary/10 text-primary hover:bg-primary hover:text-white text-sm font-black transition-all shadow-sm active:scale-95"
+                        >
+                          <Share2 className="w-4 h-4" />
+                          {t("common.share")}
+                        </button>
+  
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/teacher/rooms/${room.id}`); }}
+                          className="p-2.5 rounded-xl bg-muted/80 text-muted-foreground hover:bg-primary hover:text-white transition-all shadow-sm active:scale-95"
+                        >
+                          <ChevronRight className="w-6 h-6" />
+                        </button>
                       </div>
+  
+                      {/* Decorative Background Element */}
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />
+                    </motion.div>
+                  ))
+                ) : (
+                  <motion.div 
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="bg-card border border-border rounded-[2rem] py-20 text-center shadow-sm"
+                  >
+                    <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Play className="w-10 h-10 text-muted-foreground/30" />
                     </div>
+                    <p className="text-muted-foreground font-bold">Không tìm thấy phòng thi nào phù hợp.</p>
                   </motion.div>
-                ))
-              ) : (
-                <div className="bg-card border border-border rounded-[2rem] py-20 text-center shadow-sm">
-                  <p className="text-muted-foreground font-medium">Không tìm thấy phòng thi nào phù hợp.</p>
-                </div>
-              )}
+                )}
+              </motion.div>
             </AnimatePresence>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 pt-10">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 rounded-xl border border-border bg-card text-sm font-bold disabled:opacity-50 transition-all hover:bg-muted"
-                >
-                  {t("common.previous") || "Trước"}
-                </button>
-                <div className="flex items-center gap-1">
-                  {[...Array(totalPages)].map((_, i) => (
-                    <button
-                      key={i + 1}
-                      onClick={() => setCurrentPage(i + 1)}
-                      className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
-                        currentPage === i + 1
-                          ? "bg-primary text-white"
-                          : "bg-card border border-border hover:bg-muted"
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 rounded-xl border border-border bg-card text-sm font-bold disabled:opacity-50 transition-all hover:bg-muted"
-                >
-                  {t("common.next") || "Sau"}
-                </button>
-              </div>
-            )}
+            <Pagination 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={filteredRooms.length}
+              itemsPerPage={itemsPerPage}
+              label={t("dashboard.sidebar.rooms") || "phòng thi"}
+              showFirstLast={true}
+            />
           </div>
         </div>
       )}
@@ -438,6 +416,14 @@ export default function ExamRooms() {
         )}
       </AnimatePresence>
 
+      <ShareModal 
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        roomId={selectedRoom?.id}
+        roomCode={selectedRoom?.roomCode}
+        roomName={selectedRoom?.name}
+      />
+
       <ConfirmationModal
         isOpen={confirmModal.isOpen}
         onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
@@ -449,6 +435,17 @@ export default function ExamRooms() {
         confirmText={t("common.ok")}
         cancelText={t("common.cancel")}
       />
-    </div>
+
+      {/* Scroll to Top Button */}
+      <button
+        onClick={() => {
+          const scrollContainer = document.querySelector('main');
+          if (scrollContainer) scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+        className="fixed bottom-8 right-8 p-4 rounded-full bg-primary text-white shadow-xl shadow-primary/20 hover:scale-110 active:scale-95 transition-all z-50 group"
+      >
+        <ArrowUp className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
+      </button>
+    </motion.div>
   );
 }

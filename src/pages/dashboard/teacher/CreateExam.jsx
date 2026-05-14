@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { PlusCircle, Sparkles, Wand2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -5,6 +6,10 @@ import { useNavigate } from "react-router-dom";
 export default function CreateExam() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = t("titles.create_exam");
+  }, [t]);
 
   return (
     <div className="space-y-8 pb-20">

@@ -98,12 +98,6 @@ export default function ShareExamModal({ isOpen, onClose, examId, examTitle }) {
               {/* Buttons */}
               <div className="grid grid-cols-1 gap-3 pt-2">
                 <button
-                  onClick={() => window.open(shareLink, '_blank')}
-                  className="w-full py-4.5 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 text-sm uppercase tracking-wide"
-                >
-                  <ExternalLink className="w-4 h-4" /> {t("share.preview_btn") || "Xem thử giao diện (Preview)"}
-                </button>
-                <button
                   onClick={onClose}
                   className="w-full py-4 bg-muted text-muted-foreground font-bold rounded-2xl transition-all hover:bg-muted/80 text-xs uppercase tracking-widest"
                 >

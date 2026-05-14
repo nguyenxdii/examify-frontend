@@ -25,7 +25,7 @@ export function StatsCard({ title, value, icon: Icon, trend, description, color 
         )}
       </div>
       <div>
-        <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
+        <p className="text-sm font-medium text-muted-foreground mb-1 whitespace-nowrap">{title}</p>
         <h3 className="text-3xl font-bold text-foreground tracking-tight">{value}</h3>
         {description && <p className="text-xs text-muted-foreground mt-2">{description}</p>}
       </div>

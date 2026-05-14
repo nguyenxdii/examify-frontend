@@ -28,6 +28,9 @@ import {
   Pencil,
   Database,
   ChevronDown,
+  Zap,
+  Globe,
+  AlertTriangle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -37,6 +40,7 @@ import axiosInstance from "../../../api/axiosInstance";
 import { generateQuestions, analyzeFile } from "../../../api/aiApi";
 import { createExam, saveBatchQuestions, getQuestionBank, suggestTopic } from "../../../api/examApi";
 import QuestionModal from "../../../components/dashboard/QuestionModal";
+import MarkdownRenderer from "../../../components/MarkdownRenderer";
 import { KeyboardIcon as Step1Icon } from "../../../components/icons/Step1Icon";
 import { BotMessageSquareIcon as Step2Icon } from "../../../components/icons/Step2Icon";
 import { FileCogIcon as Step3Icon } from "../../../components/icons/Step3Icon";
@@ -56,7 +60,7 @@ export default function AiCreateExam() {
   const [error, setError] = useState("");
 
   const [wizardData, setWizardData] = useState({
-    inputType: "topic", // "topic" | "document"
+    inputType: "topic", // "topic" | "document" | "direct_parse"
     content: "",
     analysis: null,
     config: {
@@ -74,6 +78,8 @@ export default function AiCreateExam() {
       title: "",
       subject: "",
       description: "",
+      duration: 60,
+      passScore: 5.0
     },
     saveToBank: false,
     globalTopic: "",
@@ -85,6 +91,8 @@ export default function AiCreateExam() {
   });
 
   const [editingQuestion, setEditingQuestion] = useState(null);
+  const [bankSaveModal, setBankSaveModal] = useState({ isOpen: false, question: null, index: -1 });
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [deletingIdx, setDeletingIdx] = useState(null);
   const [loadingTextIndex, setLoadingTextIndex] = useState(0);
   const [isAnalyzingFile, setIsAnalyzingFile] = useState(false);
@@ -92,28 +100,33 @@ export default function AiCreateExam() {
   const [bankTopics, setBankTopics] = useState([]);
   const [inlineError, setInlineError] = useState("");
   const [regeneratingIdx, setRegeneratingIdx] = useState(null);
+  const [showGlobalTopicDropdown, setShowGlobalTopicDropdown] = useState(false);
+  const [showBankTopicsDropdown, setShowBankTopicsDropdown] = useState(false);
   const topRef = useRef(null);
 
   // Auto scroll to top on step change
   useEffect(() => {
+    document.title = t("titles.ai_create_exam");
+  }, [t]);
+
+  useEffect(() => {
     // Fetch bank topics
     const fetchTopics = async () => {
       try {
-        const res = await getQuestionBank();
-        const topics = [...new Set(res.data.map(q => q.topic).filter(Boolean))];
-        setBankTopics(topics);
+        const res = await axiosInstance.get("/exams/questions/topics");
+        setBankTopics(res.data || []);
       } catch (err) {
-        console.error("Failed to fetch topics", err);
+        console.error("Failed to fetch bank topics", err);
       }
     };
-    if (currentStep === 3) fetchTopics();
+    if (currentStep === 3 || currentStep === 5) fetchTopics();
   }, [currentStep]);
 
   // Step 1: Handlers
   const handleStep1Submit = async () => {
     const content = wizardData.content.trim();
     if (!content) {
-        setInlineError("Vui lòng nhập nội dung hoặc tải tài liệu.");
+        setInlineError(t("common.fill_all"));
         return;
     }
     
@@ -129,18 +142,27 @@ export default function AiCreateExam() {
     const totalDiff = wizardData.config.easyCount + wizardData.config.mediumCount + wizardData.config.hardCount;
 
     if (totalTypes === 0) {
-      setInlineError("Vui lòng nhập ít nhất 1 câu hỏi.");
+      setInlineError(t("wizard.validation.atLeastOne") || "Vui lòng nhập ít nhất 1 câu hỏi.");
       return;
     }
 
     if (totalTypes > 50) {
-      setInlineError("Tổng số lượng câu hỏi không được vượt quá 50.");
+      setInlineError(t("wizard.validation.tooMany") || "Tổng số lượng câu hỏi không được vượt quá 50.");
       return;
     }
 
     if (totalTypes !== totalDiff) {
-      setInlineError(`Tổng số lượng loại câu (${totalTypes}) và phân bổ độ khó (${totalDiff}) phải bằng nhau.`);
+      setInlineError(t("wizard.validation.totalMismatch", { types: totalTypes, diff: totalDiff }) || `Tổng số lượng loại câu (${totalTypes}) và phân bổ độ khó (${totalDiff}) phải bằng nhau.`);
       return;
+    }
+
+    if (wizardData.inputType === "direct_parse") {
+        if (wizardData.questions.length > 0) {
+            setCurrentStep(3);
+            return;
+        }
+        setInlineError(t("wizard.validation.uploadFile") || "Vui lòng tải lên file đề thi.");
+        return;
     }
 
     setInlineError("");
@@ -157,34 +179,55 @@ export default function AiCreateExam() {
     setInlineError("");
     setIsAnalyzingFile(true);
     try {
-      const res = await analyzeFile(file);
-      const isSufficient = res.data.isSufficient !== undefined ? res.data.isSufficient : res.data.sufficient;
-      if (isSufficient) {
-        setWizardData(prev => ({
-          ...prev,
-          content: file.name,
-          analysis: res.data,
-          config: {
-            ...prev.config,
-            multipleChoice: res.data.suggestedMultipleChoice || 30,
-            multipleAnswer: res.data.suggestedMultipleAnswer || 15,
-            essay: res.data.suggestedEssay || 5,
-            easyCount: res.data.suggestedEasy || 20,
-            mediumCount: res.data.suggestedMedium || 20,
-            hardCount: res.data.suggestedHard || 10
-          },
-          metadata: {
-            ...prev.metadata,
-            title: res.data.suggestedTitle || prev.metadata.title,
-            description: res.data.suggestedDescription || res.data.summary || prev.metadata.description,
-          }
-        }));
+      if (wizardData.inputType === "direct_parse") {
+        const { parseExamFile } = await import("../../../api/aiApi");
+        const res = await parseExamFile(file);
+        if (res.data.isValid && res.data.questions?.length > 0) {
+          setWizardData(prev => ({
+            ...prev,
+            content: file.name,
+            questions: res.data.questions,
+            globalTopic: res.data.suggestedTopic || "",
+            metadata: {
+              ...prev.metadata,
+              title: res.data.suggestedTitle || prev.metadata.title,
+            }
+          }));
+          toast.success(t("common.upload_success") || "Đã trích xuất đề thi thành công!");
+          setCurrentStep(3);
+        } else {
+          setError(res.data.reason || t("wizard.digitize.error") || "Không thể trích xuất đề thi từ file này.");
+        }
       } else {
-        setError(res.data.message || "Tài liệu không phù hợp để tạo câu hỏi.");
+        const res = await analyzeFile(file);
+        const isSufficient = res.data.isSufficient !== undefined ? res.data.isSufficient : res.data.sufficient;
+        if (isSufficient) {
+          setWizardData(prev => ({
+            ...prev,
+            content: file.name,
+            analysis: res.data,
+            config: {
+              ...prev.config,
+              multipleChoice: res.data.suggestedMultipleChoice || 30,
+              multipleAnswer: res.data.suggestedMultipleAnswer || 15,
+              essay: res.data.suggestedEssay || 5,
+              easyCount: res.data.suggestedEasy || 20,
+              mediumCount: res.data.suggestedMedium || 20,
+              hardCount: res.data.suggestedHard || 10
+            },
+            metadata: {
+              ...prev.metadata,
+              title: res.data.suggestedTitle || prev.metadata.title,
+              description: res.data.suggestedDescription || res.data.summary || prev.metadata.description,
+            }
+          }));
+        } else {
+          setError(res.data.message || t("wizard.step1.invalidDoc") || "Tài liệu không phù hợp để tạo câu hỏi.");
+        }
       }
     } catch (err) {
-      console.error("File analysis error:", err);
-      setError("Có lỗi khi phân tích file: " + (err.response?.data?.message || err.message));
+      console.error("File processing error:", err);
+      setError(t("common.error") + ": " + (err.response?.data?.message || err.message));
     } finally {
       setIsAnalyzingFile(false);
     }
@@ -225,7 +268,7 @@ export default function AiCreateExam() {
           clearInterval(timer);
         }, 1000);
       } else {
-        const errorMsg = res.data.reason || "AI không thể tạo được câu hỏi từ nội dung này.";
+        const errorMsg = res.data.reason || t("wizard.ai.error_generation") || "AI không thể tạo được câu hỏi từ nội dung này.";
         setError(errorMsg);
         setCurrentStep(1);
         setLoading(false);
@@ -233,9 +276,9 @@ export default function AiCreateExam() {
       }
     } catch (err) {
       console.error("Generation error:", err);
-      let errorMsg = "Có lỗi khi tạo câu hỏi: " + (err.response?.data?.message || err.message);
+      let errorMsg = t("common.error") + ": " + (err.response?.data?.message || err.message);
       if (err.response?.status === 503) {
-        errorMsg = "Hệ thống AI hiện đang quá tải do nhu cầu cao. Vui lòng thử lại sau vài giây.";
+        errorMsg = t("common.ai_overload") || "Hệ thống AI hiện đang quá tải do nhu cầu cao. Vui lòng thử lại sau vài giây.";
       }
       setError(errorMsg);
       setCurrentStep(1);
@@ -252,12 +295,14 @@ export default function AiCreateExam() {
         content: `Hãy sinh lại câu hỏi sau đây (giữ cùng chủ đề, độ khó và loại câu hỏi): ${q.content}.`,
         inputType: "topic",
         language: i18n.language,
-        multipleChoice: q.type === "multiple_choice" ? 1 : 0,
-        multipleAnswer: q.type === "multiple_answer" ? 1 : 0,
-        essay: q.type === "essay" ? 1 : 0,
-        easyCount: q.difficulty === "easy" ? 1 : 0,
-        mediumCount: q.difficulty === "medium" || !q.difficulty ? 1 : 0,
-        hardCount: q.difficulty === "hard" ? 1 : 0
+        config: {
+            multipleChoice: q.type === "multiple_choice" ? 1 : 0,
+            multipleAnswer: q.type === "multiple_answer" ? 1 : 0,
+            essay: q.type === "essay" ? 1 : 0,
+            easyCount: q.difficulty === "easy" ? 1 : 0,
+            mediumCount: q.difficulty === "medium" || !q.difficulty ? 1 : 0,
+            hardCount: q.difficulty === "hard" ? 1 : 0
+        }
       });
       
       if (res.data.isValid && res.data.questions?.length > 0) {
@@ -270,7 +315,7 @@ export default function AiCreateExam() {
     } catch (err) {
       let errorMsg = t("wizard.step5.modal.error");
       if (err.response?.status === 503) {
-        errorMsg = "Hệ thống AI hiện đang quá tải. Vui lòng thử lại sau vài giây.";
+        errorMsg = t("common.ai_overload") || "Hệ thống AI hiện đang quá tải. Vui lòng thử lại sau vài giây.";
       }
       setError(errorMsg);
     } finally {
@@ -293,14 +338,49 @@ export default function AiCreateExam() {
     }
   };
 
+  const handleBankSave = async (questionData) => {
+    try {
+      const targetTopic = questionData.topic || wizardData.globalTopic;
+      await axiosInstance.post("/exams/questions/bank", {
+        ...questionData,
+        topic: targetTopic
+      });
+      toast.success(t("bank.save_success") || "Đã lưu vào ngân hàng");
+      
+      if (targetTopic && !bankTopics.includes(targetTopic)) {
+        setBankTopics(prev => [...prev, targetTopic].sort());
+      }
+
+      // Mark as saved in local list to avoid duplicates when saving all
+      if (bankSaveModal.index !== -1) {
+        setWizardData(prev => {
+          const newQs = [...prev.questions];
+          newQs[bankSaveModal.index] = { ...newQs[bankSaveModal.index], savedToBank: true };
+          return { ...prev, questions: newQs };
+        });
+      }
+    } catch (err) {
+      toast.error(t("common.error"));
+    }
+  };
+
   const handleSaveExam = async (status = "published") => {
     if (!wizardData.metadata.title) return;
+    
+    // Validate duration
+    if (!wizardData.metadata.duration || wizardData.metadata.duration <= 0) {
+      setError(t("wizard.create.durationError"));
+      setCurrentStep(6); // Quay lại bước cuối để sửa
+      return;
+    }
     setSavingStatus({ exam: "loading", questions: "pending" });
     try {
       const examPayload = {
         title: wizardData.metadata.title,
         description: wizardData.metadata.description,
-        subject: wizardData.metadata.subject || "Chưa phân loại",
+        subject: wizardData.metadata.subject || t("common.uncategorized"),
+        duration: wizardData.metadata.duration,
+        passScore: wizardData.metadata.passScore,
         status: status
       };
 
@@ -311,7 +391,7 @@ export default function AiCreateExam() {
       const finalQuestions = wizardData.questions.map(q => ({
         ...q,
         topic: wizardData.saveToBank ? wizardData.globalTopic : q.topic,
-        saveToBank: wizardData.saveToBank
+        saveToBank: wizardData.saveToBank && !q.savedToBank
       }));
 
       await saveBatchQuestions(examId, finalQuestions);
@@ -319,7 +399,7 @@ export default function AiCreateExam() {
 
       setTimeout(() => navigate(`/dashboard/teacher/my-quizzes/${examId}`), 1500);
     } catch (err) {
-      setError(err.response?.data?.message || "Lỗi khi lưu đề thi.");
+      setError(err.response?.data?.message || t("common.error"));
       setSavingStatus({ exam: "error", questions: "error" });
     }
   };
@@ -372,9 +452,19 @@ export default function AiCreateExam() {
           <h3 className="text-lg font-bold mb-1">{t("wizard.step1.document")}</h3>
           <p className="text-sm text-muted-foreground">{t("wizard.step1.documentDesc")}</p>
         </div>
+        <div
+          onClick={() => !isAnalyzingFile && setWizardData({ ...wizardData, inputType: "direct_parse" })}
+          className={`cursor-pointer p-6 rounded-2xl border-2 transition-all group md:col-span-2 ${wizardData.inputType === "direct_parse" ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-card hover:border-primary/30"} ${isAnalyzingFile ? "opacity-50 cursor-not-allowed" : ""}`}
+        >
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-colors ${wizardData.inputType === "direct_parse" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"}`}>
+            <BrainCircuit className="w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-bold mb-1">{t("wizard.digitize.heroTitle")}</h3>
+          <p className="text-sm text-muted-foreground">{t("wizard.digitize.mainDesc")}</p>
+        </div>
       </div>
 
-      <div className="bg-card border border-border rounded-2xl p-6 space-y-5 shadow-lg relative overflow-hidden">
+        <div className="bg-card border border-border rounded-2xl p-6 space-y-5 shadow-lg relative overflow-visible">
         {wizardData.inputType === "topic" ? (
           <div className="space-y-4">
             <label className="text-base font-bold flex items-center gap-2">
@@ -397,12 +487,43 @@ export default function AiCreateExam() {
           </div>
         ) : (
           <>
-            <label className="text-lg font-bold flex items-center gap-2">
+            {wizardData.inputType === "direct_parse" && (
+              <div className="bg-primary/5 border border-primary/20 rounded-3xl p-8 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/20 transition-all duration-500" />
+                <div className="relative flex flex-col md:flex-row items-center gap-8">
+                  <div className="w-20 h-20 bg-primary text-white rounded-[2rem] flex items-center justify-center shadow-2xl shadow-primary/40 rotate-3 group-hover:rotate-6 transition-transform shrink-0">
+                    <FileText className="w-10 h-10" />
+                  </div>
+                  <div className="flex-1 space-y-4 text-center md:text-left">
+                    <div className="space-y-1">
+                      <h3 className="text-2xl font-black text-foreground tracking-tight">{t("wizard.digitize.heroTitle") || "Số hóa đề thi"}</h3>
+                      <p className="text-muted-foreground font-medium italic">"{t("wizard.digitize.heroDesc") || "Biến tài liệu giấy thành đề thi số trong vài giây"}"</p>
+                    </div>
+                    
+                    <div className="flex flex-col gap-3">
+                      <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                        {t("wizard.digitize.mainDesc") || "Tải lên file đề thi của bạn (PDF/Word/Ảnh) và để AI tự động trích xuất câu hỏi, đáp án và giải thích chi tiết."}
+                      </p>
+                      
+                      {/* Warning Note for Digitized Exam */}
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-3">
+                        <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                        <p className="text-[11px] text-amber-700 font-bold leading-relaxed italic">
+                          Lưu ý: Đáp án và lời giải được AI tự động nhận diện có thể có sai sót. Vui lòng kiểm tra kỹ nội dung sau khi chuyển đổi.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <label className="text-lg font-bold flex items-center gap-2 mt-4">
               <FileText className="w-5 h-5 text-primary" />
-              Tài liệu học tập
+              {wizardData.inputType === "direct_parse" ? "Tải lên đề thi gốc" : "Tài liệu học tập"}
             </label>
             
-            {!wizardData.analysis ? (
+            {!wizardData.analysis && wizardData.inputType !== "direct_parse" ? (
               <label className={cn(
                 "flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-2xl cursor-pointer transition-all group",
                 isAnalyzingFile ? "bg-primary/5 border-primary animate-pulse" : "border-border bg-muted/20 hover:bg-primary/5 hover:border-primary/30"
@@ -414,7 +535,7 @@ export default function AiCreateExam() {
                     <FileUp className="w-10 h-10 text-muted-foreground group-hover:text-primary transition-colors mb-3" />
                   )}
                   <p className="text-base font-bold text-muted-foreground group-hover:text-primary transition-colors">
-                    {isAnalyzingFile ? "Đang trích xuất nội dung..." : t("wizard.step1.uploadFile")}
+                    {isAnalyzingFile ? t("ai_wizard.analyzing") : t("wizard.step1.uploadFile")}
                   </p>
                   <p className="text-[10px] text-muted-foreground/50 uppercase mt-1">
                     PDF, DOCX, TXT (MAX 10MB)
@@ -429,6 +550,54 @@ export default function AiCreateExam() {
                   />
                 )}
               </label>
+            ) : wizardData.inputType === "direct_parse" ? (
+              <div className="space-y-4">
+                {!wizardData.questions.length ? (
+                  <label className={cn(
+                    "flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-2xl transition-all group mt-2",
+                    isAnalyzingFile ? "bg-primary/5 border-primary animate-pulse cursor-not-allowed" : "border-border bg-muted/20 hover:bg-primary/5 hover:border-primary/30 cursor-pointer"
+                  )}>
+                    <div className="flex flex-col items-center justify-center pt-4 pb-5">
+                       {isAnalyzingFile ? <Loader2 className="w-10 h-10 text-primary animate-spin mb-3" /> : <FileUp className="w-10 h-10 text-muted-foreground group-hover:text-primary transition-colors mb-3" />}
+                       <p className="text-base font-bold text-muted-foreground group-hover:text-primary transition-colors">
+                         {isAnalyzingFile ? t("wizard.digitize.analyzing") : (t("wizard.digitize.placeholder") || "Chọn file để số hóa")}
+                       </p>
+                    </div>
+                    {!isAnalyzingFile && <input type="file" className="hidden" accept=".pdf,.docx,.txt" onChange={(e) => handleFileUpload(e.target.files[0])} disabled={isAnalyzingFile} />}
+                  </label>
+                ) : (
+                  <div className="bg-primary/5 p-6 rounded-2xl border border-primary/20 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => setWizardData(prev => ({ ...prev, questions: [], content: "" }))}
+                        className="p-2 bg-white/80 hover:bg-white rounded-full text-red-500 shadow-sm"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+                        <FileText className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-primary flex items-center gap-2 text-xs uppercase tracking-widest">
+                          <CheckCircle2 className="w-4 h-4" /> {t("ai_wizard.doc_ready")}
+                        </h4>
+                        <p className="text-sm font-bold text-foreground line-clamp-1">{wizardData.content}</p>
+                        <p className="text-[10px] text-muted-foreground font-medium uppercase mt-1">
+                          {wizardData.questions.length} {t("ai_wizard.suggested_questions")}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-4 flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-amber-700 font-bold leading-relaxed italic">
+                    {t("wizard.digitize.uploadNote") || "Lưu ý: Đáp án và lời giải được AI tự động nhận diện có thể có sai sót. Vui lòng kiểm tra kỹ nội dung sau khi chuyển đổi."}
+                  </p>
+                </div>
+              </div>
             ) : (
               <div className="space-y-4">
                 <div className="bg-muted p-6 rounded-2xl border border-border relative overflow-hidden group">
@@ -441,14 +610,14 @@ export default function AiCreateExam() {
                     </button>
                   </div>
                   <h4 className="font-black text-primary mb-3 flex items-center gap-2 text-xs uppercase tracking-widest">
-                    <CheckCircle2 className="w-4 h-4" /> Tài liệu đã sẵn sàng
+                    <CheckCircle2 className="w-4 h-4" /> {t("ai_wizard.doc_ready")}
                   </h4>
                   <p className="text-sm font-medium leading-relaxed text-muted-foreground line-clamp-4 italic bg-white/50 p-4 rounded-xl border border-dashed border-primary/20">
-                    "{wizardData.analysis.summary || "Chúng tôi đã tóm tắt được nội dung của bạn. Nhấn 'Bắt đầu tạo đề' để tiếp tục."}"
+                    "{wizardData.analysis.summary || t("ai_wizard.doc_summary_fallback")}"
                   </p>
                   <div className="mt-4 flex gap-4">
-                     <span className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-lg uppercase">AI Đã hiểu tài liệu</span>
-                     <span className="px-3 py-1 bg-blue-500/10 text-blue-500 text-[10px] font-black rounded-lg uppercase">{wizardData.analysis.suggestedTotal || 50} Câu hỏi gợi ý</span>
+                     <span className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-lg uppercase">{t("ai_wizard.ai_understood")}</span>
+                     <span className="px-3 py-1 bg-blue-500/10 text-blue-500 text-[10px] font-black rounded-lg uppercase">{wizardData.analysis.suggestedTotal || 50} {t("ai_wizard.suggested_questions")}</span>
                   </div>
                 </div>
               </div>
@@ -462,17 +631,17 @@ export default function AiCreateExam() {
           </motion.div>
         )}
 
+        {wizardData.inputType !== "direct_parse" && (
         <div className="pt-6 space-y-8 border-t border-border border-dashed mt-4">
-          {/* Row 1: Question Types (Total 50) */}
           <div className="space-y-4">
             <label className="text-xs font-black uppercase text-muted-foreground flex items-center gap-2">
-              <Plus className="w-4 h-4 text-primary" /> Thiết lập số lượng câu hỏi (Tối đa: 50)
+              <Plus className="w-4 h-4 text-primary" /> {t("ai_wizard.config_title")}
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {[
-                { label: "Trắc nghiệm", key: "multipleChoice" },
-                { label: "Nhiều đáp án", key: "multipleAnswer" },
-                { label: "Tự luận", key: "essay" }
+                { label: t("ai_wizard.multiple_choice"), key: "multipleChoice" },
+                { label: t("ai_wizard.multiple_answer"), key: "multipleAnswer" },
+                { label: t("ai_wizard.essay"), key: "essay" }
               ].map(type => (
                 <div key={type.key} className="bg-muted/30 p-4 rounded-2xl border border-border">
                   <label className="text-[10px] font-black uppercase text-muted-foreground block mb-2">{type.label}</label>
@@ -490,28 +659,17 @@ export default function AiCreateExam() {
                 </div>
               ))}
             </div>
-            {wizardData.config.multipleChoice + wizardData.config.multipleAnswer + wizardData.config.essay > 50 && (
-              <p className="text-[10px] text-red-500 font-bold italic">
-                * Tổng loại câu đang là {wizardData.config.multipleChoice + wizardData.config.multipleAnswer + wizardData.config.essay}. Vui lòng giảm bớt để không vượt quá 50.
-              </p>
-            )}
-            {wizardData.config.multipleChoice + wizardData.config.multipleAnswer + wizardData.config.essay !== (wizardData.config.easyCount + wizardData.config.mediumCount + wizardData.config.hardCount) && (
-              <p className="text-[10px] text-orange-500 font-bold italic">
-                * Tổng loại câu ({wizardData.config.multipleChoice + wizardData.config.multipleAnswer + wizardData.config.essay}) đang khác tổng độ khó ({wizardData.config.easyCount + wizardData.config.mediumCount + wizardData.config.hardCount}).
-              </p>
-            )}
           </div>
 
-          {/* Row 2: Difficulty (Total 50) */}
           <div className="space-y-4">
             <label className="text-xs font-black uppercase text-muted-foreground flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-primary" /> Phân bổ độ khó (Tổng phải khớp với loại câu)
+              <BarChart3 className="w-4 h-4 text-primary" /> {t("ai_wizard.difficulty_title")}
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {[
-                { label: "Dễ", key: "easyCount" },
-                { label: "Vừa", key: "mediumCount" },
-                { label: "Khó", key: "hardCount" }
+                { label: t("ai_wizard.easy"), key: "easyCount" },
+                { label: t("ai_wizard.medium"), key: "mediumCount" },
+                { label: t("ai_wizard.hard"), key: "hardCount" }
               ].map(diff => (
                 <div key={diff.key} className="bg-muted/30 p-4 rounded-2xl border border-border">
                   <label className="text-[10px] font-black uppercase text-muted-foreground block mb-2">{diff.label}</label>
@@ -529,21 +687,17 @@ export default function AiCreateExam() {
                 </div>
               ))}
             </div>
-            {wizardData.config.easyCount + wizardData.config.mediumCount + wizardData.config.hardCount > 50 && (
-              <p className="text-[10px] text-red-500 font-bold italic">
-                * Tổng độ khó đang là {wizardData.config.easyCount + wizardData.config.mediumCount + wizardData.config.hardCount}. Vui lòng giảm bớt để không vượt quá 50.
-              </p>
-            )}
           </div>
         </div>
+        )}
 
         <div className="flex justify-end items-center pt-6">
           <button
             onClick={handleStep1Submit}
-            disabled={!wizardData.content.trim() || loading || isAnalyzingFile}
+            disabled={(!wizardData.content.trim() && wizardData.inputType === "topic") || loading || isAnalyzingFile}
             className="bg-primary text-primary-foreground px-10 py-3.5 rounded-2xl font-black flex items-center gap-2 hover:bg-primary/90 transition-all shadow-xl shadow-primary/25 disabled:opacity-50"
           >
-            Bắt đầu tạo đề <ChevronRight className="w-5 h-5" />
+            {t("ai_wizard.start_btn")} <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -552,9 +706,9 @@ export default function AiCreateExam() {
 
   const renderStep2 = () => {
     const loadingSteps = [
-      { text: "Đang phân tích chủ đề...", icon: Sparkles },
-      { text: "Đang soạn câu hỏi...", icon: Edit2 },
-      { text: "Hoàn tất bản thảo...", icon: CheckCircle2 },
+      { text: t("ai_wizard.loading_analyze"), icon: Sparkles },
+      { text: t("ai_wizard.loading_drafting"), icon: Edit2 },
+      { text: t("ai_wizard.loading_finishing"), icon: CheckCircle2 },
     ];
 
     return (
@@ -597,7 +751,7 @@ export default function AiCreateExam() {
               </motion.div>
             ))}
           </div>
-          <p className="text-muted-foreground text-xs font-medium italic animate-pulse">Vui lòng chờ trong giây lát...</p>
+          <p className="text-muted-foreground text-xs font-medium italic animate-pulse">{t("ai_wizard.wait_moment")}</p>
         </div>
       </div>
     );
@@ -606,7 +760,6 @@ export default function AiCreateExam() {
   const renderStep3 = () => (
     <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-5 duration-700">
       <div className="flex flex-col gap-6">
-        {/* Exam Settings - Full Width Top */}
         <div className="bg-card border-2 border-primary/10 rounded-2xl p-6 shadow-xl space-y-5">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold font-heading flex items-center gap-2">
@@ -662,6 +815,26 @@ export default function AiCreateExam() {
                 className="w-full bg-muted/30 border border-border rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-primary/50 outline-none" 
               />
             </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">{t("wizard.step6.duration")} (phút)</label>
+              <input 
+                type="number" 
+                value={wizardData.metadata.duration} 
+                onChange={(e) => setWizardData(prev => ({...prev, metadata: {...prev.metadata, duration: parseInt(e.target.value) || 0}}))} 
+                placeholder={t("wizard.step6.durationPlaceholder")}
+                className="w-full bg-muted/30 border border-border rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-primary/50 outline-none" 
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">{t("wizard.step6.passScore")}</label>
+              <input 
+                type="number" step="0.5"
+                value={wizardData.metadata.passScore} 
+                onChange={(e) => setWizardData(prev => ({...prev, metadata: {...prev.metadata, passScore: parseFloat(e.target.value) || 0}}))} 
+                placeholder={t("wizard.step6.passScorePlaceholder")}
+                className="w-full bg-muted/30 border border-border rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-primary/50 outline-none" 
+              />
+            </div>
           </div>
           
           <div className="bg-primary/5 border border-primary/10 rounded-xl p-3 flex items-center gap-2">
@@ -671,7 +844,6 @@ export default function AiCreateExam() {
             </p>
           </div>
 
-          {/* Question Bank Logic */}
           <div className="pt-4 border-t border-border/50 space-y-4">
             <div 
               onClick={() => setWizardData(prev => ({ ...prev, saveToBank: !prev.saveToBank }))}
@@ -706,7 +878,7 @@ export default function AiCreateExam() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden space-y-3 px-1"
+                  className="space-y-3 px-1"
                 >
                   <div className="flex items-end gap-3">
                     <div className="flex-1 space-y-2">
@@ -720,25 +892,42 @@ export default function AiCreateExam() {
                           className="w-full bg-muted/50 border border-border rounded-xl p-3 focus:ring-2 focus:ring-primary/50 outline-none font-bold text-sm pr-12"
                         />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                          {bankTopics.length > 0 && (
-                            <div className="relative group/dropdown">
-                              <div className="p-1.5 hover:bg-primary/10 rounded-lg transition-colors cursor-pointer text-muted-foreground hover:text-primary">
-                                <ChevronDown className="w-4 h-4" />
-                              </div>
-                              <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-2xl shadow-xl hidden group-hover/dropdown:block z-50 p-2 max-h-48 overflow-y-auto border-t-4 border-t-primary">
-                                {bankTopics.map(t => (
-                                  <button
-                                    key={t}
-                                    type="button"
-                                    onClick={() => setWizardData(prev => ({ ...prev, globalTopic: t }))}
-                                    className="w-full text-left px-4 py-2.5 text-xs font-bold hover:bg-primary/10 rounded-xl transition-colors"
-                                  >
-                                    {t}
-                                  </button>
-                                ))}
-                              </div>
+                          <div className="relative">
+                            <div 
+                              onClick={() => setShowGlobalTopicDropdown(!showGlobalTopicDropdown)}
+                              className="p-1.5 hover:bg-primary/10 rounded-lg transition-colors cursor-pointer text-muted-foreground hover:text-primary"
+                            >
+                              <ChevronDown className={cn("w-4 h-4 transition-transform", showGlobalTopicDropdown && "rotate-180")} />
                             </div>
-                          )}
+                            <AnimatePresence>
+                              {showGlobalTopicDropdown && (
+                                <motion.div 
+                                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-2xl shadow-xl z-[100] p-2 max-h-48 overflow-y-auto border-t-4 border-t-primary"
+                                >
+                                  {bankTopics.length > 0 ? bankTopics.map(t => (
+                                    <button
+                                      key={t}
+                                      type="button"
+                                      onClick={() => {
+                                        setWizardData(prev => ({ ...prev, globalTopic: t }));
+                                        setShowGlobalTopicDropdown(false);
+                                      }}
+                                      className="w-full text-left px-4 py-2.5 text-xs font-bold hover:bg-primary/10 rounded-xl transition-colors"
+                                    >
+                                      {t}
+                                    </button>
+                                  )) : (
+                                    <div className="px-4 py-2.5 text-[10px] text-muted-foreground italic font-medium">
+                                      {t("bank.no_topics") || "Chưa có chủ đề"}
+                                    </div>
+                                  )}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -758,7 +947,6 @@ export default function AiCreateExam() {
           </div>
         </div>
 
-        {/* Questions List Section */}
         <div className="space-y-5">
           <div className="flex items-center justify-between px-2">
             <div>
@@ -793,118 +981,133 @@ export default function AiCreateExam() {
           </div>
 
           <div className="grid grid-cols-1 gap-4">
-            {wizardData.questions.map((q, i) => (
-              <motion.div 
-                key={i} 
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="group bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-xl transition-all relative overflow-hidden text-left"
-              >
-                <div className="absolute top-0 left-0 w-1.5 h-full bg-primary/10 group-hover:bg-primary transition-colors" />
-                
-                <div className="flex flex-col md:flex-row gap-6">
-                  <div className="w-11 h-11 flex-shrink-0 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-black text-lg group-hover:scale-105 transition-transform">
-                    {i + 1}
-                  </div>
+            <AnimatePresence mode="popLayout" initial={false}>
+              {wizardData.questions.map((q, i) => (
+                <motion.div 
+                  key={i}
+                  layout
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="group bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-xl transition-all relative overflow-hidden text-left"
+                >
+                  <div className="absolute top-0 left-0 w-1.5 h-full bg-primary/10 group-hover:bg-primary transition-colors" />
                   
-                  <div className="flex-1 space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-[10px] font-black uppercase tracking-wider border border-primary/20">
-                          {q.type === "multiple_choice" ? t("wizard.step5.types.mc") : q.type === "essay" ? t("wizard.step5.types.essay") : t("wizard.step5.types.ma")}
-                        </span>
-                        <span className={cn(
-                          "px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg border",
-                          q.difficulty === 'easy' ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" :
-                          q.difficulty === 'hard' ? "bg-rose-500/10 text-rose-600 border-rose-500/20" :
-                          "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                        )}>
-                          {t(`wizard.step3.difficultyLevels.${q.difficulty || 'medium'}`)}
-                        </span>
-                      </div>
-                      
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleRegenerateQuestion(i); }} 
-                          title={t("common.regenerateOne")}
-                          disabled={regeneratingIdx !== null}
-                          className="p-2 bg-muted hover:bg-amber-500/10 text-muted-foreground hover:text-amber-500 rounded-lg transition-all border border-border disabled:opacity-50"
-                        >
-                          <RotateCw className={cn("w-4 h-4", regeneratingIdx === i && "animate-spin")} />
-                        </button>
-                        <button 
-                          onClick={() => setEditingQuestion(q)} 
-                          title={t("common.edit")}
-                          className="p-2 bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary rounded-lg transition-all border border-border"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => setDeletingIdx(i)} 
-                          title={t("common.delete")}
-                          className="p-2 bg-muted hover:bg-red-500/10 text-muted-foreground hover:text-red-500 rounded-lg transition-all border border-border"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="w-11 h-11 flex-shrink-0 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-black text-lg group-hover:scale-105 transition-transform">
+                      {i + 1}
                     </div>
-
-                    <h4 className="text-xl font-bold font-heading leading-relaxed">{q.content}</h4>
-
-                    {q.type !== "essay" && q.choices && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {q.choices.map((c, ci) => {
-                          const isCorrect = q.answer === c.key || 
-                                          (Array.isArray(q.answer) && q.answer.includes(c.key)) ||
-                                          (Array.isArray(q.correctAnswers) && q.correctAnswers.includes(c.key)) ||
-                                          q.correctAnswers === c.key;
-                          return (
-                            <div 
-                              key={ci} 
-                              className={cn(
-                                "relative p-5 rounded-2xl border-2 transition-all duration-300 flex items-center gap-4 group/choice",
-                                isCorrect 
-                                  ? "border-emerald-500 bg-emerald-50/50 shadow-sm shadow-emerald-500/10" 
-                                  : "border-border bg-muted/20 hover:border-primary/30"
-                              )}
-                            >
-                              <div className={cn(
-                                "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-black transition-all",
-                                isCorrect ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 rotate-3" : "bg-card border border-border text-muted-foreground"
-                              )}>
-                                {c.key}
-                              </div>
-                              <span className={cn(
-                                "text-base leading-relaxed",
-                                isCorrect ? "font-bold text-emerald-900" : "text-foreground/80"
-                              )}>
-                                {c.content}
-                              </span>
-                              {isCorrect && (
-                                <div className="absolute -top-2 -right-2 bg-emerald-500 text-white p-1 rounded-full shadow-lg border-2 border-white animate-in zoom-in duration-300">
-                                  <CheckCircle className="w-4 h-4" />
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {q.explanation && (
-                      <div className="p-4 bg-primary/5 rounded-xl border border-primary/10 flex gap-3 mt-3">
-                        <Info className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                        <div className="space-y-0.5">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-primary/60">{t("wizard.questionModal.explanation")}</p>
-                          <p className="text-sm text-muted-foreground italic leading-relaxed">{q.explanation}</p>
+                    
+                    <div className="flex-1 space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-[10px] font-black uppercase tracking-wider border border-primary/20">
+                            {q.type === "multiple_choice" ? t("wizard.step5.types.mc") : q.type === "essay" ? t("wizard.step5.types.essay") : t("wizard.step5.types.ma")}
+                          </span>
+                          <span className={cn(
+                            "px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg border",
+                            q.difficulty === 'easy' ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" :
+                            q.difficulty === 'hard' ? "bg-rose-500/10 text-rose-600 border-rose-500/20" :
+                            "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                          )}>
+                            {t(`wizard.step3.difficultyLevels.${q.difficulty || 'medium'}`)}
+                          </span>
+                        </div>
+                        
+                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
+                          <button 
+                            onClick={() => !q.savedToBank && setBankSaveModal({ isOpen: true, question: q, index: i })}
+                            title={q.savedToBank ? t("bank.already_saved") || "Đã lưu vào ngân hàng" : t("wizard.addToBank") || "Thêm vào ngân hàng"}
+                            disabled={q.savedToBank}
+                            className={cn(
+                                "p-2 rounded-lg transition-all border border-border",
+                                q.savedToBank 
+                                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
+                                    : "bg-muted hover:bg-emerald-500/10 text-muted-foreground hover:text-emerald-500"
+                            )}
+                          >
+                            <Database className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleRegenerateQuestion(i); }} 
+                            title={t("common.regenerateOne")}
+                            disabled={regeneratingIdx !== null}
+                            className="p-2 bg-muted hover:bg-amber-500/10 text-muted-foreground hover:text-amber-500 rounded-lg transition-all border border-border disabled:opacity-50"
+                          >
+                            <RotateCw className={cn("w-4 h-4", regeneratingIdx === i && "animate-spin")} />
+                          </button>
+                          <button 
+                            onClick={() => setEditingQuestion(q)} 
+                            title={t("common.edit")}
+                            className="p-2 bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary rounded-lg transition-all border border-border"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => setDeletingIdx(i)} 
+                            title={t("common.delete")}
+                            className="p-2 bg-muted hover:bg-red-500/10 text-muted-foreground hover:text-red-500 rounded-lg transition-all border border-border"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
-                    )}
+
+                      <MarkdownRenderer content={q.content} className="text-xl font-bold font-heading leading-relaxed" />
+
+                      {q.type !== "essay" && q.choices && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {q.choices.map((c, ci) => {
+                            const isCorrect = q.answer === c.key || 
+                                            (Array.isArray(q.answer) && q.answer.includes(c.key)) ||
+                                            (Array.isArray(q.correctAnswers) && q.correctAnswers.includes(c.key)) ||
+                                            q.correctAnswers === c.key;
+                            return (
+                              <div 
+                                key={ci} 
+                                className={cn(
+                                  "relative p-5 rounded-2xl border-2 transition-all duration-300 flex items-center gap-4 group/choice",
+                                  isCorrect 
+                                    ? "border-emerald-500 bg-emerald-50/50 shadow-sm shadow-emerald-500/10" 
+                                    : "border-border bg-muted/20 hover:border-primary/30"
+                                )}
+                              >
+                                <div className={cn(
+                                  "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-black transition-all",
+                                  isCorrect ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 rotate-3" : "bg-card border border-border text-muted-foreground"
+                                )}>
+                                  {c.key}
+                                </div>
+                                <MarkdownRenderer content={c.content} className={cn(
+                                  "text-base leading-relaxed",
+                                  isCorrect ? "font-bold text-emerald-900" : "text-foreground/80"
+                                )} />
+                                {isCorrect && (
+                                  <div className="absolute -top-2 -right-2 bg-emerald-500 text-white p-1 rounded-full shadow-lg border-2 border-white animate-in zoom-in duration-300">
+                                    <CheckCircle className="w-4 h-4" />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {q.explanation && (
+                        <div className="p-4 bg-primary/5 rounded-xl border border-primary/10 flex gap-3 mt-3">
+                          <Info className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                          <div className="space-y-0.5">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-primary/60">{t("wizard.questionModal.explanation")}</p>
+                            <MarkdownRenderer content={q.explanation} className="text-sm text-muted-foreground italic leading-relaxed" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         </div>
       </div>
@@ -925,7 +1128,6 @@ export default function AiCreateExam() {
           </div>
         )}
       </AnimatePresence>
-      
       {/* Modal sửa câu hỏi */}
       {editingQuestion && (
         <QuestionModal
@@ -937,6 +1139,120 @@ export default function AiCreateExam() {
           isAiPreview={true}
         />
       )}
+      {/* Bank Save Modal for Single Question */}
+      <AnimatePresence>
+        {bankSaveModal.isOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-card border border-border rounded-[32px] shadow-2xl max-w-lg w-full"
+            >
+              <div className="p-8 border-b border-border bg-muted/30">
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                    <Database className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-foreground">{t("wizard.addToBank") || "Thêm vào ngân hàng"}</h3>
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">{t("wizard.bankModalDesc") || "Lưu câu hỏi này để tái sử dụng"}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-8 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
+                    {t("wizard.globalTopicLabel")}
+                  </label>
+                  <div className="relative group">
+                    <input 
+                      type="text"
+                      value={bankSaveModal.question?.topic || ""}
+                      onChange={(e) => setBankSaveModal(prev => ({
+                        ...prev, 
+                        question: { ...prev.question, topic: e.target.value }
+                      }))}
+                      placeholder="Nhập hoặc chọn chủ đề..."
+                      className="w-full bg-muted/50 border border-border rounded-2xl p-4 focus:ring-2 focus:ring-primary/50 outline-none font-bold text-sm pr-12"
+                    />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 z-20">
+                       <div className="relative">
+                          <button 
+                            type="button"
+                            onClick={() => setShowBankTopicsDropdown(!showBankTopicsDropdown)}
+                            className={cn(
+                              "p-2 rounded-xl transition-all border border-transparent hover:border-border",
+                              showBankTopicsDropdown ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                            )}
+                          >
+                            <ChevronDown className={cn("w-5 h-5 transition-transform", showBankTopicsDropdown && "rotate-180")} />
+                          </button>
+                          
+                          <AnimatePresence>
+                            {showBankTopicsDropdown && (
+                              <motion.div 
+                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                className="absolute right-0 top-full mt-2 w-64 bg-card border-2 border-primary/20 rounded-2xl shadow-2xl z-[100] p-2 max-h-64 overflow-y-auto"
+                              >
+                                {bankTopics.length > 0 ? bankTopics.map(topic => (
+                                  <button
+                                    key={topic}
+                                    type="button"
+                                    onClick={() => {
+                                      setBankSaveModal(prev => ({
+                                        ...prev, 
+                                        question: { ...prev.question, topic: topic }
+                                      }));
+                                      setShowBankTopicsDropdown(false);
+                                    }}
+                                    className="w-full text-left px-4 py-3 text-[11px] font-black uppercase tracking-widest hover:bg-primary/10 hover:text-primary rounded-xl transition-all mb-1 border border-transparent hover:border-primary/10"
+                                  >
+                                    {topic}
+                                  </button>
+                                )) : (
+                                  <div className="px-4 py-3 text-xs text-muted-foreground font-medium italic">
+                                    {t("bank.no_topics") || "Chưa có chủ đề nào"}
+                                  </div>
+                                )}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                       </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10">
+                    <p className="text-[11px] text-primary font-bold italic">
+                        * Câu hỏi sẽ được lưu cùng với các đáp án và lời giải hiện tại.
+                    </p>
+                </div>
+              </div>
+
+              <div className="p-8 pt-0 flex gap-3">
+                <button 
+                  onClick={() => setBankSaveModal({ isOpen: false, question: null, index: -1 })}
+                  className="flex-1 py-4 bg-muted text-muted-foreground font-black rounded-2xl hover:bg-muted/80 transition-all uppercase tracking-widest text-xs"
+                >
+                  {t("common.cancel")}
+                </button>
+                <button 
+                  onClick={async () => {
+                    await handleBankSave(bankSaveModal.question);
+                    setBankSaveModal({ isOpen: false, question: null, index: -1 });
+                  }}
+                  className="flex-1 py-4 bg-emerald-500 text-white font-black rounded-2xl hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-500/20 uppercase tracking-widest text-xs"
+                >
+                  {t("common.save")}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 
@@ -946,8 +1262,14 @@ export default function AiCreateExam() {
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="bg-card border border-border rounded-3xl p-6 shadow-lg">
           <div className="flex items-center justify-between mb-6">
-            <button onClick={() => navigate("/dashboard/teacher/create-quiz")} className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors px-4 py-2 rounded-xl hover:bg-muted/50 bg-card border border-border">
-              <ArrowLeft className="w-4 h-4" /> Quay lại
+            <button 
+              onClick={() => navigate("/dashboard/teacher/create-quiz")} 
+              className="group flex items-center gap-2 px-5 py-2.5 bg-card hover:bg-primary hover:text-white border-2 border-primary/20 hover:border-primary rounded-xl transition-all shadow-sm"
+            >
+              <ChevronLeft className="w-5 h-5 text-primary group-hover:-translate-x-1 transition-transform group-hover:text-white" />
+              <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground group-hover:text-white">
+                {t("common.back") || "Quay lại"}
+              </span>
             </button>
             <div className="text-sm font-black text-muted-foreground uppercase tracking-widest">Bước {currentStep} / {steps.length}</div>
           </div>

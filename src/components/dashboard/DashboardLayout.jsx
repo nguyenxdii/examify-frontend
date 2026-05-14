@@ -1,4 +1,5 @@
 import { Sidebar } from "./Sidebar";
+import { DashboardHeader } from "./DashboardHeader";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation } from "react-router-dom";
@@ -28,6 +29,12 @@ export function DashboardLayout({ user }) {
     syncUserFromStorage();
     window.addEventListener("settingsChanged", syncUserFromStorage);
     window.addEventListener("authChanged", syncUserFromStorage);
+
+    // Reset scroll position on route change
+    if (mainRef.current) {
+      mainRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
     return () => {
       window.removeEventListener("settingsChanged", syncUserFromStorage);
       window.removeEventListener("authChanged", syncUserFromStorage);
@@ -43,33 +50,30 @@ export function DashboardLayout({ user }) {
 
   try {
     return (
-      <div className="flex h-screen bg-background text-foreground">
+      <div className="flex h-screen bg-background text-foreground overflow-hidden">
         {/* Sidebar - Fixed width */}
         <Sidebar role={currentUser?.role} />
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          {/* Header Removed */}
-
           {/* Dynamic Content */}
           <main
             ref={mainRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto p-6 bg-muted/20"
+            className="flex-1 overflow-y-auto p-4 md:p-8 bg-muted/20 scroll-smooth"
           >
             <AnimatePresence mode="wait">
               <motion.div
-                key={i18n?.language || "vi"}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="max-w-7xl mx-auto min-h-[calc(100vh-200px)]"
+                key={location.pathname}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="max-w-7xl mx-auto min-h-[calc(100vh-100px)]"
               >
                 <Outlet context={{ user }} />
               </motion.div>
             </AnimatePresence>
-
           </main>
         </div>
       </div>

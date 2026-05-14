@@ -3,14 +3,16 @@ import { useParams, useNavigate } from "react-router-dom";
 import { 
   BookOpen, Calendar, FileQuestion, Trash2, Edit2, 
   Plus, ChevronLeft, Loader2, AlertCircle, CheckCircle2,
-  Clock, Share2, LayoutGrid, Info, Database, RotateCw
+  Clock, Share2, LayoutGrid, Info, Database, RotateCw, Download
 } from "lucide-react";
-import { getExamDetail, getQuestions, deleteQuestion, deleteExam, updateExam } from "../../../api/examApi";
+import { getExamDetail, getQuestions, deleteQuestion, deleteExam, updateExam, exportExam } from "../../../api/examApi";
 import QuestionModal from "../../../components/dashboard/QuestionModal";
 import QuestionBankModal from "../../../components/dashboard/QuestionBankModal";
 import CreateRoomModal from "../../../components/dashboard/CreateRoomModal";
 import ShareExamModal from "../../../components/dashboard/ShareExamModal";
 import ConfirmationModal from "../../../components/dashboard/ConfirmationModal";
+import ExportModal from "../../../components/dashboard/ExportModal";
+import MarkdownRenderer from "../../../components/MarkdownRenderer";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { cn } from "../../../lib/utils";
@@ -29,6 +31,7 @@ export default function ExamDetail() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     type: "question", // 'question' or 'exam'
@@ -67,9 +70,15 @@ export default function ExamDetail() {
     fetchData();
   }, [examId]);
 
+  useEffect(() => {
+    if (exam) {
+      document.title = t("titles.exam_detail", { name: exam.title });
+    }
+  }, [exam, t]);
+
   const handleSetReady = async () => {
     if (!exam.duration || exam.duration <= 0) {
-      toast.error("Vui lòng thiết lập thời gian làm bài lớn hơn 0");
+      toast.error(t("wizard.create.durationError") || "Vui lòng thiết lập thời gian làm bài lớn hơn 0");
       setIsEditingConfig(true);
       return;
     }
@@ -85,11 +94,16 @@ export default function ExamDetail() {
       toast.success(t("common.update_success") || "Đã cập nhật trạng thái");
       fetchData();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Lỗi khi cập nhật trạng thái");
+      toast.error(err.response?.data?.message || t("common.error"));
     }
   };
   
   const handleShare = async () => {
+    if (!exam.duration || exam.duration <= 0 || exam.passScore === undefined || exam.passScore === null) {
+      toast.error("Vui lòng cấu hình thời gian làm bài và điểm đạt trước khi chia sẻ");
+      setIsEditingConfig(true);
+      return;
+    }
     try {
       if (exam.status !== "shared") {
         await updateExam(examId, {
@@ -104,7 +118,7 @@ export default function ExamDetail() {
       }
       setIsShareModalOpen(true);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Lỗi khi chia sẻ đề thi");
+      toast.error(err.response?.data?.message || t("common.error"));
     }
   };
 
@@ -122,7 +136,7 @@ export default function ExamDetail() {
       setIsEditingConfig(false);
       fetchData();
     } catch (err) {
-      toast.error("Lỗi khi cập nhật cấu hình");
+      toast.error(t("common.error"));
     }
   };
 
@@ -131,7 +145,7 @@ export default function ExamDetail() {
       isOpen: true,
       type: "question",
       targetId: qId,
-      title: "Xác nhận xóa câu hỏi",
+      title: t("wizard.detail.deleteQuestionTitle") || "Xác nhận xóa câu hỏi",
       message: t("wizard.detail.deleteQuestionConfirm") || "Bạn có chắc chắn muốn xóa câu hỏi này?"
     });
   };
@@ -162,7 +176,7 @@ export default function ExamDetail() {
       }
       setConfirmModal({ ...confirmModal, isOpen: false });
     } catch (err) {
-      toast.error(err.response?.data?.message || "Lỗi thao tác");
+      toast.error(err.response?.data?.message || t("common.error"));
     } finally {
       setDeleteLoading(false);
     }
@@ -230,21 +244,29 @@ export default function ExamDetail() {
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate("/dashboard/teacher/my-quizzes")}
-              className="group flex items-center gap-2 px-4 py-2 bg-card hover:bg-muted border border-border rounded-xl transition-all"
+              className="group flex items-center gap-2 px-5 py-2.5 bg-card border border-border hover:border-primary/50 rounded-xl transition-all shadow-sm"
             >
               <ChevronLeft className="w-5 h-5 text-primary group-hover:-translate-x-1 transition-transform" />
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground">
+              <span className="text-xs font-black uppercase tracking-widest text-foreground group-hover:text-primary transition-colors">
                 {t("wizard.detail.backToList") || "Quay lại"}
               </span>
             </button>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsExportModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 border-2 border-emerald-200 rounded-xl hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all text-xs font-bold uppercase tracking-wider"
+              >
+                <Download className="w-4 h-4" />
+                {t("common.export_exam") || "Tải đề thi"}
+              </button>
               <button
                 onClick={handleDeleteExam}
-                className="p-2.5 text-muted-foreground hover:bg-red-500/10 hover:text-red-500 rounded-xl transition-all border border-transparent"
-                title="Xóa đề thi"
+                className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border-2 border-red-200 rounded-xl hover:bg-red-500 hover:text-white hover:border-red-500 transition-all text-xs font-bold uppercase tracking-wider print:hidden"
+                title={t("wizard.list.deleteTitle")}
               >
-                <Trash2 className="w-5 h-5" />
+                <Trash2 className="w-4 h-4" />
+                {t("common.delete") || "Xóa đề"}
               </button>
             </div>
           </div>
@@ -253,51 +275,51 @@ export default function ExamDetail() {
           <div className="relative p-8 bg-card border border-border rounded-[1.5rem] shadow-sm">
             <div className="relative space-y-6">
               <div className="flex flex-wrap items-center gap-2.5">
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-muted text-muted-foreground border border-border text-[10px] font-bold uppercase tracking-wider">
+                  <BookOpen className="w-3 h-3 text-primary" />
+                  {exam?.subject || t("common.uncategorized")}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight leading-snug">
+                  {exam?.title || "Untitled Exam"}
+                </h1>
                 <span className={cn(
-                  "flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider text-white",
+                  "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider text-white h-fit mt-1 shadow-sm shrink-0",
                   statusInfo.color
                 )}>
                   {statusInfo.icon}
                   {statusInfo.label}
                 </span>
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-muted text-muted-foreground border border-border text-[10px] font-bold uppercase tracking-wider">
-                  <BookOpen className="w-3 h-3 text-primary" />
-                  {exam?.subject || "Chưa phân loại"}
-                </span>
               </div>
-
-              <div className="space-y-2">
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight leading-snug">
-                  {exam?.title || "Untitled Exam"}
-                </h1>
                 {exam?.description && (
                   <p className="text-muted-foreground text-sm leading-relaxed max-w-3xl">
                     {exam.description}
                   </p>
                 )}
-              </div>
 
               {/* Quick Stats Grid */}
               <div className="flex flex-wrap gap-10 pt-2">
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Ngày tạo</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{t("common.created_at")}</span>
                   <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <Calendar className="w-3.5 h-3.5 text-primary/60" />
                     {exam?.createdAt ? new Date(exam.createdAt).toLocaleDateString("vi-VN") : "--/--/----"}
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Cấu trúc</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{t("common.structure")}</span>
                   <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <FileQuestion className="w-3.5 h-3.5 text-primary/60" />
-                    {questions?.length || 0} câu hỏi
+                    {questions?.length || 0} {t("common.questions")}
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Thời lượng</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{t("common.duration")}</span>
                   <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <Clock className="w-3.5 h-3.5 text-primary/60" />
-                    {exam?.duration || "--"} phút
+                    {exam?.duration || "--"} {t("common.minutes")}
                   </div>
                 </div>
               </div>
@@ -371,19 +393,19 @@ export default function ExamDetail() {
                                t("wizard.step3.difficultyLevels.medium")}
                             </span>
                           </div>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                             {exam.status === "draft" && (
                               <>
                                 <button 
                                   onClick={() => { setSelectedQuestion(q); setIsModalOpen(true); }}
-                                  className="p-2 hover:bg-primary/10 text-primary rounded-xl transition-colors"
+                                  className="p-2.5 bg-primary/5 text-primary border-2 border-primary/20 rounded-xl hover:bg-primary hover:text-white hover:border-primary transition-all"
                                   title={t("wizard.step5.edit") || "Sửa"}
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </button>
                                 <button 
                                   onClick={() => handleDeleteQuestion(q.id)}
-                                  className="p-2 hover:bg-red-500/10 text-red-500 rounded-xl transition-colors"
+                                  className="p-2.5 bg-red-50 text-red-500 border-2 border-red-100 rounded-xl hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
                                   title={t("common.delete") || "Xóa"}
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -392,7 +414,7 @@ export default function ExamDetail() {
                             )}
                           </div>
                         </div>
-                        <h4 className="text-base font-bold font-heading leading-snug">{q?.content}</h4>
+                        <MarkdownRenderer content={q?.content} className="text-base font-bold font-heading leading-snug" />
                         {Array.isArray(q?.choices) && q.choices.length > 0 && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
                             {q.choices.map((c, i) => {
@@ -415,12 +437,10 @@ export default function ExamDetail() {
                                   )}>
                                     {c.key}
                                   </div>
-                                  <span className={cn(
+                                  <MarkdownRenderer content={c.content} className={cn(
                                     "text-sm leading-relaxed",
                                     isCorrect ? "font-bold text-emerald-900" : "text-foreground/80"
-                                  )}>
-                                    {c.content}
-                                  </span>
+                                  )} />
                                   {isCorrect && (
                                     <div className="absolute -top-2 -right-2 bg-emerald-500 text-white p-1 rounded-full shadow-lg">
                                       <CheckCircle2 className="w-3 h-3" />
@@ -436,7 +456,7 @@ export default function ExamDetail() {
                             <Info className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                             <div className="space-y-1">
                                <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60">{t("wizard.questionModal.explanation")}</p>
-                              <p className="text-sm text-muted-foreground italic">{q.explanation}</p>
+                              <MarkdownRenderer content={q.explanation} className="text-sm text-muted-foreground italic" />
                             </div>
                           </div>
                         )}
@@ -459,7 +479,7 @@ export default function ExamDetail() {
                     onClick={() => setIsEditingConfig(true)}
                     className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1"
                   >
-                    <Edit2 className="w-3 h-3" /> Chỉnh sửa
+                    <Edit2 className="w-3 h-3" /> {t("common.edit")}
                   </button>
                 )}
               </div>
@@ -535,7 +555,7 @@ export default function ExamDetail() {
                       "text-[10px] font-bold uppercase px-2 py-0.5 rounded-md",
                       (exam?.isShuffled || exam?.shuffled) ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
                     )}>
-                      {(exam?.isShuffled || exam?.shuffled) ? "Đã bật" : "Đã tắt"}
+                      {(exam?.isShuffled || exam?.shuffled) ? t("common.enabled") : t("common.disabled")}
                     </span>
                   )}
                 </div>
@@ -546,13 +566,13 @@ export default function ExamDetail() {
                       onClick={() => setIsEditingConfig(false)}
                       className="flex-1 py-2 bg-muted text-muted-foreground font-bold rounded-xl text-xs"
                     >
-                      Hủy
+                      {t("common.cancel")}
                     </button>
                     <button
                       onClick={handleUpdateConfig}
                       className="flex-1 py-2 bg-primary text-white font-bold rounded-xl text-xs"
                     >
-                      Lưu cấu hình
+                      {t("common.save_config")}
                     </button>
                   </div>
                 )}
@@ -641,6 +661,14 @@ export default function ExamDetail() {
           examId={examId}
           examTitle={exam.title}
         />
+
+        <ExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          examId={examId}
+          examTitle={exam.title}
+        />
+
       </div>
     );
   } catch (err) {

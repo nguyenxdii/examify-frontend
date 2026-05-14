@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Book, FileText, Layout, Save } from "lucide-react";
+import { ChevronLeft, Book, FileText, Layout, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-hot-toast";
@@ -9,6 +9,10 @@ import { createExam } from "../../../api/examApi";
 export default function ManualCreateExam() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = t("titles.create_exam_manual");
+  }, [t]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -100,10 +104,12 @@ export default function ManualCreateExam() {
               <button
                 type="button"
                 onClick={() => navigate("/dashboard/teacher/create-quiz")}
-                className="flex-[1] inline-flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 text-foreground font-bold py-3.5 px-5 rounded-2xl transition-all"
+                className="group flex items-center gap-2 px-5 py-2.5 bg-card hover:bg-primary hover:text-white border-2 border-primary/20 hover:border-primary rounded-xl transition-all shadow-sm"
               >
-                <ArrowLeft className="w-4 h-4" />
-                {t("dashboard.sidebar.createQuiz") || "Quay lại tạo đề thi"}
+                <ChevronLeft className="w-5 h-5 text-primary group-hover:-translate-x-1 transition-transform group-hover:text-white" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground group-hover:text-white">
+                  {t("common.back") || "Quay lại"}
+                </span>
               </button>
               <button
                 type="submit"

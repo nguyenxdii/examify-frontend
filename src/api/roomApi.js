@@ -21,6 +21,13 @@ export const uploadStudentList = (roomId, formData) =>
     },
   });
 
+export const previewStudentList = (roomId, formData) => 
+  axiosInstance.post(`/rooms/${roomId}/students/preview`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
 export const getStudentList = (roomId) => axiosInstance.get(`/rooms/${roomId}/students`);
  
 export const addStudentManual = (roomId, data) => 
@@ -39,3 +46,12 @@ export const getSubmissionDetail = (roomId, submissionId) =>
 
 export const gradeEssay = (roomId, submissionId, data) => 
   axiosInstance.patch(`/rooms/${roomId}/submissions/${submissionId}/grade`, data);
+
+export const publishScores = (roomId, published) => 
+  axiosInstance.patch(`/rooms/${roomId}/publish?published=${published}`);
+
+export const toggleSubmissionGraded = (roomId, submissionId, graded) => 
+  axiosInstance.patch(`/rooms/${roomId}/submissions/${submissionId}/toggle-graded?graded=${graded}`);
+
+export const publishIndividualScore = (roomId, submissionId, published) => 
+  axiosInstance.patch(`/rooms/${roomId}/submissions/${submissionId}/publish?published=${published}`);
