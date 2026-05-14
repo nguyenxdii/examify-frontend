@@ -103,6 +103,22 @@ export default function AiCreateExam() {
   const [showGlobalTopicDropdown, setShowGlobalTopicDropdown] = useState(false);
   const [showBankTopicsDropdown, setShowBankTopicsDropdown] = useState(false);
   const topRef = useRef(null);
+  const globalTopicRef = useRef(null);
+  const bankTopicRef = useRef(null);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (globalTopicRef.current && !globalTopicRef.current.contains(event.target)) {
+        setShowGlobalTopicDropdown(false);
+      }
+      if (bankTopicRef.current && !bankTopicRef.current.contains(event.target)) {
+        setShowBankTopicsDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Auto scroll to top on step change
   useEffect(() => {
@@ -460,7 +476,7 @@ export default function AiCreateExam() {
             <BrainCircuit className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-bold mb-1">{t("wizard.digitize.heroTitle")}</h3>
-          <p className="text-xs text-muted-foreground">Chuyển file PDF, Word, Ảnh thành các câu hỏi trên website</p>
+          <p className="text-xs text-muted-foreground">{t("wizard.digitize.miniDesc") || "Chuyển file PDF, Word, Ảnh thành các câu hỏi trên website"}</p>
         </div>
       </div>
 
@@ -502,16 +518,8 @@ export default function AiCreateExam() {
                     
                     <div className="flex flex-col gap-3">
                       <p className="text-sm text-foreground/80 leading-relaxed font-medium">
-                        Chuyển nhanh các file đề thi có sẵn (PDF, Word, Ảnh) thành bộ câu hỏi trắc nghiệm trực tuyến để tổ chức thi ngay lập tức.
+                        {t("wizard.digitize.mainDesc") || "Chuyển nhanh các file đề thi có sẵn (PDF, Word, Ảnh) thành bộ câu hỏi trắc nghiệm trực tuyến để tổ chức thi ngay lập tức."}
                       </p>
-                      
-                      {/* Warning Note for Digitized Exam */}
-                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-3">
-                        <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                        <p className="text-[11px] text-amber-700 font-bold leading-relaxed italic">
-                          Lưu ý: Đáp án và lời giải được AI tự động nhận diện có thể có sai sót. Vui lòng kiểm tra kỹ nội dung sau khi chuyển đổi.
-                        </p>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -520,7 +528,7 @@ export default function AiCreateExam() {
             
             <label className="text-lg font-bold flex items-center gap-2 mt-4">
               <FileText className="w-5 h-5 text-primary" />
-              {wizardData.inputType === "direct_parse" ? "Tải lên đề thi gốc" : "Tài liệu học tập"}
+              {wizardData.inputType === "direct_parse" ? t("wizard.digitize.uploadOriginal") : t("wizard.step1.studyMaterial")}
             </label>
             
             {!wizardData.analysis && wizardData.inputType !== "direct_parse" ? (
@@ -883,12 +891,12 @@ export default function AiCreateExam() {
                   <div className="flex items-end gap-3">
                     <div className="flex-1 space-y-2">
                       <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground px-1">{t("wizard.globalTopicLabel")}</label>
-                      <div className="relative group">
+                      <div className="relative group" ref={globalTopicRef}>
                         <input 
                           type="text"
                           value={wizardData.globalTopic}
                           onChange={(e) => setWizardData(prev => ({ ...prev, globalTopic: e.target.value }))}
-                          placeholder="Ví dụ: Đạo hàm, Lịch sử Đảng,..."
+                          placeholder={t("wizard.globalTopicPlaceholder") || "Ví dụ: Đạo hàm, Lịch sử Đảng,..."}
                           className="w-full bg-muted/50 border border-border rounded-xl p-3 focus:ring-2 focus:ring-primary/50 outline-none font-bold text-sm pr-12"
                         />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -1118,11 +1126,11 @@ export default function AiCreateExam() {
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-card border border-border p-6 rounded-2xl shadow-xl max-w-sm w-full text-center space-y-5">
               <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto"><AlertCircle className="w-8 h-8" /></div>
-              <h3 className="text-xl font-black">Xác nhận xóa câu hỏi?</h3>
-              <p className="text-sm text-muted-foreground">Câu hỏi này sẽ bị loại bỏ khỏi đề thi hiện tại.</p>
+              <h3 className="text-xl font-black">{t("wizard.confirm_delete_title") || "Xác nhận xóa câu hỏi?"}</h3>
+              <p className="text-sm text-muted-foreground">{t("wizard.confirm_delete_msg") || "Câu hỏi này sẽ bị loại bỏ khỏi đề thi hiện tại."}</p>
               <div className="flex gap-3">
-                <button onClick={() => setDeletingIdx(null)} className="flex-1 py-3 bg-muted rounded-xl font-bold text-sm">Hủy</button>
-                <button onClick={confirmDelete} className="flex-1 py-3 bg-red-600 text-white font-black rounded-xl text-sm">Xóa ngay</button>
+                <button onClick={() => setDeletingIdx(null)} className="flex-1 py-3 bg-muted rounded-xl font-bold text-sm">{t("common.cancel")}</button>
+                <button onClick={confirmDelete} className="flex-1 py-3 bg-red-600 text-white font-black rounded-xl text-sm">{t("common.delete")}</button>
               </div>
             </motion.div>
           </div>
@@ -1166,7 +1174,7 @@ export default function AiCreateExam() {
                   <label className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
                     {t("wizard.globalTopicLabel")}
                   </label>
-                  <div className="relative group">
+                  <div className="relative group" ref={bankTopicRef}>
                     <input 
                       type="text"
                       value={bankSaveModal.question?.topic || ""}
@@ -1174,7 +1182,7 @@ export default function AiCreateExam() {
                         ...prev, 
                         question: { ...prev.question, topic: e.target.value }
                       }))}
-                      placeholder="Nhập hoặc chọn chủ đề..."
+                      placeholder={t("wizard.topic_placeholder") || "Nhập hoặc chọn chủ đề..."}
                       className="w-full bg-muted/50 border border-border rounded-2xl p-4 focus:ring-2 focus:ring-primary/50 outline-none font-bold text-sm pr-12"
                     />
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 z-20">
@@ -1312,7 +1320,7 @@ export default function AiCreateExam() {
             <div className="w-20 h-20 bg-red-100 text-red-600 rounded-3xl flex items-center justify-center mx-auto">
               <AlertCircle className="w-10 h-10" />
             </div>
-            <h3 className="text-2xl font-black text-red-600">Úi, có lỗi rồi!</h3>
+            <h3 className="text-2xl font-black text-red-600">{t("common.error_occurred") || "Úi, có lỗi rồi!"}</h3>
             <p className="text-muted-foreground font-medium leading-relaxed">
               {error}
             </p>

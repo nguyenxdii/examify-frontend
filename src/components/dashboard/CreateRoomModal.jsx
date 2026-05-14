@@ -111,23 +111,24 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess, initialExa
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
-          {/* Backdrop */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
+          {/* Backdrop - Now truly fullscreen without padding interference */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+            className="fixed inset-0 bg-background/80 backdrop-blur-md"
           />
 
-          {/* Modal Content */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-lg bg-card border border-border rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
-          >
+          {/* Modal Content Wrapper - Handles padding and centering */}
+          <div className="relative w-full h-full flex items-center justify-center p-4 pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg bg-card border border-border rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden pointer-events-auto"
+            >
             {/* Header */}
             <div className="p-6 border-b border-border flex items-center justify-between bg-muted/30">
               <div className="flex items-center gap-3">
@@ -421,8 +422,9 @@ export default function CreateRoomModal({ isOpen, onClose, onSuccess, initialExa
             </div>
           </motion.div>
         </div>
-      )}
-    </AnimatePresence>
+      </div>
+    )}
+  </AnimatePresence>
   );
 }
 
