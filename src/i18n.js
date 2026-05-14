@@ -17,7 +17,8 @@ i18n
         translation: viTranslations
       }
     },
-    fallbackLng: 'en',
+    fallbackLng: 'vi',
+    lng: localStorage.getItem('i18nextLng') || 'vi',
     detection: {
       order: ['localStorage', 'cookie', 'htmlTag', 'path', 'subdomain'],
       caches: ['localStorage', 'cookie']

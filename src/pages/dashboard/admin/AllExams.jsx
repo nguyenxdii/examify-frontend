@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { 
   BookOpen, Search, Filter, Trash2, 
-  ChevronLeft, ChevronRight, Eye,
+  ChevronLeft, ChevronRight, Eye, ChevronDown,
   Calendar, ShieldAlert, X, FileText, CheckCircle,
   Loader2, ArrowUp, Layout, RefreshCw
 } from "lucide-react";
@@ -156,84 +156,68 @@ export default function AllExams() {
         <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl -z-10" />
         <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl -z-10" />
 
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest mb-2">
-              <ShieldAlert className="w-3 h-3" />
-              System Administration
-            </div>
-            <h1 className="text-4xl font-black text-foreground tracking-tight flex items-center gap-4">
-              <div className="p-3 bg-primary text-white rounded-2xl shadow-xl shadow-primary/20">
-                <Layout className="w-8 h-8" />
-              </div>
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-black text-foreground tracking-tight">
               {t("dashboard.sidebar.allQuizzes") || "Tất cả đề thi"}
             </h1>
-            <p className="text-muted-foreground font-medium text-lg max-w-xl">
+            <p className="text-muted-foreground font-medium text-sm">
               {t("dashboard.admin.exams.subtitle") || "Quản lý và giám sát toàn bộ tài nguyên đề thi trên hệ thống Examify."}
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:flex items-center gap-3">
-             <div className="bg-muted/30 p-4 rounded-3xl border border-border/50 text-center sm:text-left sm:min-w-[140px]">
-                <p className="text-[10px] font-black uppercase text-muted-foreground mb-1 tracking-widest">{t("dashboard.stats.totalQuizzes")}</p>
-                <p className="text-2xl font-black text-primary">{exams.length}</p>
+          <div className="flex items-center gap-3">
+             <div className="bg-card border border-border px-6 py-3 rounded-2xl shadow-sm">
+                <p className="text-[10px] font-black uppercase text-muted-foreground mb-0.5 tracking-widest">{t("dashboard.stats.totalQuizzes")}</p>
+                <p className="text-xl font-black text-primary">{exams.length}</p>
              </div>
-             <div className="bg-muted/30 p-4 rounded-3xl border border-border/50 text-center sm:text-left sm:min-w-[140px]">
-                <p className="text-[10px] font-black uppercase text-muted-foreground mb-1 tracking-widest">{t("dashboard.admin.exams.status.shared")}</p>
-                <p className="text-2xl font-black text-emerald-500">{exams.filter(e => e.status?.toLowerCase() === 'shared').length}</p>
+             <div className="bg-card border border-border px-6 py-3 rounded-2xl shadow-sm">
+                <p className="text-[10px] font-black uppercase text-muted-foreground mb-0.5 tracking-widest">{t("dashboard.admin.exams.status.shared")}</p>
+                <p className="text-xl font-black text-emerald-500">{exams.filter(e => e.status?.toLowerCase() === 'shared').length}</p>
              </div>
           </div>
         </div>
       </div>
 
-      {/* Modern Filter Bar */}
-      <div className="flex flex-col md:flex-row items-center gap-4 bg-muted/20 p-3 rounded-[2rem] border border-border/50 backdrop-blur-sm">
+      {/* Filter Bar */}
+      <div className="flex flex-col md:flex-row items-center gap-4">
         <div className="relative group flex-1 w-full md:w-auto">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <input 
             type="text" 
             placeholder={t("dashboard.admin.exams.search_placeholder") || "Tìm tên đề, giáo viên..."}
-            className="w-full pl-14 pr-6 py-4 bg-card border border-border rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all shadow-sm group-hover:border-primary/40 placeholder:text-muted-foreground/60"
+            className="w-full pl-12 pr-6 py-3 bg-card border border-border rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all shadow-sm group-hover:border-primary/40 placeholder:text-muted-foreground/60"
             value={searchTerm}
             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
           />
         </div>
         
-        <div className="flex items-center gap-1 p-1.5 bg-card border border-border rounded-2xl shadow-sm w-full md:w-auto overflow-x-auto no-scrollbar">
-          {Object.entries(statusMap).map(([val, label]) => (
-            <button
-              key={val}
-              onClick={() => { setStatusFilter(val); setCurrentPage(1); }}
-              className={cn(
-                "relative px-6 py-3 rounded-xl text-xs font-black transition-all whitespace-nowrap overflow-hidden",
-                statusFilter === val ? "text-white" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-              )}
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative flex-1 md:flex-none min-w-[180px]">
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              className="w-full px-6 py-3 bg-card border border-border rounded-2xl text-sm font-bold focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer appearance-none pr-12 shadow-sm hover:border-primary/40"
             >
-              {statusFilter === val && (
-                <motion.div 
-                  layoutId="activeAdminTab"
-                  className="absolute inset-0 bg-primary shadow-lg shadow-primary/30"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-              )}
-              <span className="relative z-10">{label}</span>
-            </button>
-          ))}
-        </div>
+              {Object.entries(statusMap).map(([val, label]) => (
+                <option key={val} value={val}>{label}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          </div>
 
-        <div className="flex items-center gap-2">
           <button 
             onClick={() => fetchExams()}
-            className="p-4 rounded-2xl bg-card border border-border hover:bg-muted/50 transition-all text-muted-foreground hover:text-primary shadow-sm active:scale-95 group"
+            className="p-3.5 rounded-2xl bg-card border border-border hover:bg-muted/50 transition-all text-muted-foreground hover:text-primary shadow-sm active:scale-95 group"
             title={t("common.refresh")}
           >
-            <RefreshCw className={cn("w-5 h-5 group-hover:rotate-180 transition-transform duration-500", loading && "animate-spin")} />
+            <RefreshCw className={cn("w-4 h-4 group-hover:rotate-180 transition-transform duration-500", loading && "animate-spin")} />
           </button>
         </div>
       </div>
     </div>
 
-      <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
+    <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>

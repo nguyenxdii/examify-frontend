@@ -77,118 +77,79 @@ export default function RoomQuiz() {
     }
   }, [step]);
 
-  // Load data
+  const fetchData = useCallback(async (sId = null, sName = null) => {
+    try {
+      const params = {};
+      if (sId) params.studentId = sId;
+      if (sName) params.studentName = sName;
+      
+      const res = await getRoomPublic(roomId, params);
+      const roomData = res.data.room;
+      let questionsData = res.data.questions || [];
+      
+      setRoom(roomData);
+      setQuestions(questionsData);
+      return { roomData, questionsData };
+    } catch (err) {
+      if (err.response?.data?.message?.includes("đã đóng") || err.response?.data?.message?.includes("chưa mở") || err.response?.data?.message?.includes("closed") || err.response?.data?.message?.includes("not open")) {
+        setRoomClosed(true);
+      } else {
+        toast.error(t("room_quiz.toast.fetch_error") || "Không thể tải phòng thi");
+        navigate("/");
+      }
+      return null;
+    }
+  }, [roomId, navigate, t]);
+
+  // Initial load
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await getRoomPublic(roomId);
-        const roomData = res.data.room;
-        let questionsData = res.data.questions || [];
-        const isShuffled = res.data.shuffled;
-        
-        if (isShuffled) {
-          const shuffleArray = (arr) => {
-            const newArr = [...arr];
-            for (let i = newArr.length - 1; i > 0; i--) {
-              const j = Math.floor(Math.random() * (i + 1));
-              [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
-            }
-            return newArr;
-          };
+    const init = async () => {
+      setLoading(true);
+      const result = await fetchData();
+      if (!result) {
+        setLoading(false);
+        return;
+      }
+      
+      const { roomData } = result;
 
-          // Try to recover saved order for this room to persist across refreshes
-          const savedOrderStr = localStorage.getItem(`examify_shuffle_${roomId}`);
-          if (savedOrderStr) {
-            try {
-              const { qOrder, cOrders } = JSON.parse(savedOrderStr);
-              const qMap = new Map(questionsData.map(q => [q.id, q]));
-              const reordered = [];
-              
-              qOrder.forEach(id => {
-                if (qMap.has(id)) {
-                  const q = { ...qMap.get(id) };
-                  if (cOrders[id] && q.choices) {
-                    const cMap = new Map(q.choices.map(c => [c.key, c]));
-                    q.choices = cOrders[id].map(key => cMap.get(key)).filter(Boolean);
-                  }
-                  reordered.push(q);
-                }
-              });
-              
-              // Fallback for missing questions
-              if (reordered.length === questionsData.length) {
-                questionsData = reordered;
-              } else {
-                localStorage.removeItem(`examify_shuffle_${roomId}`);
-                // Perform new shuffle below
-              }
-            } catch (e) {
-               localStorage.removeItem(`examify_shuffle_${roomId}`);
-            }
-          }
-
-          if (!localStorage.getItem(`examify_shuffle_${roomId}`)) {
-            questionsData = shuffleArray(questionsData).map(q => {
-              if (q.choices && q.choices.length > 0) {
-                return { ...q, choices: shuffleArray(q.choices) };
-              }
-              return q;
-            });
-            // Save the order
-            const qOrder = questionsData.map(q => q.id);
-            const cOrders = {};
-            questionsData.forEach(q => { if (q.choices) cOrders[q.id] = q.choices.map(c => c.key); });
-            localStorage.setItem(`examify_shuffle_${roomId}`, JSON.stringify({ qOrder, cOrders }));
-          }
-        }
-        
-        setRoom(roomData);
-        setQuestions(questionsData);
-
-        // Check persistent timer
-        const savedTimer = localStorage.getItem(`examify_timer_${roomId}`);
-        if (savedTimer) {
-          try {
-            const { endTime, savedStudentId, savedStudentName } = JSON.parse(savedTimer);
-            const remaining = Math.floor((endTime - Date.now()) / 1000);
+      // Check persistent timer
+      const savedTimer = localStorage.getItem(`examify_timer_${roomId}`);
+      if (savedTimer) {
+        try {
+          const { endTime, savedStudentId, savedStudentName } = JSON.parse(savedTimer);
+          const remaining = Math.floor((endTime - Date.now()) / 1000);
+          
+          if (remaining > 0) {
+            setStudentId(savedStudentId);
+            setStudentName(savedStudentName);
+            setEndTime(endTime);
+            setTimeLeft(remaining);
             
-            if (remaining > 0) {
-              setStudentId(savedStudentId);
-              setStudentName(savedStudentName);
-              setEndTime(endTime);
-              setTimeLeft(remaining);
-              
-              // Load saved answers
-              const savedAnswers = localStorage.getItem(`examify_answers_${roomId}`);
-              if (savedAnswers) {
-                setAnswers(JSON.parse(savedAnswers));
-              }
-              
-              setStep("quiz");
-            } else {
-              localStorage.removeItem(`examify_timer_${roomId}`);
-              setTimeLeft((roomData.durationMinutes || 10) * 60);
-              setEndTime(Date.now() + (roomData.durationMinutes || 10) * 60000);
+            // Re-fetch questions with student info to get correct shuffle
+            await fetchData(savedStudentId, savedStudentName);
+            
+            // Load saved answers
+            const savedAnswers = localStorage.getItem(`examify_answers_${roomId}`);
+            if (savedAnswers) {
+              setAnswers(JSON.parse(savedAnswers));
             }
-          } catch (e) {
+            
+            setStep("quiz");
+          } else {
+            localStorage.removeItem(`examify_timer_${roomId}`);
             setTimeLeft((roomData.durationMinutes || 10) * 60);
           }
-        } else {
+        } catch (e) {
           setTimeLeft((roomData.durationMinutes || 10) * 60);
         }
-      } catch (err) {
-        if (err.response?.data?.message?.includes("đã đóng") || err.response?.data?.message?.includes("chưa mở") || err.response?.data?.message?.includes("closed") || err.response?.data?.message?.includes("not open")) {
-          setRoomClosed(true);
-        } else {
-          toast.error(t("room_quiz.toast.fetch_error") || "Không thể tải phòng thi");
-          navigate("/");
-        }
-      } finally {
-        setLoading(false);
+      } else {
+        setTimeLeft((roomData.durationMinutes || 10) * 60);
       }
+      setLoading(false);
     };
-    fetchData();
-  }, [roomId, navigate]);
+    init();
+  }, [fetchData, roomId]);
 
   // Handle redirect countdown
   useEffect(() => {
@@ -269,6 +230,10 @@ export default function RoomQuiz() {
           savedStudentId: studentId,
           savedStudentName: studentName
         }));
+        
+        // Re-fetch questions with student info to get correct shuffle
+        const resQuiz = await getRoomPublic(roomId, { studentId, studentName });
+        setQuestions(resQuiz.data.questions || []);
         
         setStep("quiz");
       } catch (err) {

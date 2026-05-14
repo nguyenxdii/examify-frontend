@@ -140,7 +140,8 @@
           "created_at": "Created Date"
         },
         "status": {
-          "all": "All Statuses"
+          "all": "All Statuses",
+          "shared": "Shared"
         },
         "delete_modal": {
           "title": "Delete Violation Exam",
@@ -470,6 +471,19 @@
         "shared": "Shared",
         "loading": "Processing..."
       }
+    }
+  },
+  "rooms": {
+    "detail": {
+      "duplicate_warning": "DUPLICATE DETECTED",
+      "duplicate_filtered": "• FILTERED {{count}} DUPLICATES",
+      "replace_warning": "WARNING: This room already has a student list. Saving a new list will <1>REPLACE ALL</1> existing data and may result in the loss of submitted exam results.",
+      "confirm_replace_title": "Confirm List Replacement",
+      "confirm_replace_msg": "This room already has students. Are you sure you want to REPLACE the entire existing list with the new file? This may affect existing exam results.",
+      "no_students_found": "No matching students found",
+      "ai_verify_title": "Student List",
+      "tab_students": "Students",
+      "search_placeholder": "Search ID or name..."
     }
   },
   "common": {
@@ -843,7 +857,8 @@
       "pending_announcement": "Pending",
       "correct_total": "Correct / Total",
       "status": "Status",
-      "review_quiz": "Review Quiz",
+      "review_btn": "Review Submission",
+      "history": "Exam History",
       "back_to_home": "Back to Home",
       "detail_questions": "Detailed Questions",
       "close_review": "Close Review",
@@ -858,7 +873,7 @@
     },
     "detail": {
       "back": "Back",
-      "question_num": "Questions",
+      "question_num": "Question {{num}}",
       "card": {
         "exam": "Exam",
         "code": "Room Code",
@@ -922,6 +937,9 @@
       "essay": "Essay",
       "multiple_choice": "Multiple Choice",
       "grading": {
+        "student_selected_correct": "CORRECT SELECTION",
+        "student_selected_incorrect": "INCORRECT SELECTION",
+        "manually_graded": "Manually Graded",
         "title": "Grading: {{name}}",
         "essay_confirm_title": "Confirm Result?",
         "essay_confirm_msg": "Are you sure you want to mark this answer as CORRECT?",

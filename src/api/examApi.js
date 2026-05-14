@@ -35,7 +35,7 @@ export const submitPublicQuiz = (examId, data) => axiosInstance.post(`/exams/${e
 export const saveToBank = (data) => axiosInstance.post("/exams/questions/bank", data);
 
 // Room APIs
-export const getRoomPublic = (roomId) => axiosInstance.get(`/rooms/${roomId}/public`);
+export const getRoomPublic = (roomId, params = {}) => axiosInstance.get(`/rooms/${roomId}/public`, { params });
 export const submitRoomQuiz = (roomId, data) => axiosInstance.post(`/rooms/${roomId}/submit`, data);
 export const validateRoom = (roomId, data) => axiosInstance.post(`/rooms/${roomId}/validate`, data);
 export const lookupResult = (studentId, roomCode) => 

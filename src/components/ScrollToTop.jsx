@@ -5,10 +5,14 @@ export default function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
+    // Scroll window
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Scroll dashboard main container if it exists
+    const mainContainer = document.querySelector('main');
+    if (mainContainer) {
+      mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }, [pathname]);
 
   return null;

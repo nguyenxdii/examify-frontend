@@ -431,36 +431,36 @@ export default function AiCreateExam() {
 
   const renderStep1 = () => (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div
           onClick={() => setWizardData({ ...wizardData, inputType: "topic" })}
-          className={`cursor-pointer p-6 rounded-2xl border-2 transition-all group ${wizardData.inputType === "topic" ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-card hover:border-primary/30"}`}
+          className={`cursor-pointer p-6 rounded-2xl border-2 transition-all group flex flex-col items-center text-center ${wizardData.inputType === "topic" ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-card hover:border-primary/30"}`}
         >
           <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-colors ${wizardData.inputType === "topic" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"}`}>
             <Sparkles className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-bold mb-1">{t("wizard.step1.topic")}</h3>
-          <p className="text-sm text-muted-foreground">{t("wizard.step1.topicDesc")}</p>
+          <p className="text-xs text-muted-foreground">{t("wizard.step1.topicDesc")}</p>
         </div>
         <div
           onClick={() => setWizardData({ ...wizardData, inputType: "document" })}
-          className={`cursor-pointer p-6 rounded-2xl border-2 transition-all group ${wizardData.inputType === "document" ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-card hover:border-primary/30"}`}
+          className={`cursor-pointer p-6 rounded-2xl border-2 transition-all group flex flex-col items-center text-center ${wizardData.inputType === "document" ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-card hover:border-primary/30"}`}
         >
           <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-colors ${wizardData.inputType === "document" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"}`}>
             <FileUp className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-bold mb-1">{t("wizard.step1.document")}</h3>
-          <p className="text-sm text-muted-foreground">{t("wizard.step1.documentDesc")}</p>
+          <p className="text-xs text-muted-foreground">{t("wizard.step1.documentDesc")}</p>
         </div>
         <div
           onClick={() => !isAnalyzingFile && setWizardData({ ...wizardData, inputType: "direct_parse" })}
-          className={`cursor-pointer p-6 rounded-2xl border-2 transition-all group md:col-span-2 ${wizardData.inputType === "direct_parse" ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-card hover:border-primary/30"} ${isAnalyzingFile ? "opacity-50 cursor-not-allowed" : ""}`}
+          className={`cursor-pointer p-6 rounded-2xl border-2 transition-all group flex flex-col items-center text-center ${wizardData.inputType === "direct_parse" ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-card hover:border-primary/30"} ${isAnalyzingFile ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-colors ${wizardData.inputType === "direct_parse" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"}`}>
             <BrainCircuit className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-bold mb-1">{t("wizard.digitize.heroTitle")}</h3>
-          <p className="text-sm text-muted-foreground">{t("wizard.digitize.mainDesc")}</p>
+          <p className="text-xs text-muted-foreground">Chuyển file PDF, Word, Ảnh thành các câu hỏi trên website</p>
         </div>
       </div>
 
@@ -488,21 +488,21 @@ export default function AiCreateExam() {
         ) : (
           <>
             {wizardData.inputType === "direct_parse" && (
-              <div className="bg-primary/5 border border-primary/20 rounded-3xl p-8 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/20 transition-all duration-500" />
-                <div className="relative flex flex-col md:flex-row items-center gap-8">
-                  <div className="w-20 h-20 bg-primary text-white rounded-[2rem] flex items-center justify-center shadow-2xl shadow-primary/40 rotate-3 group-hover:rotate-6 transition-transform shrink-0">
-                    <FileText className="w-10 h-10" />
+              <div className="bg-primary/5 border border-primary/20 rounded-[2rem] p-6 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-3xl -mr-12 -mt-12 group-hover:bg-primary/20 transition-all duration-500" />
+                <div className="relative flex items-center gap-6">
+                  <div className="w-16 h-16 bg-primary text-white rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-primary/30 rotate-2 group-hover:rotate-6 transition-transform shrink-0">
+                    <FileText className="w-8 h-8" />
                   </div>
-                  <div className="flex-1 space-y-4 text-center md:text-left">
-                    <div className="space-y-1">
-                      <h3 className="text-2xl font-black text-foreground tracking-tight">{t("wizard.digitize.heroTitle") || "Số hóa đề thi"}</h3>
-                      <p className="text-muted-foreground font-medium italic">"{t("wizard.digitize.heroDesc") || "Biến tài liệu giấy thành đề thi số trong vài giây"}"</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="space-y-0.5">
+                      <h3 className="text-xl font-black text-foreground tracking-tight">{t("wizard.digitize.heroTitle") || "Số hóa đề thi"}</h3>
+                      <p className="text-xs text-muted-foreground font-medium italic opacity-80">"{t("wizard.digitize.heroDesc") || "Biến tài liệu giấy thành đề thi số trong vài giây"}"</p>
                     </div>
                     
                     <div className="flex flex-col gap-3">
                       <p className="text-sm text-foreground/80 leading-relaxed font-medium">
-                        {t("wizard.digitize.mainDesc") || "Tải lên file đề thi của bạn (PDF/Word/Ảnh) và để AI tự động trích xuất câu hỏi, đáp án và giải thích chi tiết."}
+                        Chuyển nhanh các file đề thi có sẵn (PDF, Word, Ảnh) thành bộ câu hỏi trắc nghiệm trực tuyến để tổ chức thi ngay lập tức.
                       </p>
                       
                       {/* Warning Note for Digitized Exam */}

@@ -20,7 +20,10 @@ import {
   QrCode,
   Sparkles,
   Layers,
-  Plus
+  Plus,
+  Eye,
+  Loader2,
+  ArrowLeft
 } from "lucide-react";
 import { 
   getRoomDetail, 
@@ -244,6 +247,20 @@ export default function RoomDetail() {
   const handleConfirmUpload = async () => {
     if (!pendingFile) return;
 
+    if (students.length > 0) {
+      setConfirmModal({
+        isOpen: true,
+        title: t("rooms.detail.confirm_replace_title", "Xác nhận ghi đè danh sách"),
+        message: t("rooms.detail.confirm_replace_msg", "Phòng thi hiện đã có học sinh. Bạn có chắc chắn muốn THAY THẾ TOÀN BỘ danh sách cũ bằng file mới không? Việc này có thể ảnh hưởng đến kết quả các bài thi đã nộp."),
+        type: "danger",
+        onConfirm: performUpload
+      });
+    } else {
+      performUpload();
+    }
+  };
+
+  const performUpload = async () => {
     const formData = new FormData();
     formData.append("file", pendingFile);
 
@@ -253,6 +270,7 @@ export default function RoomDetail() {
       toast.success(t("rooms.detail.upload_success") || "Đã tải danh sách học sinh");
       setIsPreviewModalOpen(false);
       setPendingFile(null);
+      setConfirmModal(prev => ({ ...prev, isOpen: false }));
       fetchData(true);
     } catch (error) {
       toast.error(error.response?.data?.message || t("rooms.upload_error"));
@@ -945,6 +963,7 @@ export default function RoomDetail() {
         students={previewStudents}
         onConfirm={handleConfirmUpload}
         loading={actionLoading}
+        hasExistingStudents={students.length > 0}
       />
 
       {/* Manual Add Student Modal */}

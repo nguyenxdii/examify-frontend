@@ -129,7 +129,8 @@
           "created_at": "Ngày tạo"
         },
         "status": {
-          "all": "Tất cả trạng thái"
+          "all": "Tất cả trạng thái",
+          "shared": "Đã chia sẻ"
         },
         "delete_modal": {
           "title": "Xóa đề thi vi phạm",
@@ -198,6 +199,19 @@
       }
     }
   },
+  "rooms": {
+    "detail": {
+      "duplicate_warning": "PHÁT HIỆN TRÙNG LẶP",
+      "duplicate_filtered": "• ĐÃ LỌC {{count}} TRÙNG LẶP",
+      "replace_warning": "CẢNH BÁO: Phòng thi đã có danh sách học sinh. Việc lưu danh sách mới sẽ <1>THAY THẾ TOÀN BỘ</1> dữ liệu cũ và có thể làm mất kết quả các bài thi đã nộp.",
+      "confirm_replace_title": "Xác nhận ghi đè danh sách",
+      "confirm_replace_msg": "Phòng thi hiện đã có học sinh. Bạn có chắc chắn muốn THAY THẾ TOÀN BỘ danh sách cũ bằng file mới không? Việc này có thể ảnh hưởng đến kết quả các bài thi đã nộp.",
+      "no_students_found": "Không tìm thấy học sinh nào khớp",
+      "ai_verify_title": "Danh sách học sinh",
+      "tab_students": "Học sinh",
+      "search_placeholder": "Tìm kiếm MSSV hoặc tên..."
+    }
+  },
   "common": {
     "save": "Lưu",
     "back": "Quay lại",
@@ -236,7 +250,7 @@
     "processing": "Đang xử lý...",
     "error": "Có lỗi xảy ra",
     "published": "Đã công bố",
-    "unpublished": "Chưa công bố",
+    "unpublished": "Hủy công bố",
     "all": "Tất cả",
     "attempts": "Lần thi",
     "graded": "Đã chấm",
@@ -846,7 +860,7 @@
     },
     "detail": {
       "back": "Quay lại",
-      "question_num": "Số câu hỏi",
+      "question_num": "Câu {{num}}",
       "card": {
         "exam": "Đề thi",
         "code": "Mã phòng",
@@ -866,7 +880,7 @@
       "status_closed": "Đã đóng",
       "yes": "Có",
       "no": "Không",
-      "ai_verify_title": "AI KIỂM TRA DANH SÁCH",
+      "ai_verify_title": "Danh sách học sinh",
       "duplicate_warning": "PHÁT HIỆN TRÙNG LẶP",
       "no_students_found": "Không tìm thấy học sinh nào khớp",
       "no": "Không",
@@ -897,7 +911,7 @@
       "publish_score": "Công bố điểm",
       "master_publish": "Công bố toàn phòng",
       "status_published": "Đã công bố",
-      "status_unpublished": "Chưa công bố",
+      "status_unpublished": "Hủy công bố",
       "publish_all": "Công bố điểm toàn phòng",
       "unpublish_all": "Hủy công bố toàn phòng",
       "submission_details": "Chi tiết bài làm",
@@ -912,6 +926,9 @@
       "essay": "Tự luận",
       "multiple_choice": "Trắc nghiệm",
       "grading": {
+        "student_selected_correct": "BẠN CHỌN ĐÚNG",
+        "student_selected_incorrect": "BẠN CHỌN SAI",
+        "manually_graded": "Đã chấm thủ công",
         "title": "Chấm bài: {{name}}",
         "essay_confirm_title": "Xác nhận kết quả?",
         "essay_confirm_msg": "Bạn có chắc chắn muốn xác nhận câu trả lời này là ĐÚNG không?",
