@@ -4,6 +4,7 @@ import { getQuestionBank, addQuestion } from "../../api/examApi";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
+import MarkdownRenderer from "../MarkdownRenderer";
 
 export default function QuestionBankModal({ isOpen, onClose, examId, existingQuestions = [], onSuccess }) {
   const { t } = useTranslation();
@@ -210,7 +211,7 @@ export default function QuestionBankModal({ isOpen, onClose, examId, existingQue
                             {q.difficulty === 'easy' ? t("wizard.step3.difficultyLevels.easy") : q.difficulty === 'hard' ? t("wizard.step3.difficultyLevels.hard") : t("wizard.step3.difficultyLevels.medium")}
                           </span>
                         </div>
-                        <p className="text-sm font-bold leading-relaxed">{q.content}</p>
+                        <MarkdownRenderer content={q.content} className="text-sm font-bold leading-relaxed" />
                       </div>
                     </div>
                   </div>

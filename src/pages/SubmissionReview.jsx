@@ -14,6 +14,7 @@ import { cn } from "../lib/utils";
 import { toast } from "react-hot-toast";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import MarkdownRenderer from "../components/MarkdownRenderer";
 
 export default function SubmissionReview() {
   const { t, i18n } = useTranslation();
@@ -349,13 +350,19 @@ export default function SubmissionReview() {
                         )}
                       </div>
 
-                    <h4 className="text-xl font-black text-foreground leading-tight tracking-tight">{ans.questionContent}</h4>
+                    <MarkdownRenderer 
+                      content={ans.questionContent} 
+                      className="text-xl font-black text-foreground leading-tight tracking-tight"
+                    />
 
                     {isEssay ? (
                       <div className="space-y-5">
                         <div className="p-6 bg-muted/20 border border-border rounded-2xl space-y-3">
                           <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60">{t("rooms.detail.grading.student_answer")}</p>
-                          <p className="text-base font-medium leading-relaxed whitespace-pre-wrap">{ans.essayAnswer || `(${t("common.empty")})`}</p>
+                          <MarkdownRenderer 
+                            content={ans.essayAnswer || `(${t("common.empty")})`} 
+                            className="text-base font-medium leading-relaxed"
+                          />
                         </div>
                         {ans.aiComment && (
                           <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl space-y-3 relative overflow-hidden">
@@ -445,9 +452,10 @@ export default function SubmissionReview() {
                             {isEssay ? t("rooms.detail.grading.correct_answer") : t("rooms.detail.grading.explanation")}
                           </p>
                         </div>
-                        <p className="text-base md:text-lg font-bold text-foreground leading-relaxed text-justify hyphens-auto whitespace-pre-wrap font-medium">
-                          {isEssay ? (ans.explanation || ans.sampleAnswer) : ans.explanation}
-                        </p>
+                        <MarkdownRenderer 
+                          content={isEssay ? (ans.explanation || ans.sampleAnswer) : ans.explanation} 
+                          className="text-base md:text-lg font-bold text-foreground leading-relaxed text-justify hyphens-auto"
+                        />
                       </div>
                     )}
                   </motion.div>

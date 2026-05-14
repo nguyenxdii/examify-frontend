@@ -270,10 +270,17 @@
     "account": "Tài khoản",
     "correct": "Đúng",
     "incorrect": "Sai",
+    "wrong": "Sai",
+    "wrong_empty": "Sai (Bỏ trống)",
     "correctCount": "Đúng / Tổng",
     "ai_graded": "Đã chấm AI",
     "pending": "Đang đợi chấm",
     "empty": "Trống",
+    "all_subjects": "Tất cả môn",
+    "all_difficulties": "Tất cả độ khó",
+    "no_topics": "Chưa có chủ đề",
+    "modal_search_placeholder": "Tìm kiếm nội dung hoặc chủ đề...",
+    "duplicate_error": "Câu hỏi này đã tồn tại trong đề thi!",
     "on": "Bật",
     "off": "Tắt",
     "avg": "TB",
@@ -772,7 +779,8 @@
     }
   },
   "header": {
-    "search": "Tìm kiếm học sinh, bài làm..."
+    "search": "Tìm kiếm học sinh, bài làm...",
+    "explanation": "Giải thích chi tiết"
   },
   "rooms": {
     "title": "Phòng thi của tôi",
@@ -1160,5 +1168,22 @@
       "submit_error": "Lỗi khi nộp bài",
       "no_questions": "Không tìm thấy nội dung câu hỏi"
     }
+  },
+  "bank": {
+    "modal_title": "Ngân hàng câu hỏi",
+    "modal_subtitle": "Chọn câu hỏi từ kho lưu trữ của bạn",
+    "modal_search_placeholder": "Tìm kiếm nội dung hoặc chủ đề...",
+    "all_subjects": "Tất cả môn",
+    "all_difficulties": "Tất cả độ khó",
+    "no_topics": "Chưa có chủ đề",
+    "loading": "Đang truy cập kho lưu trữ...",
+    "empty_search": "Không tìm thấy câu hỏi nào phù hợp",
+    "unclassified": "Chưa phân loại",
+    "selected_count": "Đã chọn {{count}} câu hỏi",
+    "add_to_exam": "Thêm vào đề thi",
+    "fetch_error": "Không thể tải ngân hàng câu hỏi",
+    "duplicate_error": "Câu hỏi này đã tồn tại trong đề thi!",
+    "add_success": "Đã thêm {{count}} câu hỏi vào đề thi",
+    "add_error": "Lỗi khi thêm câu hỏi"
   }
 }

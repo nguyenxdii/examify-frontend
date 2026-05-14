@@ -189,7 +189,7 @@ export default function QuestionModal({ isOpen, onClose, examId, question = null
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-2xl bg-card border border-border rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-2xl bg-card border border-border rounded-3xl shadow-2xl max-h-[90vh] flex flex-col">
             <div className="p-6 border-b border-border flex items-center justify-between bg-muted/20">
               <div>
                 <h3 className="text-xl font-bold font-heading text-foreground">
@@ -390,7 +390,7 @@ export default function QuestionModal({ isOpen, onClose, examId, question = null
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden space-y-3 px-1"
+                      className="space-y-3 px-1"
                     >
                       <div className="flex items-end gap-3">
                         <div className="flex-1 space-y-2">

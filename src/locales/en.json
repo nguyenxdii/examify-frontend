@@ -533,6 +533,8 @@
     "completed": "Completed",
     "correct": "Correct",
     "incorrect": "Incorrect",
+    "wrong": "Incorrect",
+    "wrong_empty": "Incorrect (Empty)",
     "correctCount": "Correct / Total",
     "ai_graded": "AI Graded",
     "pending": "Pending",
@@ -585,7 +587,13 @@
     "back": "Back",
     "essay": "Essay",
     "multiple_choice": "Multiple Choice",
-    "error_fetch_stats": "Failed to fetch statistics"
+    "error_fetch_stats": "Failed to fetch statistics",
+    "all_subjects": "All Subjects",
+    "all_difficulties": "All Difficulties",
+    "no_topics": "No topics available",
+    "modal_search_placeholder": "Search content or topic...",
+    "duplicate_error": "This question already exists in the exam!",
+    "explanation": "Explanation"
   },
   "nav": {
     "quizzes": "Quiz",

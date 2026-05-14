@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../../../lib/utils";
 import { toast } from "react-hot-toast";
 import { Eye, EyeOff, ShieldCheck as ShieldIcon, ChevronDown } from "lucide-react";
+import MarkdownRenderer from "../../../components/MarkdownRenderer";
 
 export default function SubmissionDetail() {
   const { t } = useTranslation();
@@ -347,9 +348,10 @@ export default function SubmissionDetail() {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-lg md:text-xl font-bold leading-tight">
-                  {ans.questionContent || t("rooms.detail.grading.content_unavailable")}
-                </h3>
+                <MarkdownRenderer 
+                  content={ans.questionContent || t("rooms.detail.grading.content_unavailable")} 
+                  className="text-lg md:text-xl font-bold leading-tight"
+                />
                 
                 {isEssay ? (
                   <div className="space-y-6">
@@ -358,9 +360,10 @@ export default function SubmissionDetail() {
                        <p className="absolute -top-3 left-6 bg-background px-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                          {t("rooms.detail.grading.student_answer")}
                        </p>
-                       <p className="text-base font-medium whitespace-pre-wrap leading-relaxed">
-                         {ans.essayAnswer || t("rooms.detail.grading.no_answer")}
-                       </p>
+                       <MarkdownRenderer 
+                         content={ans.essayAnswer || t("rooms.detail.grading.no_answer")} 
+                         className="text-base font-medium leading-relaxed"
+                       />
                     </div>
 
                     {/* AI Feedback */}
@@ -443,7 +446,10 @@ export default function SubmissionDetail() {
                           )}>
                             {String.fromCharCode(65 + cIdx)}
                           </div>
-                            <span className="font-bold text-sm">{choice.content}</span>
+                            <MarkdownRenderer 
+                              content={choice.content} 
+                              className="font-bold text-sm"
+                            />
                             <div className="ml-auto flex items-center gap-2">
                               {isCorrectChoice && (
                                 <>
@@ -511,9 +517,10 @@ export default function SubmissionDetail() {
                   <div className="pt-6 border-t border-border/50">
                     <div className="space-y-2">
                       <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{t("rooms.detail.grading.correct_answer")}</p>
-                      <p className="text-sm font-medium leading-relaxed bg-muted/20 p-4 rounded-2xl border border-dashed border-border whitespace-pre-wrap">
-                        {ans.explanation || ans.sampleAnswer}
-                      </p>
+                      <MarkdownRenderer 
+                        content={ans.explanation || ans.sampleAnswer} 
+                        className="text-sm font-medium leading-relaxed bg-muted/20 p-4 rounded-2xl border border-dashed border-border"
+                      />
                     </div>
                   </div>
                 )
