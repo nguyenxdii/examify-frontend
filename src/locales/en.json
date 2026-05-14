@@ -1067,17 +1067,25 @@
     "fetch_error": "Cannot load question bank",
     "modal_title": "Select from Bank",
     "modal_subtitle": "Select questions to add to your current exam",
+    "modal_search_placeholder": "Search content or topic...",
     "selected_count": "{{count}} selected",
     "all_subjects": "All Subjects",
-    "all_difficulies": "All Difficulties",
+    "all_difficulties": "All Difficulties",
     "add_to_exam": "Add to Exam",
     "add_success": "Question added to exam",
-    "already_exists": "This question already exists in the exam",
+    "add_error": "Error adding question",
+    "duplicate_error": "This question already exists in the exam",
+    "already_saved": "This question is already in the bank",
     "empty_title": "Bank is empty",
     "empty_desc": "Start adding questions to your bank to build your knowledge base.",
+    "empty_search": "No matching questions found",
     "clear_filters": "Clear filters",
     "create": "Create New Question",
-    "search": "Search questions..."
+    "search": "Search questions...",
+    "loading": "Accessing repository...",
+    "unclassified": "Unclassified",
+    "no_topics": "No topics available",
+    "save_success": "Saved to question bank successfully!"
   },
 
   "about": {

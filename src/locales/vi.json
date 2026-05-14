@@ -1025,27 +1025,7 @@
     "loading_finishing": "Hoàn tất bản thảo...",
     "wait_moment": "Vui lòng chờ trong giây lát..."
   },
-  "bank": {
-    "modal_title": "Ngân hàng câu hỏi",
-    "modal_subtitle": "Chọn câu hỏi để thêm vào đề thi hiện tại",
-    "subtitle": "Quản lý và sử dụng câu hỏi từ thư viện cá nhân của bạn",
-    "select_btn": "Chọn từ ngân hàng",
-    "selected_count": "Đã chọn {{count}} câu",
-    "all_subjects": "Tất cả môn học",
-    "all_difficulies": "Tất cả độ khó",
-    "add_to_exam": "Thêm vào đề thi",
-    "create": "Tạo câu hỏi mới",
-    "search": "Tìm kiếm câu hỏi...",
-    "create_single": "Tạo câu hỏi",
-    "search_placeholder": "Tìm kiếm...",
-    "all_topics": "Tất cả chủ đề",
-    "empty_title": "Ngân hàng trống",
-    "empty_desc": "Bắt đầu thêm câu hỏi vào ngân hàng để xây dựng kho tri thức của bạn.",
-    "clear_filters": "Xóa bộ lọc",
-    "no_topics": "Chưa có chủ đề nào",
-    "save_success": "Đã lưu vào ngân hàng câu hỏi thành công!",
-    "already_saved": "Câu hỏi này đã có trong ngân hàng"
-  },
+
 
   "about": {
     "hero": {
@@ -1177,20 +1157,33 @@
     }
   },
   "bank": {
-    "modal_title": "Ngân hàng câu hỏi",
-    "modal_subtitle": "Chọn câu hỏi từ kho lưu trữ của bạn",
-    "modal_search_placeholder": "Tìm kiếm nội dung hoặc chủ đề...",
-    "all_subjects": "Tất cả môn",
-    "all_difficulties": "Tất cả độ khó",
-    "no_topics": "Chưa có chủ đề",
-    "loading": "Đang truy cập kho lưu trữ...",
-    "empty_search": "Không tìm thấy câu hỏi nào phù hợp",
-    "unclassified": "Chưa phân loại",
-    "selected_count": "Đã chọn {{count}} câu hỏi",
-    "add_to_exam": "Thêm vào đề thi",
+    "title": "Ngân hàng câu hỏi",
+    "subtitle": "Quản lý và sử dụng câu hỏi từ thư viện cá nhân của bạn",
+    "search_placeholder": "Tìm kiếm câu hỏi...",
+    "all_topics": "Tất cả chủ đề",
+    "all": "Tất cả",
+    "create_single": "Tạo câu hỏi",
     "fetch_error": "Không thể tải ngân hàng câu hỏi",
-    "duplicate_error": "Câu hỏi này đã tồn tại trong đề thi!",
+    "modal_title": "Ngân hàng câu hỏi",
+    "modal_subtitle": "Chọn câu hỏi để thêm vào đề thi hiện tại",
+    "modal_search_placeholder": "Tìm kiếm nội dung hoặc chủ đề...",
+    "selected_count": "Đã chọn {{count}} câu",
+    "all_subjects": "Tất cả môn học",
+    "all_difficulties": "Tất cả độ khó",
+    "add_to_exam": "Thêm vào đề thi",
     "add_success": "Đã thêm {{count}} câu hỏi vào đề thi",
-    "add_error": "Lỗi khi thêm câu hỏi"
+    "add_error": "Lỗi khi thêm câu hỏi",
+    "duplicate_error": "Câu hỏi này đã tồn tại trong đề thi!",
+    "already_saved": "Câu hỏi này đã có trong ngân hàng",
+    "empty_title": "Ngân hàng trống",
+    "empty_desc": "Bắt đầu thêm câu hỏi vào ngân hàng để xây dựng kho tri thức của bạn.",
+    "empty_search": "Không tìm thấy câu hỏi nào phù hợp",
+    "clear_filters": "Xóa bộ lọc",
+    "create": "Tạo câu hỏi mới",
+    "search": "Tìm kiếm câu hỏi...",
+    "loading": "Đang truy cập kho lưu trữ...",
+    "unclassified": "Chưa phân loại",
+    "no_topics": "Chưa có chủ đề nào",
+    "save_success": "Đã lưu vào ngân hàng câu hỏi thành công!"
   }
 }
