@@ -538,6 +538,8 @@
       "heroTitle": "Số hóa đề thi",
       "heroDesc": "Biến tài liệu giấy thành đề thi số trong vài giây",
       "mainDesc": "Tải lên file đề thi của bạn (PDF/Word/Text) và để AI tự động trích xuất câu hỏi, đáp án và giải thích chi tiết.",
+      "miniDesc": "Chuyển file PDF, Word, Ảnh thành các câu hỏi trên website",
+      "uploadOriginal": "Tải lên file gốc",
       "placeholder": "Chọn file để số hóa",
       "uploadNote": "Lưu ý: Đáp án và lời giải được AI tự động nhận diện có thể có sai sót. Vui lòng kiểm tra kỹ nội dung sau khi chuyển đổi.",
       "analyzing": "Đang phân tích tài liệu..."
@@ -571,6 +573,7 @@
       "topicLabel": "Nhập nội dung hoặc chủ đề",
       "placeholderTopic": "Ví dụ: Lịch sử Việt Nam thế kỷ 20, Giải phương trình bậc 2...",
       "documentLabel": "Tài liệu học tập",
+      "studyMaterial": "Tài liệu học tập",
       "uploadFile": "Chọn hoặc kéo thả file vào đây",
       "fileTooLarge": "File quá lớn, tối đa 10MB",
       "tooShortError": "Nội dung quá ngắn, vui lòng nhập ít nhất 3 từ"
@@ -956,6 +959,7 @@
         "regrade": "Chấm lại",
         "incorrect": "Sai",
         "correct": "Đúng",
+        "no_answer": "(Chưa trả lời)",
         "score": "Điểm"
       },
       "grading_status_pending": "Chờ chấm"

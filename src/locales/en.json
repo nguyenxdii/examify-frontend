@@ -169,6 +169,8 @@
       "heroTitle": "Digitize Exam",
       "heroDesc": "Turn paper documents into digital exams in seconds",
       "mainDesc": "Upload your exam file (PDF/Word/Image) and let AI automatically extract questions, answers, and detailed explanations.",
+      "miniDesc": "Convert PDF, Word, and Images into digital questions",
+      "uploadOriginal": "Upload original file",
       "placeholder": "Select file to digitize",
       "uploadNote": "Note: Answers and explanations automatically recognized by AI may contain errors. Please check the content carefully after conversion.",
       "analyzing": "Analyzing document..."
@@ -239,6 +241,7 @@
       "topicDesc": "AI will brainstorm questions from a topic name.",
       "contentLabel": "Content details",
       "topicLabel": "Topic name",
+      "studyMaterial": "Study Material",
       "placeholderDoc": "Paste your content here...",
       "placeholderTopic": "Enter a topic (e.g. History of Rome)...",
       "uploadFile": "Upload document file (PDF, Word, TXT)",
@@ -969,6 +972,7 @@
         "regrade": "Regrade",
         "incorrect": "Incorrect",
         "correct": "Correct",
+        "no_answer": "(No answer)",
         "score": "Score"
       },
       "grading_status_pending": "Pending"

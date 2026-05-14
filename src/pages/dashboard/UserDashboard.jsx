@@ -4,7 +4,7 @@ import { StatsCard } from "../../components/dashboard/StatsCard";
 import { RecentQuizzes } from "../../components/dashboard/RecentQuizzes";
 import { TopStudents } from "../../components/dashboard/TopStudents";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Users, Award, Zap, Database, Loader2 } from "lucide-react";
+import { BookOpen, Users, Award, Zap, Database, Loader2, Activity } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getDashboardStats } from "../../api/examApi";
 import { toast } from "react-hot-toast";
