@@ -1,4 +1,7 @@
 {
+  "notification": {
+    "reason": "Lý do hệ thống"
+  },
   "dashboard": {
     "user": {
       "title": "Chào mừng quay trở lại!",

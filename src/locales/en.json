@@ -1,4 +1,7 @@
 {
+  "notification": {
+    "reason": "System Reason"
+  },
   "dashboard": {
     "user": {
       "title": "Welcome back!",

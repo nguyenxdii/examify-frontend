@@ -4,7 +4,7 @@ import { StatsCard } from "../../components/dashboard/StatsCard";
 import { RecentQuizzes } from "../../components/dashboard/RecentQuizzes";
 import { TopStudents } from "../../components/dashboard/TopStudents";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Users, Award, Zap, Database, Loader2, Activity } from "lucide-react";
+import { BookOpen, Users, Award, Database, Loader2, Activity } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getDashboardStats } from "../../api/examApi";
 import { toast } from "react-hot-toast";
@@ -186,9 +186,6 @@ export default function UserDashboard() {
               className="bg-card border border-border rounded-[32px] shadow-2xl max-w-md w-full overflow-hidden"
             >
               <div className="p-8 flex flex-col items-center text-center space-y-6">
-                <div className="w-20 h-20 bg-rose-500/10 text-rose-500 rounded-[2rem] flex items-center justify-center shadow-inner group">
-                   <Zap className="w-10 h-10 group-hover:scale-110 transition-transform duration-500" />
-                </div>
                 
                 <div className="space-y-2">
                   <h3 className="text-2xl font-black text-foreground tracking-tight">{currentNotification.title}</h3>
